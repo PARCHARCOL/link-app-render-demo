@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Link App</title>
+  <meta name="description" content="Demo web de Link: noticias gremiales, empleo, marketplace y mensajes.">
+  <style>
+    :root{--black:#000;--graphite:#1c1c1e;--graphite2:#2c2c2e;--gold:#d4af37;--blue:#007aff;--green:#34c759;--red:#ff3b30;--text:#fff;--muted:#98989d;--muted2:#6f6f75}
+    *{box-sizing:border-box}
+    html,body{min-height:100%;margin:0;background:#111;color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    button,input{font:inherit}button{cursor:pointer}
+    .site-shell{min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 20% 15%,rgba(212,175,55,.16),transparent 28%),linear-gradient(135deg,#050505 0%,#151515 45%,#262018 100%)}
+    .phone{width:min(100%,430px);height:min(860px,calc(100vh - 48px));min-height:690px;overflow:hidden;display:grid;grid-template-rows:34px 1fr 74px;background:var(--black);border:1px solid #3a3a3c;border-radius:32px;box-shadow:0 26px 80px rgba(0,0,0,.42)}
+    .status{display:flex;align-items:center;justify-content:space-between;padding:0 26px;color:#f2f2f7;font-size:12px;font-weight:800;background:var(--black)}
+    .status span:last-child{color:var(--muted)}
+    #content{min-height:0;overflow:hidden}
+    .screen{height:100%;overflow-y:auto;padding:8px 16px 24px;scrollbar-width:none}.screen::-webkit-scrollbar{display:none}
+    .head{position:sticky;top:0;z-index:1;padding:10px 0 16px;background:linear-gradient(180deg,#000 70%,rgba(0,0,0,0))}
+    .head span{display:block;margin-bottom:2px;color:var(--muted);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0}
+    .head h1{margin:0;color:#fff;font-size:34px;line-height:1;font-weight:900}.head h1.gold{color:var(--gold)}
+    .label{margin:4px 0 10px;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:0}.label.red{color:var(--red)}.label.blue{color:var(--blue);margin-top:18px}
+    .stack{display:grid;gap:12px}.card,.person,.product,.chat{background:var(--graphite);border:1px solid rgba(255,255,255,.06);border-radius:14px}
+    .card{padding:16px}.card.urgent{border-color:rgba(212,175,55,.72)}
+    .top{display:flex;justify-content:space-between;gap:10px;margin-bottom:9px;color:var(--muted);font-size:11px;font-weight:800}.top strong{color:var(--gold);white-space:nowrap}
+    h2{margin:0;color:#fff;font-size:17px;line-height:1.18}.card p,.person p,.product p{margin:8px 0 0;color:var(--muted);font-size:14px;line-height:1.35}
+    .search{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:9px;margin-bottom:16px;padding:10px 12px;background:var(--graphite);border-radius:12px}
+    .search span{color:var(--muted);font-size:13px;font-weight:800}.search input,.composer input{width:100%;min-width:0;color:#fff;background:transparent;border:0;outline:0}.search input::placeholder,.composer input::placeholder{color:var(--muted2)}
+    .person{display:grid;grid-template-columns:52px 1fr;gap:13px;padding:15px}.avatar{width:48px;height:48px;display:grid;place-items:center;flex:0 0 auto;color:var(--gold);background:var(--graphite2);border-radius:50%;font-size:18px;font-weight:900}.avatar.premium{border:1.5px solid var(--gold)}
+    .person-copy{min-width:0}.person-title{display:flex;align-items:center;gap:8px}.person-title h2{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.person-title span{flex:0 0 auto;padding:3px 6px;color:#171107;background:var(--gold);border-radius:6px;font-size:10px;font-weight:900}
+    .person strong{display:block;margin-top:3px;color:var(--blue);font-size:13px}.person small{display:block;margin-top:5px;color:var(--muted2);font-size:12px;font-weight:800}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.product{min-height:260px;overflow:hidden;display:grid;grid-template-rows:118px 1fr;border-radius:12px}
+    .photo{display:grid;place-items:center;color:var(--muted2);background:linear-gradient(135deg,rgba(255,255,255,.06),transparent),var(--graphite2);font-size:13px;font-weight:900}
+    .product-copy{min-width:0;padding:10px}.product h2{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}.product strong{display:block;overflow:hidden;margin-top:4px;color:var(--gold);font-size:13px;text-overflow:ellipsis;white-space:nowrap}.product p{display:-webkit-box;min-height:32px;overflow:hidden;margin-top:5px;font-size:11px;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+    .state{display:block;margin-top:7px;font-size:11px;font-weight:900}.state.nueva{color:var(--green)}.state.usado{color:var(--gold)}.state.piezas{color:var(--red)}
+    .thread-list{display:grid;overflow:hidden;margin-bottom:14px;border-top:1px solid var(--graphite2)}.thread{position:relative;width:100%;display:grid;grid-template-columns:48px 1fr 10px;align-items:center;gap:12px;padding:13px 0;color:#fff;background:transparent;border:0;border-bottom:1px solid var(--graphite2);text-align:left}.thread.active{background:linear-gradient(90deg,rgba(212,175,55,.1),transparent)}
+    .thread-copy{min-width:0}.thread-copy div{display:flex;justify-content:space-between;gap:8px}.thread-copy strong,.thread-copy small,.thread-copy span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.thread-copy strong{font-size:14px}.thread-copy small{flex:0 0 auto;color:var(--muted);font-size:12px}.thread-copy span{display:block;margin-top:3px;color:var(--muted);font-size:13px}.thread i{width:9px;height:9px;background:var(--blue);border-radius:50%}
+    .chat{padding:13px}.chat-title{display:flex;justify-content:space-between;gap:10px;padding-bottom:10px;border-bottom:1px solid var(--graphite2)}.chat-title strong{overflow:hidden;font-size:14px;text-overflow:ellipsis;white-space:nowrap}.chat-title span{color:var(--gold);font-size:12px;font-weight:900}
+    .bubbles{display:grid;gap:9px;padding:13px 0}.bubble{max-width:82%;justify-self:start;padding:10px 12px;background:var(--graphite2);border-radius:14px}.bubble.mine{justify-self:end;background:var(--blue)}.bubble small{display:block;margin-bottom:3px;color:rgba(255,255,255,.7);font-size:10px;font-weight:900}.bubble p{margin:0;color:#fff;font-size:13px;line-height:1.3}
+    .composer{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;padding:8px;background:var(--graphite2);border-radius:18px}.composer button{height:34px;padding:0 12px;color:#171107;background:var(--gold);border:0;border-radius:17px;font-size:12px;font-weight:900}
+    .tabs{display:grid;grid-template-columns:repeat(4,1fr);align-items:center;padding:7px 8px 12px;background:rgba(28,28,30,.98);border-top:1px solid var(--graphite2)}.tab{display:grid;justify-items:center;gap:3px;min-width:0;color:var(--muted);background:transparent;border:0}.tab span{width:28px;height:28px;display:grid;place-items:center;border:1px solid currentColor;border-radius:50%;font-size:12px;font-weight:900}.tab small{max-width:100%;overflow:hidden;font-size:11px;font-weight:800;text-overflow:ellipsis;white-space:nowrap}.tab.active{color:var(--gold)}
+    @media (max-width:520px){.site-shell{padding:0;background:var(--black)}.phone{width:100%;height:100vh;min-height:100vh;border:0;border-radius:0}}
+  </style>
+</head>
+<body>
+  <main class="site-shell">
+    <section class="phone" aria-label="Demo web de Link">
+      <header class="status"><span>9:41</span><span>LTE 100%</span></header>
+      <div id="content"></div>
+      <nav class="tabs" aria-label="Navegacion principal"></nav>
+    </section>
+  </main>
+  <script>
+    const news=[
+      {title:"Resolucion Coljuegos 2026",body:"Nuevas tarifas y derechos de explotacion para maquinas slots contratadas en salas fisicas.",time:"Hace 2 horas",tag:"Alerta regulatoria",urgent:true},
+      {title:"Circular UIAF - Reportes ROS",body:"Recordatorio de vencimiento para la entrega de informes de prevencion de lavado de activos.",time:"Ayer",tag:"Cumplimiento",urgent:false},
+      {title:"Retencion en premios DIAN",body:"Estructura de cobro de ganancia ocasional actualizada para casinos este semestre.",time:"2 dias",tag:"DIAN y Supersalud",urgent:false}
+    ];
+    const jobs=[
+      {name:"Carlos Mendoza",role:"Tecnico de maquinas",specialty:"Slots, ruletas, Bally, IGT",city:"Medellin",premium:true},
+      {name:"Diana Restrepo",role:"Dealer de mesas",specialty:"Blackjack, poker y caja",city:"Bogota",premium:false},
+      {name:"Andres Jaramillo",role:"Inspector de seguridad",specialty:"Monitoreo, CCTV y sala",city:"Cali",premium:false}
+    ];
+    const products=[
+      {name:"Billetero MEI Advance",price:"$1.200.000 COP",description:"Repuesto legal con manifiesto",state:"Usado"},
+      {name:"Tarjeta principal IGT",price:"$3.500.000 COP",description:"Tarjeta para modelo CrystalDual",state:"Nueva"},
+      {name:"Pantalla monitor 23 pulgadas",price:"$850.000 COP",description:"Compatible con Novomatic",state:"Usado"},
+      {name:"Botonera dinamica",price:"$450.000 COP",description:"Repuestos originales Bally",state:"Para piezas"}
+    ];
+    const threads=[
+      {name:"Casino Atlantis",role:"Reclutador",last:"Recibimos tu HV de administrador, agendemos entrevista.",time:"14:25",unread:true,messages:[["Casino Atlantis","Hola, revisamos tu hoja de vida para administrador de sala."],["Casino Atlantis","Recibimos tu HV de administrador, agendemos entrevista."]]},
+      {name:"Ingeniero Electronico Cali",role:"Marketplace",last:"El precio del billetero MEI es negociable?",time:"Ayer",unread:false,messages:[["Ingeniero Electronico Cali","Buen dia. El precio del billetero MEI es negociable?"],["Tu","Si, podemos revisar una oferta si el retiro es esta semana."]]},
+      {name:"Foro Tecnico Gremial",role:"Comunidad",last:"Nuevo hilo: como calibrar sensores de ruleta?",time:"9 Ago",unread:false,messages:[["Foro Tecnico Gremial","Nuevo hilo: como calibrar sensores de ruleta?"],["Tu","Lo reviso y comparto el procedimiento recomendado."]]}
+    ];
+    const tabs=[["inicio","Inicio","N"],["empleos","Empleos","E"],["marketplace","Market","M"],["mensajes","Mensajes","C"]];
+    let active="inicio";
+    let activeThread=0;
+    const content=document.querySelector("#content");
+    const nav=document.querySelector(".tabs");
+    function esc(value){return String(value).replace(/[&<>"']/g,function(char){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[char]})}
+    function header(eyebrow,title,gold){return '<div class="head"><span>'+esc(eyebrow)+'</span><h1 class="'+(gold?'gold':'')+'">'+esc(title)+'</h1></div>'}
+    function renderTabs(){
+      nav.innerHTML=tabs.map(function(tab){return '<button class="tab '+(active===tab[0]?'active':'')+'" data-tab="'+tab[0]+'"><span>'+tab[2]+'</span><small>'+tab[1]+'</small></button>'}).join("");
+      nav.querySelectorAll("button").forEach(function(btn){btn.onclick=function(){active=btn.dataset.tab;render()}});
+    }
+    function renderInicio(){
+      return '<section class="screen">'+header("Link","Radar Gremial",true)+'<div class="label red">Alertas regulatorias</div><div class="stack">'+news.slice(0,2).map(function(item){return '<article class="card '+(item.urgent?'urgent':'')+'"><div class="top"><span>'+esc(item.tag)+'</span><strong>'+esc(item.time)+'</strong></div><h2>'+esc(item.title)+'</h2><p>'+esc(item.body)+'</p></article>'}).join("")+'</div><div class="label blue">DIAN y Supersalud</div><article class="card"><div class="top"><span>'+esc(news[2].tag)+'</span><strong>'+esc(news[2].time)+'</strong></div><h2>'+esc(news[2].title)+'</h2><p>'+esc(news[2].body)+'</p></article></section>'
+    }
+    function renderEmpleos(){
+      return '<section class="screen">'+header("Bolsa de empleo","Talento Gaming")+'<label class="search"><span>Buscar</span><input placeholder="tecnicos, dealers, pit boss..."></label><div class="stack">'+jobs.map(function(job){return '<article class="person"><div class="avatar '+(job.premium?'premium':'')+'">'+esc(job.name[0])+'</div><div class="person-copy"><div class="person-title"><h2>'+esc(job.name)+'</h2>'+(job.premium?'<span>Verificado</span>':'')+'</div><strong>'+esc(job.role)+'</strong><p>'+esc(job.specialty)+'</p><small>'+esc(job.city)+'</small></div></article>'}).join("")+'</div></section>'
+    }
+    function stateClass(state){return state==="Nueva"?"nueva":state==="Para piezas"?"piezas":"usado"}
+    function renderMarketplace(){
+      return '<section class="screen">'+header("Clasificados","Marketplace")+'<div class="grid">'+products.map(function(product){return '<article class="product"><div class="photo">Foto</div><div class="product-copy"><h2>'+esc(product.name)+'</h2><strong>'+esc(product.price)+'</strong><p>'+esc(product.description)+'</p><span class="state '+stateClass(product.state)+'">'+esc(product.state)+'</span></div></article>'}).join("")+'</div></section>'
+    }
+    function renderMensajes(){
+      const thread=threads[activeThread];
+      return '<section class="screen">'+header("Chat interno","Mensajes")+'<div class="thread-list">'+threads.map(function(item,index){return '<button class="thread '+(index===activeThread?'active':'')+'" data-thread="'+index+'"><div class="avatar">'+esc(item.name[0])+'</div><div class="thread-copy"><div><strong>'+esc(item.name)+'</strong><small>'+esc(item.time)+'</small></div><span>'+esc(item.last)+'</span></div>'+(item.unread?'<i aria-label="No leido"></i>':'')+'</button>'}).join("")+'</div><div class="chat"><div class="chat-title"><strong>'+esc(thread.name)+'</strong><span>'+esc(thread.role)+'</span></div><div class="bubbles">'+thread.messages.map(function(pair){return '<div class="bubble '+(pair[0]==="Tu"?'mine':'')+'"><small>'+esc(pair[0])+'</small><p>'+esc(pair[1])+'</p></div>'}).join("")+'</div><div class="composer"><input placeholder="Mensaje"><button type="button">Enviar</button></div></div></section>'
+    }
+    function render(){
+      renderTabs();
+      if(active==="inicio")content.innerHTML=renderInicio();
+      if(active==="empleos")content.innerHTML=renderEmpleos();
+      if(active==="marketplace")content.innerHTML=renderMarketplace();
+      if(active==="mensajes"){
+        content.innerHTML=renderMensajes();
+        content.querySelectorAll(".thread").forEach(function(btn){btn.onclick=function(){activeThread=Number(btn.dataset.thread);render()}});
+      }
+    }
+    render();
+  </script>
+</body>
+</html>

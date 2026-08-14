@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: link-app-demo
+    runtime: static
+    plan: free
+    buildCommand: ""
+    staticPublishPath: ./public
+    autoDeployTrigger: commit
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
