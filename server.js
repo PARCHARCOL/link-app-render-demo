@@ -1,21 +1,33 @@
 import { createServer } from "node:http";
-import { randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID, scrypt, timingSafeEqual } from "node:crypto";
 import { mkdir, readFile, rename, stat, writeFile } from "node:fs/promises";
 import { createReadStream } from "node:fs";
 import path from "node:path";
+import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
+import pg from "pg";
+
+const { Pool } = pg;
+const scryptAsync = promisify(scrypt);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(__dirname, "public");
 const dataDir = path.join(__dirname, "data");
 const dataFile = path.join(dataDir, "link-data.json");
 const port = Number(process.env.PORT || 3000);
+const databaseUrl = process.env.DATABASE_URL || "";
 const officialNewsTtlMs = Number(process.env.OFFICIAL_NEWS_TTL_MS || 30 * 60 * 1000);
 const officialNewsTimeoutMs = Number(process.env.OFFICIAL_NEWS_TIMEOUT_MS || 12_000);
+const bodyLimitBytes = Number(process.env.BODY_LIMIT_BYTES || 6_000_000);
+const sessionDays = Number(process.env.SESSION_DAYS || 30);
 
 const emptyData = {
+  users: [],
+  sessions: [],
   news: [],
   jobs: [],
+  resumes: [],
+  vacancies: [],
   products: [],
   threads: [],
 };
@@ -94,13 +106,6 @@ const officialHostSuffixes = [
   "docs.supersalud.gov.co",
 ];
 
-let officialNewsCache = {
-  items: [],
-  updatedAt: null,
-  error: null,
-  promise: null,
-};
-
 const mimeTypes = new Map([
   [".html", "text/html; charset=utf-8"],
   [".css", "text/css; charset=utf-8"],
@@ -113,6 +118,27 @@ const mimeTypes = new Map([
   [".svg", "image/svg+xml"],
   [".ico", "image/x-icon"],
 ]);
+
+let officialNewsCache = {
+  items: [],
+  updatedAt: null,
+  error: null,
+  promise: null,
+};
+
+let dbReady = false;
+let dbError = null;
+let pool = null;
+
+if (databaseUrl) {
+  const sslMode = process.env.PGSSLMODE || "";
+  const needsSsl = /sslmode=require/i.test(databaseUrl) || sslMode === "require";
+  pool = new Pool({
+    connectionString: databaseUrl,
+    max: Number(process.env.PG_POOL_MAX || 5),
+    ssl: needsSsl ? { rejectUnauthorized: false } : undefined,
+  });
+}
 
 function json(res, status, payload) {
   const body = JSON.stringify(payload);
@@ -127,8 +153,47 @@ function text(value, max = 500) {
   return String(value ?? "").trim().slice(0, max);
 }
 
+function dataText(value, max) {
+  const output = String(value ?? "").trim();
+  if (!output) return "";
+  if (!output.startsWith("data:")) return "";
+  if (output.length > max) {
+    const error = new Error("El archivo supera el tamano permitido");
+    error.status = 413;
+    throw error;
+  }
+  return output;
+}
+
 function nowStamp() {
   return new Date().toISOString();
+}
+
+function normalizeEmail(value) {
+  return text(value, 160).toLowerCase();
+}
+
+function normalizeAccountType(value) {
+  return value === "company" ? "company" : "person";
+}
+
+function tokenHash(token) {
+  return createHash("sha256").update(String(token)).digest("hex");
+}
+
+function storageInfo() {
+  return {
+    mode: dbReady ? "postgres" : "json",
+    dbConfigured: Boolean(databaseUrl),
+    dbReady,
+    dbError,
+  };
+}
+
+function fail(status, message) {
+  const error = new Error(message);
+  error.status = status;
+  throw error;
 }
 
 function normalizeText(value) {
@@ -191,6 +256,16 @@ function htmlToText(html, max = 600) {
     .slice(0, max);
 }
 
+function htmlEscape(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  })[char]);
+}
+
 function extractPageTitle(html) {
   const h1 = html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i);
   const title = h1 || html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
@@ -250,7 +325,7 @@ function isLikelyContentTitle(value) {
   const normalized = normalizeText(value);
   if (isGenericLinkText(value)) return false;
   if (normalized.length >= 32) return true;
-  return /\b(concepto|oficio|circular|decreto|resolucion|resolucion|acuerdo|comunicado)\b/i.test(normalized);
+  return /\b(concepto|oficio|circular|decreto|resolucion|acuerdo|comunicado)\b/i.test(normalized);
 }
 
 function isListingSourceUrl(source, sourceUrl) {
@@ -312,7 +387,7 @@ function candidateScore(candidate) {
 function cleanSummary(value) {
   return String(value || "")
     .replace(/contraste aumentar tamano letra disminuir tamano letra/gi, " ")
-    .replace(/breadcrumb\s+home\s+(?:&raquo;|»)?/gi, " ")
+    .replace(/breadcrumb\s+home\s+(?:&raquo;|Â»)?/gi, " ")
     .replace(/\S*\.gov\.co\/\S*/gi, " ")
     .replace(/\S*\.co\/\S*/gi, " ")
     .replace(/\b[\w-]+=["'][^"']*["']>?/g, " ")
@@ -488,6 +563,19 @@ async function getOfficialNews(force = false) {
   return officialNewsCache.promise;
 }
 
+function normalizeData(parsed = {}) {
+  return {
+    users: Array.isArray(parsed.users) ? parsed.users : [],
+    sessions: Array.isArray(parsed.sessions) ? parsed.sessions : [],
+    news: Array.isArray(parsed.news) ? parsed.news : [],
+    jobs: Array.isArray(parsed.jobs) ? parsed.jobs : [],
+    resumes: Array.isArray(parsed.resumes) ? parsed.resumes : [],
+    vacancies: Array.isArray(parsed.vacancies) ? parsed.vacancies : [],
+    products: Array.isArray(parsed.products) ? parsed.products : [],
+    threads: Array.isArray(parsed.threads) ? parsed.threads : [],
+  };
+}
+
 async function ensureDataFile() {
   await mkdir(dataDir, { recursive: true });
   try {
@@ -497,27 +585,635 @@ async function ensureDataFile() {
   }
 }
 
-async function readData() {
+async function readJsonData() {
   await ensureDataFile();
   try {
     const raw = await readFile(dataFile, "utf8");
-    const parsed = JSON.parse(raw);
-    return {
-      news: Array.isArray(parsed.news) ? parsed.news : [],
-      jobs: Array.isArray(parsed.jobs) ? parsed.jobs : [],
-      products: Array.isArray(parsed.products) ? parsed.products : [],
-      threads: Array.isArray(parsed.threads) ? parsed.threads : [],
-    };
+    return normalizeData(JSON.parse(raw));
   } catch {
     return structuredClone(emptyData);
   }
 }
 
-async function writeData(data) {
+async function writeJsonData(data) {
   await mkdir(dataDir, { recursive: true });
   const tempFile = `${dataFile}.${process.pid}.tmp`;
-  await writeFile(tempFile, JSON.stringify(data, null, 2), "utf8");
+  await writeFile(tempFile, JSON.stringify(normalizeData(data), null, 2), "utf8");
   await rename(tempFile, dataFile);
+}
+
+async function initDb() {
+  if (!pool) return;
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS link_users (
+      id uuid PRIMARY KEY,
+      email text UNIQUE NOT NULL,
+      password_hash text NOT NULL,
+      account_type text NOT NULL CHECK (account_type IN ('person', 'company')),
+      display_name text NOT NULL,
+      phone text DEFAULT '',
+      city text DEFAULT '',
+      company_name text DEFAULT '',
+      nit text DEFAULT '',
+      role text DEFAULT '',
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS link_sessions (
+      token_hash text PRIMARY KEY,
+      user_id uuid NOT NULL REFERENCES link_users(id) ON DELETE CASCADE,
+      expires_at timestamptz NOT NULL,
+      created_at timestamptz NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS link_news (
+      id uuid PRIMARY KEY,
+      author_id uuid REFERENCES link_users(id) ON DELETE SET NULL,
+      title text NOT NULL,
+      body text NOT NULL,
+      category text NOT NULL DEFAULT 'General',
+      contact text DEFAULT '',
+      created_at timestamptz NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS link_products (
+      id uuid PRIMARY KEY,
+      author_id uuid REFERENCES link_users(id) ON DELETE SET NULL,
+      name text NOT NULL,
+      price text NOT NULL,
+      condition text NOT NULL DEFAULT 'Disponible',
+      description text DEFAULT '',
+      contact text DEFAULT '',
+      created_at timestamptz NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS link_threads (
+      id uuid PRIMARY KEY,
+      author_id uuid REFERENCES link_users(id) ON DELETE SET NULL,
+      name text NOT NULL,
+      topic text NOT NULL DEFAULT 'Conversacion',
+      created_at timestamptz NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS link_messages (
+      id uuid PRIMARY KEY,
+      thread_id uuid NOT NULL REFERENCES link_threads(id) ON DELETE CASCADE,
+      author_id uuid REFERENCES link_users(id) ON DELETE SET NULL,
+      author text NOT NULL,
+      text text NOT NULL,
+      created_at timestamptz NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS link_resumes (
+      id uuid PRIMARY KEY,
+      user_id uuid NOT NULL REFERENCES link_users(id) ON DELETE CASCADE,
+      full_name text NOT NULL,
+      headline text NOT NULL,
+      document_id text DEFAULT '',
+      city text DEFAULT '',
+      phone text DEFAULT '',
+      email text DEFAULT '',
+      availability text DEFAULT '',
+      salary text DEFAULT '',
+      summary text DEFAULT '',
+      experience text DEFAULT '',
+      education text DEFAULT '',
+      skills text DEFAULT '',
+      references_text text DEFAULT '',
+      photo_data text DEFAULT '',
+      attachment_name text DEFAULT '',
+      attachment_data text DEFAULT '',
+      is_public boolean NOT NULL DEFAULT true,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS link_vacancies (
+      id uuid PRIMARY KEY,
+      user_id uuid NOT NULL REFERENCES link_users(id) ON DELETE CASCADE,
+      company text NOT NULL,
+      title text NOT NULL,
+      city text DEFAULT '',
+      salary text DEFAULT '',
+      contact text DEFAULT '',
+      description text DEFAULT '',
+      requirements text DEFAULT '',
+      created_at timestamptz NOT NULL DEFAULT now()
+    );
+  `);
+}
+
+async function initializeStorage() {
+  await ensureDataFile();
+  if (!pool) return;
+  try {
+    await initDb();
+    dbReady = true;
+    dbError = null;
+    console.log("Link app using PostgreSQL storage");
+  } catch (error) {
+    dbReady = false;
+    dbError = error.message;
+    console.error(`PostgreSQL unavailable, using JSON storage: ${error.message}`);
+  }
+}
+
+function authToken(req) {
+  const header = req.headers.authorization || "";
+  const match = header.match(/^Bearer\s+(.+)$/i);
+  return match ? match[1].trim() : "";
+}
+
+async function hashPassword(password) {
+  const salt = randomBytes(16).toString("hex");
+  const derived = await scryptAsync(password, salt, 64);
+  return `scrypt:${salt}:${derived.toString("hex")}`;
+}
+
+async function verifyPassword(password, stored) {
+  const [scheme, salt, expectedHex] = String(stored || "").split(":");
+  if (scheme !== "scrypt" || !salt || !expectedHex) return false;
+  const actual = await scryptAsync(password, salt, 64);
+  const expected = Buffer.from(expectedHex, "hex");
+  return expected.length === actual.length && timingSafeEqual(expected, actual);
+}
+
+function sanitizeUser(user) {
+  if (!user) return null;
+  return {
+    id: user.id,
+    email: user.email,
+    accountType: user.accountType || user.account_type,
+    displayName: user.displayName || user.display_name,
+    phone: user.phone || "",
+    city: user.city || "",
+    companyName: user.companyName || user.company_name || "",
+    nit: user.nit || "",
+    role: user.role || "",
+    createdAt: user.createdAt || user.created_at || null,
+  };
+}
+
+function rowUser(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    email: row.email,
+    accountType: row.account_type,
+    displayName: row.display_name,
+    phone: row.phone || "",
+    city: row.city || "",
+    companyName: row.company_name || "",
+    nit: row.nit || "",
+    role: row.role || "",
+    createdAt: row.createdAt || row.created_at,
+  };
+}
+
+function publicAuthor(user) {
+  return user?.displayName || user?.display_name || user?.email || "Link";
+}
+
+async function createSession(userId) {
+  const token = randomBytes(32).toString("base64url");
+  const hashed = tokenHash(token);
+  const expiresAt = new Date(Date.now() + sessionDays * 24 * 60 * 60 * 1000).toISOString();
+  if (dbReady) {
+    await pool.query(
+      "INSERT INTO link_sessions (token_hash, user_id, expires_at) VALUES ($1, $2, $3)",
+      [hashed, userId, expiresAt],
+    );
+  } else {
+    const data = await readJsonData();
+    data.sessions = data.sessions.filter((item) => Date.parse(item.expiresAt) > Date.now());
+    data.sessions.push({ tokenHash: hashed, userId, expiresAt, createdAt: nowStamp() });
+    await writeJsonData(data);
+  }
+  return token;
+}
+
+async function getAuthUser(req) {
+  const token = authToken(req);
+  if (!token) return null;
+  const hashed = tokenHash(token);
+  if (dbReady) {
+    const result = await pool.query(
+      `SELECT u.id, u.email, u.account_type, u.display_name, u.phone, u.city, u.company_name, u.nit, u.role, u.created_at
+       FROM link_sessions s
+       JOIN link_users u ON u.id = s.user_id
+       WHERE s.token_hash = $1 AND s.expires_at > now()`,
+      [hashed],
+    );
+    return rowUser(result.rows[0]);
+  }
+  const data = await readJsonData();
+  const session = data.sessions.find((item) => item.tokenHash === hashed && Date.parse(item.expiresAt) > Date.now());
+  if (!session) return null;
+  return sanitizeUser(data.users.find((item) => item.id === session.userId));
+}
+
+async function requireUser(req) {
+  const user = await getAuthUser(req);
+  if (!user) fail(401, "Debes iniciar sesion");
+  return user;
+}
+
+async function registerUser(body) {
+  const email = normalizeEmail(body.email);
+  const password = String(body.password || "");
+  const accountType = normalizeAccountType(body.accountType);
+  const displayName = text(body.displayName, 120) || text(body.companyName, 120);
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) fail(400, "Correo invalido");
+  if (password.length < 6) fail(400, "La clave debe tener minimo 6 caracteres");
+  if (!displayName) fail(400, "Nombre requerido");
+
+  const user = {
+    id: randomUUID(),
+    email,
+    passwordHash: await hashPassword(password),
+    accountType,
+    displayName,
+    phone: text(body.phone, 80),
+    city: text(body.city, 80),
+    companyName: accountType === "company" ? text(body.companyName, 140) : "",
+    nit: accountType === "company" ? text(body.nit, 40) : "",
+    role: text(body.role, 120),
+    createdAt: nowStamp(),
+  };
+
+  if (dbReady) {
+    try {
+      await pool.query(
+        `INSERT INTO link_users
+         (id, email, password_hash, account_type, display_name, phone, city, company_name, nit, role)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        [user.id, user.email, user.passwordHash, user.accountType, user.displayName, user.phone, user.city, user.companyName, user.nit, user.role],
+      );
+    } catch (error) {
+      if (error.code === "23505") fail(409, "Ese correo ya esta registrado");
+      throw error;
+    }
+  } else {
+    const data = await readJsonData();
+    if (data.users.some((item) => normalizeEmail(item.email) === email)) fail(409, "Ese correo ya esta registrado");
+    data.users.push(user);
+    await writeJsonData(data);
+  }
+
+  const token = await createSession(user.id);
+  return { token, user: sanitizeUser(user) };
+}
+
+async function loginUser(body) {
+  const email = normalizeEmail(body.email);
+  const password = String(body.password || "");
+  let user;
+  let passwordHash;
+  if (dbReady) {
+    const result = await pool.query(
+      `SELECT id, email, password_hash, account_type, display_name, phone, city, company_name, nit, role, created_at
+       FROM link_users WHERE email = $1`,
+      [email],
+    );
+    const row = result.rows[0];
+    if (row) {
+      user = rowUser(row);
+      passwordHash = row.password_hash;
+    }
+  } else {
+    const data = await readJsonData();
+    const found = data.users.find((item) => normalizeEmail(item.email) === email);
+    if (found) {
+      user = sanitizeUser(found);
+      passwordHash = found.passwordHash;
+    }
+  }
+  if (!user || !await verifyPassword(password, passwordHash)) fail(401, "Correo o clave incorrectos");
+  const token = await createSession(user.id);
+  return { token, user };
+}
+
+async function logoutUser(req) {
+  const token = authToken(req);
+  if (!token) return;
+  const hashed = tokenHash(token);
+  if (dbReady) {
+    await pool.query("DELETE FROM link_sessions WHERE token_hash = $1", [hashed]);
+  } else {
+    const data = await readJsonData();
+    data.sessions = data.sessions.filter((item) => item.tokenHash !== hashed);
+    await writeJsonData(data);
+  }
+}
+
+async function readData(authUser = null) {
+  if (dbReady) {
+    const [
+      news,
+      products,
+      threads,
+      messages,
+      resumes,
+      vacancies,
+    ] = await Promise.all([
+      pool.query(`SELECT id, title, body, category, contact, created_at AS "createdAt" FROM link_news ORDER BY created_at DESC LIMIT 100`),
+      pool.query(`SELECT id, name, price, condition, description, contact, created_at AS "createdAt" FROM link_products ORDER BY created_at DESC LIMIT 100`),
+      pool.query(`SELECT id, name, topic, created_at AS "createdAt" FROM link_threads ORDER BY created_at DESC LIMIT 50`),
+      pool.query(`SELECT id, thread_id AS "threadId", author, text, created_at AS "createdAt" FROM link_messages ORDER BY created_at ASC LIMIT 500`),
+      pool.query(
+        `SELECT id, full_name AS "fullName", headline, document_id AS "documentId", city, phone, email, availability, salary,
+                summary, experience, education, skills, references_text AS "referencesText", photo_data AS "photoData",
+                attachment_name AS "attachmentName", created_at AS "createdAt", updated_at AS "updatedAt"
+         FROM link_resumes
+         WHERE is_public = true OR ($1::uuid IS NOT NULL AND user_id = $1::uuid)
+         ORDER BY updated_at DESC LIMIT 100`,
+        [authUser?.id || null],
+      ),
+      pool.query(`SELECT id, company, title, city, salary, contact, description, requirements, created_at AS "createdAt" FROM link_vacancies ORDER BY created_at DESC LIMIT 100`),
+    ]);
+
+    const messagesByThread = new Map();
+    for (const message of messages.rows) {
+      const list = messagesByThread.get(message.threadId) || [];
+      list.push(message);
+      messagesByThread.set(message.threadId, list);
+    }
+
+    return {
+      news: news.rows,
+      jobs: [],
+      resumes: resumes.rows,
+      vacancies: vacancies.rows,
+      products: products.rows,
+      threads: threads.rows.map((thread) => ({ ...thread, messages: messagesByThread.get(thread.id) || [] })),
+      currentUser: authUser,
+      storage: storageInfo(),
+    };
+  }
+
+  const data = await readJsonData();
+  return {
+    news: data.news,
+    jobs: data.jobs,
+    resumes: data.resumes,
+    vacancies: data.vacancies,
+    products: data.products,
+    threads: data.threads,
+    currentUser: authUser,
+    storage: storageInfo(),
+  };
+}
+
+async function saveNews(body, user) {
+  const title = text(body.title, 140);
+  const bodyText = text(body.body, 1200);
+  if (!title || !bodyText) fail(400, "Titulo y contenido son requeridos");
+  const item = {
+    id: randomUUID(),
+    title,
+    body: bodyText,
+    category: text(body.category, 80) || "General",
+    contact: text(body.contact, 120),
+    createdAt: nowStamp(),
+  };
+  if (dbReady) {
+    await pool.query(
+      `INSERT INTO link_news (id, author_id, title, body, category, contact) VALUES ($1, $2, $3, $4, $5, $6)`,
+      [item.id, user.id, item.title, item.body, item.category, item.contact],
+    );
+  } else {
+    const data = await readJsonData();
+    data.news.unshift({ ...item, authorId: user.id });
+    await writeJsonData(data);
+  }
+  return item;
+}
+
+async function saveProduct(body, user) {
+  const name = text(body.name, 120);
+  const price = text(body.price, 80);
+  if (!name || !price) fail(400, "Producto y precio son requeridos");
+  const item = {
+    id: randomUUID(),
+    name,
+    price,
+    condition: text(body.condition, 80) || "Disponible",
+    description: text(body.description, 500),
+    contact: text(body.contact, 160) || user.phone || user.email,
+    createdAt: nowStamp(),
+  };
+  if (dbReady) {
+    await pool.query(
+      `INSERT INTO link_products (id, author_id, name, price, condition, description, contact)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [item.id, user.id, item.name, item.price, item.condition, item.description, item.contact],
+    );
+  } else {
+    const data = await readJsonData();
+    data.products.unshift({ ...item, authorId: user.id });
+    await writeJsonData(data);
+  }
+  return item;
+}
+
+async function saveThread(body, user) {
+  const message = text(body.message, 1000);
+  if (!message) fail(400, "Mensaje requerido");
+  const item = {
+    id: randomUUID(),
+    name: publicAuthor(user),
+    topic: text(body.topic, 120) || "Conversacion",
+    createdAt: nowStamp(),
+    messages: [
+      {
+        id: randomUUID(),
+        author: publicAuthor(user),
+        text: message,
+        createdAt: nowStamp(),
+      },
+    ],
+  };
+  if (dbReady) {
+    await pool.query(`INSERT INTO link_threads (id, author_id, name, topic) VALUES ($1, $2, $3, $4)`, [item.id, user.id, item.name, item.topic]);
+    await pool.query(
+      `INSERT INTO link_messages (id, thread_id, author_id, author, text) VALUES ($1, $2, $3, $4, $5)`,
+      [item.messages[0].id, item.id, user.id, item.messages[0].author, item.messages[0].text],
+    );
+  } else {
+    const data = await readJsonData();
+    data.threads.unshift({ ...item, authorId: user.id });
+    await writeJsonData(data);
+  }
+  return item;
+}
+
+async function saveMessage(threadId, body, user) {
+  const message = text(body.message, 1000);
+  if (!message) fail(400, "Mensaje requerido");
+  const item = {
+    id: randomUUID(),
+    author: publicAuthor(user),
+    text: message,
+    createdAt: nowStamp(),
+  };
+  if (dbReady) {
+    const thread = await pool.query("SELECT id FROM link_threads WHERE id = $1", [threadId]);
+    if (!thread.rows[0]) fail(404, "Conversacion no encontrada");
+    await pool.query(
+      `INSERT INTO link_messages (id, thread_id, author_id, author, text) VALUES ($1, $2, $3, $4, $5)`,
+      [item.id, threadId, user.id, item.author, item.text],
+    );
+  } else {
+    const data = await readJsonData();
+    const thread = data.threads.find((entry) => entry.id === threadId);
+    if (!thread) fail(404, "Conversacion no encontrada");
+    thread.messages.push({ ...item, authorId: user.id });
+    await writeJsonData(data);
+  }
+  return item;
+}
+
+async function saveResume(body, user) {
+  if (user.accountType !== "person") fail(403, "Solo persona natural puede publicar hoja de vida");
+  const fullName = text(body.fullName, 140) || user.displayName;
+  const headline = text(body.headline, 160);
+  if (!fullName || !headline) fail(400, "Nombre y perfil profesional son requeridos");
+  const item = {
+    id: randomUUID(),
+    userId: user.id,
+    fullName,
+    headline,
+    documentId: text(body.documentId, 60),
+    city: text(body.city, 80) || user.city,
+    phone: text(body.phone, 80) || user.phone,
+    email: text(body.email, 160) || user.email,
+    availability: text(body.availability, 120),
+    salary: text(body.salary, 80),
+    summary: text(body.summary, 1200),
+    experience: text(body.experience, 2000),
+    education: text(body.education, 1600),
+    skills: text(body.skills, 1000),
+    referencesText: text(body.referencesText, 1000),
+    photoData: dataText(body.photoData, 2_000_000),
+    attachmentName: text(body.attachmentName, 160),
+    attachmentData: dataText(body.attachmentData, 4_000_000),
+    createdAt: nowStamp(),
+    updatedAt: nowStamp(),
+  };
+
+  if (dbReady) {
+    await pool.query("DELETE FROM link_resumes WHERE user_id = $1", [user.id]);
+    await pool.query(
+      `INSERT INTO link_resumes
+       (id, user_id, full_name, headline, document_id, city, phone, email, availability, salary, summary, experience,
+        education, skills, references_text, photo_data, attachment_name, attachment_data)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
+      [
+        item.id, item.userId, item.fullName, item.headline, item.documentId, item.city, item.phone, item.email,
+        item.availability, item.salary, item.summary, item.experience, item.education, item.skills,
+        item.referencesText, item.photoData, item.attachmentName, item.attachmentData,
+      ],
+    );
+  } else {
+    const data = await readJsonData();
+    data.resumes = data.resumes.filter((entry) => entry.userId !== user.id);
+    data.resumes.unshift(item);
+    await writeJsonData(data);
+  }
+  return item;
+}
+
+async function saveVacancy(body, user) {
+  if (user.accountType !== "company") fail(403, "Solo empresa puede publicar vacantes");
+  const company = text(body.company, 140) || user.companyName || user.displayName;
+  const title = text(body.title, 140);
+  if (!company || !title) fail(400, "Empresa y cargo son requeridos");
+  const item = {
+    id: randomUUID(),
+    userId: user.id,
+    company,
+    title,
+    city: text(body.city, 80) || user.city,
+    salary: text(body.salary, 80),
+    contact: text(body.contact, 160) || user.phone || user.email,
+    description: text(body.description, 1200),
+    requirements: text(body.requirements, 1200),
+    createdAt: nowStamp(),
+  };
+  if (dbReady) {
+    await pool.query(
+      `INSERT INTO link_vacancies (id, user_id, company, title, city, salary, contact, description, requirements)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [item.id, item.userId, item.company, item.title, item.city, item.salary, item.contact, item.description, item.requirements],
+    );
+  } else {
+    const data = await readJsonData();
+    data.vacancies.unshift(item);
+    await writeJsonData(data);
+  }
+  return item;
+}
+
+async function getResume(id) {
+  if (dbReady) {
+    const result = await pool.query(
+      `SELECT id, full_name AS "fullName", headline, document_id AS "documentId", city, phone, email, availability, salary,
+              summary, experience, education, skills, references_text AS "referencesText", photo_data AS "photoData",
+              attachment_name AS "attachmentName", attachment_data AS "attachmentData", created_at AS "createdAt", updated_at AS "updatedAt"
+       FROM link_resumes WHERE id = $1 AND is_public = true`,
+      [id],
+    );
+    return result.rows[0] || null;
+  }
+  const data = await readJsonData();
+  return data.resumes.find((item) => item.id === id) || null;
+}
+
+function resumePrintHtml(resume) {
+  const lines = (value) => htmlEscape(value).split(/\n+/).filter(Boolean).map((line) => `<p>${line}</p>`).join("");
+  return `<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hoja de vida - ${htmlEscape(resume.fullName)}</title>
+  <style>
+    body{margin:0;background:#f2f2f2;color:#161616;font-family:Arial,sans-serif}
+    main{max-width:850px;margin:24px auto;padding:34px;background:white}
+    header{display:grid;grid-template-columns:120px 1fr;gap:24px;align-items:center;border-bottom:3px solid #caa64c;padding-bottom:20px}
+    .photo{width:120px;height:140px;object-fit:cover;background:#111;border:1px solid #ddd}
+    h1{margin:0;font-size:30px} h2{margin:24px 0 8px;font-size:16px;color:#7a5c15;text-transform:uppercase}
+    .headline{margin:8px 0 0;font-weight:bold}.meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;color:#444;font-size:13px}
+    p{margin:5px 0;line-height:1.42}.actions{margin:18px 0}.actions button{padding:10px 14px;border:0;background:#caa64c;font-weight:bold}
+    @media print{body{background:white}main{margin:0;max-width:none}.actions{display:none}}
+  </style>
+</head>
+<body>
+  <main>
+    <div class="actions"><button onclick="window.print()">Imprimir / guardar PDF</button></div>
+    <header>
+      ${resume.photoData ? `<img class="photo" src="${resume.photoData}" alt="Foto">` : `<div class="photo"></div>`}
+      <div>
+        <h1>${htmlEscape(resume.fullName)}</h1>
+        <p class="headline">${htmlEscape(resume.headline)}</p>
+        <div class="meta">
+          ${resume.city ? `<span>${htmlEscape(resume.city)}</span>` : ""}
+          ${resume.phone ? `<span>${htmlEscape(resume.phone)}</span>` : ""}
+          ${resume.email ? `<span>${htmlEscape(resume.email)}</span>` : ""}
+          ${resume.availability ? `<span>${htmlEscape(resume.availability)}</span>` : ""}
+        </div>
+      </div>
+    </header>
+    ${resume.summary ? `<h2>Perfil</h2>${lines(resume.summary)}` : ""}
+    ${resume.experience ? `<h2>Experiencia</h2>${lines(resume.experience)}` : ""}
+    ${resume.education ? `<h2>Formacion</h2>${lines(resume.education)}` : ""}
+    ${resume.skills ? `<h2>Competencias</h2>${lines(resume.skills)}` : ""}
+    ${resume.referencesText ? `<h2>Referencias</h2>${lines(resume.referencesText)}` : ""}
+    ${resume.attachmentData ? `<h2>Anexo</h2><p>Archivo adjunto: ${htmlEscape(resume.attachmentName || "Hoja de vida")}</p>` : ""}
+  </main>
+</body>
+</html>`;
 }
 
 async function readBody(req) {
@@ -525,8 +1221,8 @@ async function readBody(req) {
   let size = 0;
   for await (const chunk of req) {
     size += chunk.length;
-    if (size > 1_000_000) {
-      const error = new Error("Payload too large");
+    if (size > bodyLimitBytes) {
+      const error = new Error("El archivo o formulario es muy grande");
       error.status = 413;
       throw error;
     }
@@ -546,7 +1242,8 @@ function invalid(res, message) {
 
 async function handleApi(req, res, url) {
   if (req.method === "GET" && url.pathname === "/api/state") {
-    const data = await readData();
+    const authUser = await getAuthUser(req);
+    const data = await readData(authUser);
     const officialNews = await getOfficialNews(url.searchParams.get("refresh") === "1").catch(() => officialNewsSnapshot());
     json(res, 200, {
       ...data,
@@ -563,112 +1260,65 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (req.method === "GET" && url.pathname === "/api/me") {
+    json(res, 200, { user: await getAuthUser(req), storage: storageInfo() });
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/auth/register") {
+    json(res, 201, await registerUser(await readBody(req)));
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/auth/login") {
+    json(res, 200, await loginUser(await readBody(req)));
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/auth/logout") {
+    await logoutUser(req);
+    json(res, 200, { ok: true });
+    return;
+  }
+
   if (req.method === "POST" && url.pathname === "/api/news") {
-    const body = await readBody(req);
-    const title = text(body.title, 140);
-    const bodyText = text(body.body, 1200);
-    if (!title || !bodyText) return invalid(res, "title and body are required");
-    const data = await readData();
-    const item = {
-      id: randomUUID(),
-      title,
-      body: bodyText,
-      category: text(body.category, 80) || "General",
-      contact: text(body.contact, 120),
-      createdAt: nowStamp(),
-    };
-    data.news.unshift(item);
-    await writeData(data);
-    json(res, 201, item);
+    json(res, 201, await saveNews(await readBody(req), await requireUser(req)));
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/resumes") {
+    json(res, 201, await saveResume(await readBody(req), await requireUser(req)));
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/vacancies") {
+    json(res, 201, await saveVacancy(await readBody(req), await requireUser(req)));
     return;
   }
 
   if (req.method === "POST" && url.pathname === "/api/jobs") {
-    const body = await readBody(req);
-    const name = text(body.name, 120);
-    const role = text(body.role, 120);
-    if (!name || !role) return invalid(res, "name and role are required");
-    const data = await readData();
-    const item = {
-      id: randomUUID(),
-      name,
-      role,
-      city: text(body.city, 80),
-      specialty: text(body.specialty, 240),
-      contact: text(body.contact, 160),
-      createdAt: nowStamp(),
-    };
-    data.jobs.unshift(item);
-    await writeData(data);
-    json(res, 201, item);
+    const user = await requireUser(req);
+    if (user.accountType === "company") {
+      json(res, 201, await saveVacancy(await readBody(req), user));
+      return;
+    }
+    json(res, 201, await saveResume(await readBody(req), user));
     return;
   }
 
   if (req.method === "POST" && url.pathname === "/api/products") {
-    const body = await readBody(req);
-    const name = text(body.name, 120);
-    const price = text(body.price, 80);
-    if (!name || !price) return invalid(res, "name and price are required");
-    const data = await readData();
-    const item = {
-      id: randomUUID(),
-      name,
-      price,
-      condition: text(body.condition, 80) || "Disponible",
-      description: text(body.description, 500),
-      contact: text(body.contact, 160),
-      createdAt: nowStamp(),
-    };
-    data.products.unshift(item);
-    await writeData(data);
-    json(res, 201, item);
+    json(res, 201, await saveProduct(await readBody(req), await requireUser(req)));
     return;
   }
 
   if (req.method === "POST" && url.pathname === "/api/threads") {
-    const body = await readBody(req);
-    const name = text(body.name, 120);
-    const message = text(body.message, 1000);
-    if (!name || !message) return invalid(res, "name and message are required");
-    const data = await readData();
-    const item = {
-      id: randomUUID(),
-      name,
-      topic: text(body.topic, 120) || "Conversacion",
-      createdAt: nowStamp(),
-      messages: [
-        {
-          id: randomUUID(),
-          author: name,
-          text: message,
-          createdAt: nowStamp(),
-        },
-      ],
-    };
-    data.threads.unshift(item);
-    await writeData(data);
-    json(res, 201, item);
+    json(res, 201, await saveThread(await readBody(req), await requireUser(req)));
     return;
   }
 
   const messageMatch = url.pathname.match(/^\/api\/threads\/([^/]+)\/messages$/);
   if (req.method === "POST" && messageMatch) {
-    const body = await readBody(req);
-    const author = text(body.author, 120) || "Link";
-    const message = text(body.message, 1000);
-    if (!message) return invalid(res, "message is required");
-    const data = await readData();
-    const thread = data.threads.find((item) => item.id === messageMatch[1]);
-    if (!thread) return notFound(res);
-    const item = {
-      id: randomUUID(),
-      author,
-      text: message,
-      createdAt: nowStamp(),
-    };
-    thread.messages.push(item);
-    await writeData(data);
-    json(res, 201, item);
+    json(res, 201, await saveMessage(messageMatch[1], await readBody(req), await requireUser(req)));
     return;
   }
 
@@ -713,7 +1363,15 @@ const server = createServer(async (req, res) => {
   try {
     const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
     if (req.method === "GET" && url.pathname === "/health") {
-      json(res, 200, { ok: true });
+      json(res, 200, { ok: true, storage: storageInfo() });
+      return;
+    }
+    const cvMatch = url.pathname.match(/^\/cv\/([0-9a-f-]+)$/i);
+    if (req.method === "GET" && cvMatch) {
+      const resume = await getResume(cvMatch[1]);
+      if (!resume) return notFound(res);
+      res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+      res.end(resumePrintHtml(resume));
       return;
     }
     if (url.pathname.startsWith("/api/")) {
@@ -726,6 +1384,8 @@ const server = createServer(async (req, res) => {
     json(res, status, { error: status === 500 ? "Server error" : error.message });
   }
 });
+
+await initializeStorage();
 
 server.listen(port, () => {
   console.log(`Link app listening on ${port}`);
