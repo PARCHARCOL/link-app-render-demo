@@ -132,6 +132,11 @@
         if (!res.ok) throw new Error("No se pudo cargar la informacion");
         return res.json();
       },
+      async officialNews(refresh = false) {
+        const res = await fetch(`/api/official-news${refresh ? "?refresh=1" : ""}`, { cache: "no-store" });
+        if (!res.ok) throw new Error("No se pudo consultar el servidor de noticias oficiales");
+        return res.json();
+      },
       async post(path, payload) {
         const res = await fetch(path, {
           method: "POST",
@@ -426,15 +431,47 @@
       bindForms();
     }
 
+    async function hydrateOfficialNews() {
+      if (officialItems().length || state.officialNewsError) return;
+      try {
+        const official = await api.officialNews(true);
+        state = {
+          ...state,
+          officialNews: official.items || [],
+          officialNewsUpdatedAt: official.updatedAt || null,
+          officialNewsError: official.error || null,
+          officialSources: official.sources || [],
+        };
+      } catch {
+        state = {
+          ...state,
+          officialNews: [],
+          officialNewsUpdatedAt: null,
+          officialNewsError: "Backend no conectado. Esta pantalla no esta recibiendo datos del servidor.",
+        };
+      }
+      if (active === "inicio") render();
+    }
+
     async function boot() {
       renderTabs();
       content.innerHTML = `<section class="screen splash"><div class="logo-hero" role="img" aria-label="Logo Link"></div><h1>Link</h1><p>Cargando la aplicacion...</p><div class="splash-news"><strong>Al Dia</strong><span>Consultando publicaciones oficiales de Coljuegos, UIAF, Supersalud y DIAN.</span></div><div class="loader"></div></section>`;
       try {
         state = await api.state();
       } catch {
-        state = { news: [], jobs: [], products: [], threads: [], officialNews: [], officialNewsUpdatedAt: null, officialNewsError: null, officialSources: [] };
+        state = {
+          news: [],
+          jobs: [],
+          products: [],
+          threads: [],
+          officialNews: [],
+          officialNewsUpdatedAt: null,
+          officialNewsError: "Backend no conectado. Abre la app desde el link publico de Render o desde localhost con el servidor activo.",
+          officialSources: [],
+        };
       }
       render();
+      hydrateOfficialNews();
     }
 
     boot();
