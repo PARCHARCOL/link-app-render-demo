@@ -6,7 +6,7 @@ Aplicacion web online para Link con backend Node en Render.
 
 - Logo oficial en el encabezado.
 - API real en `/api/state`.
-- Formularios para publicar alertas, perfiles, productos y conversaciones.
+- Formularios para publicar informacion, perfiles, productos y conversaciones.
 - Datos guardados en `data/link-data.json` dentro del servicio.
 
 ## Render

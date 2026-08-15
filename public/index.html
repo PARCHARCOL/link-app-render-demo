@@ -2,82 +2,107 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Link</title>
-  <meta name="description" content="Link: red gremial online para noticias, empleo, marketplace y mensajes.">
+  <meta name="description" content="Link: aplicacion online para informacion de interes, talento, mercado y mensajes del sector.">
+  <meta name="theme-color" content="#050505">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Link">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icon-192.png">
   <link rel="preload" href="/logolink.png" as="image">
   <style>
-    :root{--black:#000;--graphite:#1c1c1e;--graphite2:#2c2c2e;--line:#3a3a3c;--gold:#d4af37;--blue:#007aff;--green:#34c759;--red:#ff3b30;--text:#fff;--muted:#a0a0a6;--muted2:#73737a}
+    :root{--bg:#050505;--panel:#111112;--panel2:#181819;--field:#202022;--line:#2a2926;--line2:#3a3425;--gold:#caa64c;--gold2:#f0d27a;--text:#f7f3ea;--muted:#aaa39a;--muted2:#77736d;--blue:#6aa7ff;--green:#47c97a;--red:#ff6b61;--shadow:0 20px 70px rgba(0,0,0,.45)}
     *{box-sizing:border-box}
-    html,body{min-height:100%;margin:0;background:#060606;color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    html,body{min-height:100%;margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
     button,input,textarea,select{font:inherit}
     button{cursor:pointer}
-    .site-shell{min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 18% 12%,rgba(212,175,55,.16),transparent 30%),linear-gradient(135deg,#050505,#171717 52%,#211b12)}
-    .phone{width:min(100%,430px);height:min(860px,calc(100vh - 48px));min-height:690px;overflow:hidden;display:grid;grid-template-rows:34px 1fr 74px;background:var(--black);border:1px solid var(--line);border-radius:32px;box-shadow:0 26px 80px rgba(0,0,0,.42)}
-    .status{display:flex;align-items:center;justify-content:space-between;padding:0 26px;color:#f2f2f7;font-size:12px;font-weight:800;background:var(--black)}
-    .status span:last-child{color:var(--muted)}
+    .stage{min-height:100vh;display:grid;place-items:center;padding:22px;background:linear-gradient(160deg,#050505 0%,#0b0b0b 58%,#17130a 100%)}
+    .app{width:min(100%,430px);height:min(860px,calc(100vh - 44px));min-height:690px;overflow:hidden;display:grid;grid-template-rows:auto 1fr auto;background:#050505;border:1px solid #2b2b2b;border-radius:32px;box-shadow:var(--shadow)}
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 18px 10px;color:#eee7d8;font-size:12px;font-weight:800;border-bottom:1px solid rgba(255,255,255,.04)}
+    .topbar small{color:var(--gold2);font-weight:900}
     #content{min-height:0;overflow:hidden}
-    .screen{height:100%;overflow-y:auto;padding:8px 16px 24px;scrollbar-width:none}
+    .screen{height:100%;overflow-y:auto;padding:16px 18px 22px;scrollbar-width:none}
     .screen::-webkit-scrollbar{display:none}
-    .head{position:sticky;top:0;z-index:2;padding:10px 0 14px;background:linear-gradient(180deg,#000 76%,rgba(0,0,0,0))}
-    .brand{display:grid;grid-template-columns:58px 1fr;gap:12px;align-items:center}
-    .logo{width:54px;height:54px;object-fit:contain;border-radius:13px;background:#000;box-shadow:0 0 0 1px rgba(212,175,55,.24),0 10px 24px rgba(212,175,55,.12)}
-    .head span{display:block;margin-bottom:2px;color:var(--muted);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0}
-    .head h1{margin:0;color:#fff;font-size:32px;line-height:1;font-weight:900}
-    .head h1.gold{color:var(--gold)}
-    .notice{margin:0 0 12px;padding:10px 12px;color:#f5e9bf;background:rgba(212,175,55,.1);border:1px solid rgba(212,175,55,.22);border-radius:12px;font-size:12px;line-height:1.35}
-    .panel,.card,.chat{background:var(--graphite);border:1px solid rgba(255,255,255,.07);border-radius:14px}
-    .panel{padding:12px;margin-bottom:14px}
-    .panel h2{margin:0 0 10px;font-size:15px}
-    .grid-form{display:grid;gap:9px}
-    .split{display:grid;grid-template-columns:1fr 1fr;gap:9px}
-    input,textarea,select{width:100%;min-width:0;color:#fff;background:var(--graphite2);border:1px solid rgba(255,255,255,.08);border-radius:10px;outline:0;padding:10px 11px}
-    textarea{min-height:82px;resize:vertical}
+    .splash{height:100%;display:grid;align-content:center;justify-items:center;padding:34px;text-align:center}
+    .logo-hero{width:148px;height:148px;margin-bottom:20px;background:url("/logolink.png") center/contain no-repeat;border-radius:28px;filter:drop-shadow(0 18px 34px rgba(202,166,76,.18))}
+    .splash h1{margin:0;color:var(--gold2);font-size:38px;line-height:1;font-weight:900}
+    .splash p{max-width:260px;margin:12px 0 0;color:var(--muted);font-size:14px;line-height:1.45}
+    .loader{width:118px;height:3px;overflow:hidden;margin-top:24px;background:#1d1d1d;border-radius:999px}
+    .loader::after{content:"";display:block;width:44%;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:999px;animation:load 1.2s ease-in-out infinite}
+    @keyframes load{0%{transform:translateX(-110%)}100%{transform:translateX(260%)}}
+    .hero{display:grid;grid-template-columns:86px 1fr;gap:14px;align-items:center;margin-bottom:14px}
+    .logo-card{width:86px;height:86px;background:#030303 url("/logolink.png") center/contain no-repeat;border:1px solid rgba(202,166,76,.34);border-radius:20px;box-shadow:0 12px 30px rgba(0,0,0,.28)}
+    .hero-kicker{margin:0 0 3px;color:var(--gold2);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:0}
+    .hero h1{margin:0;color:var(--text);font-size:30px;line-height:1.03;font-weight:900}
+    .hero p{margin:7px 0 0;color:var(--muted);font-size:13px;line-height:1.34}
+    .install-card{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-bottom:14px;padding:12px;background:linear-gradient(180deg,#151411,#0e0e0e);border:1px solid rgba(202,166,76,.18);border-radius:16px}
+    .install-card strong{display:block;font-size:13px}
+    .install-card span{display:block;margin-top:2px;color:var(--muted);font-size:12px}
+    .install-btn,.primary{height:40px;padding:0 14px;color:#171105;background:linear-gradient(180deg,var(--gold2),var(--gold));border:0;border-radius:12px;font-weight:900}
+    .install-help{display:none;margin:-6px 0 14px;padding:10px 12px;color:#e9dbc0;background:rgba(202,166,76,.08);border:1px solid rgba(202,166,76,.18);border-radius:12px;font-size:12px;line-height:1.35}
+    .install-help.show{display:block}
+    details.editor{margin-bottom:14px;background:var(--panel);border:1px solid var(--line);border-radius:16px}
+    details.editor summary{list-style:none;padding:14px 14px;color:var(--text);font-size:14px;font-weight:900}
+    details.editor summary::-webkit-details-marker{display:none}
+    details.editor[open] summary{border-bottom:1px solid var(--line)}
+    .form{display:grid;gap:10px;padding:12px 14px 14px}
+    .split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    input,textarea,select{width:100%;min-width:0;color:var(--text);background:var(--field);border:1px solid #343436;border-radius:12px;outline:0;padding:11px 12px}
+    textarea{min-height:92px;resize:vertical}
+    input:focus,textarea:focus,select:focus{border-color:rgba(202,166,76,.58);box-shadow:0 0 0 3px rgba(202,166,76,.1)}
     input::placeholder,textarea::placeholder{color:var(--muted2)}
-    .submit{height:40px;color:#160f03;background:var(--gold);border:0;border-radius:11px;font-weight:900}
-    .secondary{height:36px;color:#fff;background:var(--graphite2);border:1px solid rgba(255,255,255,.1);border-radius:10px;font-weight:800}
+    .error{display:none;margin:0 0 12px;padding:10px 12px;color:#ffd9d5;background:rgba(255,107,97,.12);border:1px solid rgba(255,107,97,.22);border-radius:12px;font-size:12px}
+    .error.show{display:block}
+    .section-title{display:flex;align-items:end;justify-content:space-between;gap:10px;margin:8px 0 10px}
+    .section-title h2{margin:0;font-size:16px}
+    .section-title small{color:var(--muted2);font-size:12px;font-weight:800}
     .stack{display:grid;gap:10px}
-    .empty{padding:18px 14px;color:var(--muted);background:rgba(255,255,255,.03);border:1px dashed rgba(255,255,255,.14);border-radius:14px;text-align:center;font-size:13px}
-    .card{padding:14px}
-    .topline{display:flex;justify-content:space-between;gap:10px;margin-bottom:8px;color:var(--muted);font-size:11px;font-weight:800}
-    .topline strong{color:var(--gold);white-space:nowrap}
-    h3{margin:0;color:#fff;font-size:16px;line-height:1.2}
-    .card p{margin:7px 0 0;color:var(--muted);font-size:13px;line-height:1.35}
+    .empty{display:grid;place-items:center;min-height:120px;padding:18px 14px;color:var(--muted);background:#080808;border:1px dashed #2e2e2e;border-radius:16px;text-align:center;font-size:13px;line-height:1.35}
+    .card{padding:14px;background:var(--panel);border:1px solid var(--line);border-radius:16px}
+    .topline{display:flex;justify-content:space-between;gap:10px;margin-bottom:8px;color:var(--muted);font-size:11px;font-weight:900}
+    .topline strong{color:var(--gold2);white-space:nowrap}
+    .card h3{margin:0;color:var(--text);font-size:16px;line-height:1.22}
+    .card p{margin:7px 0 0;color:var(--muted);font-size:13px;line-height:1.38}
     .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
-    .pill{display:inline-flex;align-items:center;min-height:22px;padding:3px 7px;color:#f6e8ba;background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.18);border-radius:7px;font-size:11px;font-weight:800}
+    .pill{display:inline-flex;align-items:center;min-height:23px;padding:3px 8px;color:#f2ddaa;background:rgba(202,166,76,.1);border:1px solid rgba(202,166,76,.18);border-radius:8px;font-size:11px;font-weight:900}
     .product-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
     .product{overflow:hidden;padding:0}
-    .product .photo{height:92px;display:grid;place-items:center;background:var(--graphite2);color:var(--muted2);font-size:12px;font-weight:900}
-    .product .body{padding:10px}
+    .product-logo{height:104px;background:#070707 url("/logolink.png") center/64px no-repeat;border-bottom:1px solid var(--line)}
+    .product-body{padding:11px}
     .product h3{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
-    .price{display:block;margin-top:4px;color:var(--gold);font-size:13px;font-weight:900}
-    .tabs{display:grid;grid-template-columns:repeat(4,1fr);align-items:center;padding:7px 8px 12px;background:rgba(28,28,30,.98);border-top:1px solid var(--graphite2)}
-    .tab{display:grid;justify-items:center;gap:3px;min-width:0;color:var(--muted);background:transparent;border:0}
-    .tab span{width:28px;height:28px;display:grid;place-items:center;border:1px solid currentColor;border-radius:50%;font-size:12px;font-weight:900}
-    .tab small{max-width:100%;overflow:hidden;font-size:11px;font-weight:800;text-overflow:ellipsis;white-space:nowrap}
-    .tab.active{color:var(--gold)}
+    .price{display:block;margin-top:4px;color:var(--gold2);font-size:13px;font-weight:900}
     .threads{display:grid;gap:8px;margin-bottom:12px}
-    .thread{width:100%;display:grid;grid-template-columns:42px 1fr;gap:10px;align-items:center;padding:10px;color:#fff;background:var(--graphite);border:1px solid rgba(255,255,255,.07);border-radius:12px;text-align:left}
-    .thread.active{border-color:rgba(212,175,55,.48)}
-    .avatar{width:42px;height:42px;display:grid;place-items:center;color:var(--gold);background:var(--graphite2);border-radius:50%;font-size:16px;font-weight:900}
+    .thread{width:100%;display:grid;grid-template-columns:42px 1fr;gap:10px;align-items:center;padding:10px;color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:14px;text-align:left}
+    .thread.active{border-color:rgba(202,166,76,.52);background:#15130e}
+    .avatar{width:42px;height:42px;display:grid;place-items:center;color:#191204;background:linear-gradient(180deg,var(--gold2),var(--gold));border-radius:50%;font-size:16px;font-weight:900}
     .thread strong,.thread small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .thread small{margin-top:3px;color:var(--muted);font-size:12px}
-    .chat{padding:12px}
+    .chat{padding:12px;background:var(--panel);border:1px solid var(--line);border-radius:16px}
     .bubble-stack{display:grid;gap:8px;margin-bottom:10px}
-    .bubble{max-width:86%;justify-self:start;padding:9px 11px;background:var(--graphite2);border-radius:13px}
-    .bubble.mine{justify-self:end;background:var(--blue)}
-    .bubble strong{display:block;margin-bottom:3px;color:rgba(255,255,255,.76);font-size:10px}
+    .bubble{max-width:86%;justify-self:start;padding:9px 11px;background:var(--field);border-radius:14px}
+    .bubble.mine{justify-self:end;color:#161005;background:linear-gradient(180deg,var(--gold2),var(--gold))}
+    .bubble strong{display:block;margin-bottom:3px;color:inherit;opacity:.75;font-size:10px}
     .bubble p{margin:0;font-size:13px;line-height:1.32}
     .inline-form{display:grid;grid-template-columns:1fr auto;gap:8px}
-    .error{display:none;margin:0 0 10px;padding:9px 10px;color:#ffd7d4;background:rgba(255,59,48,.12);border:1px solid rgba(255,59,48,.22);border-radius:10px;font-size:12px}
-    .error.show{display:block}
-    @media (max-width:520px){.site-shell{padding:0;background:#000}.phone{width:100%;height:100vh;min-height:100vh;border:0;border-radius:0}.split{grid-template-columns:1fr}}
+    .tabs{display:grid;grid-template-columns:repeat(4,1fr);align-items:center;padding:8px 8px 12px;background:#101010;border-top:1px solid #272727}
+    .tab{display:grid;justify-items:center;gap:4px;min-width:0;color:#9f9b93;background:transparent;border:0}
+    .tab i{width:22px;height:22px;display:block;position:relative}
+    .tab i::before,.tab i::after{content:"";position:absolute;inset:4px;border:1.8px solid currentColor;border-radius:5px}
+    .tab[data-tab="empleos"] i::before{border-radius:50% 50% 44% 44%}
+    .tab[data-tab="marketplace"] i::before{inset:5px 3px 4px;border-radius:4px}
+    .tab[data-tab="mensajes"] i::before{border-radius:8px}
+    .tab[data-tab="mensajes"] i::after{inset:auto 4px 2px auto;width:6px;height:6px;border-width:0 1.8px 1.8px 0;border-radius:0;transform:rotate(35deg)}
+    .tab small{max-width:100%;overflow:hidden;font-size:11px;font-weight:800;text-overflow:ellipsis;white-space:nowrap}
+    .tab.active{color:var(--gold2)}
+    @media (max-width:520px){.stage{padding:0;background:#050505}.app{width:100%;height:100vh;min-height:100vh;border:0;border-radius:0}.screen{padding-left:16px;padding-right:16px}.split{grid-template-columns:1fr}.hero{grid-template-columns:76px 1fr}.logo-card{width:76px;height:76px}.hero h1{font-size:28px}}
   </style>
 </head>
 <body>
-  <main class="site-shell">
-    <section class="phone" aria-label="Link">
-      <header class="status"><span>9:41</span><span>Online</span></header>
+  <main class="stage">
+    <section class="app" aria-label="Link">
+      <header class="topbar"><span>9:41</span><small>LINK ONLINE</small></header>
       <div id="content"></div>
       <nav class="tabs" aria-label="Navegacion principal"></nav>
     </section>
@@ -86,7 +111,7 @@
     const api = {
       async state() {
         const res = await fetch("/api/state", { cache: "no-store" });
-        if (!res.ok) throw new Error("No se pudo cargar");
+        if (!res.ok) throw new Error("No se pudo cargar la informacion");
         return res.json();
       },
       async post(path, payload) {
@@ -102,17 +127,30 @@
     };
 
     const tabs = [
-      ["inicio", "Inicio", "N"],
-      ["empleos", "Empleos", "E"],
-      ["marketplace", "Market", "M"],
-      ["mensajes", "Mensajes", "C"],
+      ["inicio", "Al Dia"],
+      ["empleos", "Talento"],
+      ["marketplace", "Mercado"],
+      ["mensajes", "Mensajes"],
     ];
 
     let active = "inicio";
     let activeThreadId = "";
+    let installPromptEvent = null;
     let state = { news: [], jobs: [], products: [], threads: [] };
     const content = document.querySelector("#content");
     const nav = document.querySelector(".tabs");
+
+    window.addEventListener("beforeinstallprompt", (event) => {
+      event.preventDefault();
+      installPromptEvent = event;
+      render();
+    });
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/service-worker.js").catch(() => {});
+      });
+    }
 
     function esc(value) {
       return String(value ?? "").replace(/[&<>"']/g, (char) => ({
@@ -125,12 +163,32 @@
       return new Date(value).toLocaleDateString("es-CO", { day: "2-digit", month: "short" });
     }
 
-    function header(eyebrow, title, gold = false) {
-      return `<div class="head"><div class="brand"><img class="logo" src="/logolink.png" alt="Logo Link"><div><span>${esc(eyebrow)}</span><h1 class="${gold ? "gold" : ""}">${esc(title)}</h1></div></div></div>`;
+    function hero(title, subtitle) {
+      return `<div class="hero"><div class="logo-card" role="img" aria-label="Logo Link"></div><div><p class="hero-kicker">Link</p><h1>${esc(title)}</h1><p>${esc(subtitle)}</p></div></div>${installCard()}`;
+    }
+
+    function installCard() {
+      return `<div class="install-card"><div><strong>Instalar Link</strong><span>Agregala al celular como app.</span></div><button class="install-btn" type="button" id="installButton">Descargar app</button></div><p class="install-help" id="installHelp"></p>`;
+    }
+
+    async function installApp() {
+      const help = document.querySelector("#installHelp");
+      if (installPromptEvent) {
+        installPromptEvent.prompt();
+        await installPromptEvent.userChoice.catch(() => {});
+        installPromptEvent = null;
+        return;
+      }
+      if (help) {
+        help.textContent = /iphone|ipad|ipod/i.test(navigator.userAgent)
+          ? "En iPhone abre esta pagina en Safari, toca Compartir y luego Agregar a pantalla de inicio."
+          : "Si no aparece el instalador, abre el menu del navegador y elige Instalar app o Agregar a pantalla principal.";
+        help.classList.add("show");
+      }
     }
 
     function renderTabs() {
-      nav.innerHTML = tabs.map((tab) => `<button class="tab ${active === tab[0] ? "active" : ""}" data-tab="${tab[0]}"><span>${tab[2]}</span><small>${tab[1]}</small></button>`).join("");
+      nav.innerHTML = tabs.map((tab) => `<button class="tab ${active === tab[0] ? "active" : ""}" data-tab="${tab[0]}" type="button"><i aria-hidden="true"></i><small>${tab[1]}</small></button>`).join("");
       nav.querySelectorAll("button").forEach((button) => {
         button.onclick = () => {
           active = button.dataset.tab;
@@ -147,26 +205,35 @@
       return `<div class="empty">${esc(text)}</div>`;
     }
 
+    function editor(summary, action, fields) {
+      return `<details class="editor"><summary>${esc(summary)}</summary><form class="form" data-action="${action}">${fields}<button class="primary" type="submit">Guardar</button></form></details>`;
+    }
+
     function renderInicio() {
       const list = state.news.length ? state.news.map((item) => `
         <article class="card">
           <div class="topline"><span>${esc(item.category)}</span><strong>${esc(dateLabel(item.createdAt))}</strong></div>
           <h3>${esc(item.title)}</h3>
           <p>${esc(item.body)}</p>
-          <div class="meta">${item.contact ? `<span class="pill">${esc(item.contact)}</span>` : ""}</div>
-        </article>`).join("") : empty("No hay alertas publicadas.");
-      return `<section class="screen">${header("Link", "Radar Gremial", true)}
+          <div class="meta">${item.contact ? `<span class="pill">Fuente: ${esc(item.contact)}</span>` : ""}</div>
+        </article>`).join("") : empty("Aun no hay informacion publicada.");
+      return `<section class="screen">${hero("Al Dia", "Noticias, resoluciones e informacion de interes de entidades del sector.")}
         ${formError()}
-        <form class="panel grid-form" data-action="/api/news">
-          <h2>Publicar alerta</h2>
-          <input name="title" placeholder="Titulo" required>
+        ${editor("Nueva informacion", "/api/news", `
+          <input name="title" placeholder="Titulo de la noticia, resolucion o comunicado" required>
           <div class="split">
-            <input name="category" placeholder="Categoria">
-            <input name="contact" placeholder="Contacto">
+            <select name="category">
+              <option>Coljuegos</option>
+              <option>UIAF</option>
+              <option>DIAN</option>
+              <option>Supersalud</option>
+              <option>Otra entidad</option>
+            </select>
+            <input name="contact" placeholder="Fuente o enlace oficial">
           </div>
-          <textarea name="body" placeholder="Contenido" required></textarea>
-          <button class="submit" type="submit">Guardar</button>
-        </form>
+          <textarea name="body" placeholder="Resumen o contenido" required></textarea>
+        `)}
+        <div class="section-title"><h2>Informacion publicada</h2><small>${state.news.length}</small></div>
         <div class="stack">${list}</div>
       </section>`;
     }
@@ -179,20 +246,19 @@
           <p><strong>${esc(item.role)}</strong></p>
           <p>${esc(item.specialty || "")}</p>
           <div class="meta">${item.contact ? `<span class="pill">${esc(item.contact)}</span>` : ""}</div>
-        </article>`).join("") : empty("No hay perfiles o vacantes publicados.");
-      return `<section class="screen">${header("Bolsa", "Talento Gaming")}
+        </article>`).join("") : empty("Aun no hay perfiles o vacantes publicados.");
+      return `<section class="screen">${hero("Talento", "Perfiles, vacantes y contactos profesionales del sector.")}
         ${formError()}
-        <form class="panel grid-form" data-action="/api/jobs">
-          <h2>Publicar perfil</h2>
+        ${editor("Publicar perfil o vacante", "/api/jobs", `
           <input name="name" placeholder="Nombre o empresa" required>
-          <input name="role" placeholder="Cargo o necesidad" required>
+          <input name="role" placeholder="Cargo, perfil o necesidad" required>
           <div class="split">
             <input name="city" placeholder="Ciudad">
             <input name="contact" placeholder="Contacto">
           </div>
           <textarea name="specialty" placeholder="Experiencia, requisitos o especialidad"></textarea>
-          <button class="submit" type="submit">Guardar</button>
-        </form>
+        `)}
+        <div class="section-title"><h2>Talento publicado</h2><small>${state.jobs.length}</small></div>
         <div class="stack">${list}</div>
       </section>`;
     }
@@ -200,32 +266,32 @@
     function renderMarketplace() {
       const list = state.products.length ? state.products.map((item) => `
         <article class="card product">
-          <div class="photo">LINK</div>
-          <div class="body">
+          <div class="product-logo" aria-hidden="true"></div>
+          <div class="product-body">
             <h3>${esc(item.name)}</h3>
             <strong class="price">${esc(item.price)}</strong>
             <p>${esc(item.description || "")}</p>
             <div class="meta"><span class="pill">${esc(item.condition)}</span>${item.contact ? `<span class="pill">${esc(item.contact)}</span>` : ""}</div>
           </div>
-        </article>`).join("") : empty("No hay productos publicados.");
-      return `<section class="screen">${header("Clasificados", "Marketplace")}
+        </article>`).join("") : empty("Aun no hay productos publicados.");
+      return `<section class="screen">${hero("Mercado", "Clasificados de equipos, repuestos y servicios del sector.")}
         ${formError()}
-        <form class="panel grid-form" data-action="/api/products">
-          <h2>Publicar producto</h2>
-          <input name="name" placeholder="Producto" required>
+        ${editor("Publicar producto o servicio", "/api/products", `
+          <input name="name" placeholder="Producto o servicio" required>
           <div class="split">
             <input name="price" placeholder="Precio" required>
             <select name="condition">
-              <option>Nueva</option>
+              <option>Disponible</option>
+              <option>Nuevo</option>
               <option>Usado</option>
               <option>Para piezas</option>
-              <option>Disponible</option>
+              <option>Servicio</option>
             </select>
           </div>
           <input name="contact" placeholder="Contacto">
           <textarea name="description" placeholder="Descripcion"></textarea>
-          <button class="submit" type="submit">Guardar</button>
-        </form>
+        `)}
+        <div class="section-title"><h2>Publicaciones</h2><small>${state.products.length}</small></div>
         <div class="product-grid">${list}</div>
       </section>`;
     }
@@ -234,10 +300,10 @@
       const activeThread = state.threads.find((thread) => thread.id === activeThreadId) || state.threads[0];
       if (activeThread && activeThread.id !== activeThreadId) activeThreadId = activeThread.id;
       const threads = state.threads.length ? state.threads.map((thread) => `
-        <button class="thread ${thread.id === activeThreadId ? "active" : ""}" data-thread="${esc(thread.id)}">
+        <button class="thread ${thread.id === activeThreadId ? "active" : ""}" data-thread="${esc(thread.id)}" type="button">
           <div class="avatar">${esc(thread.name[0] || "L")}</div>
           <div><strong>${esc(thread.name)}</strong><small>${esc(thread.topic)}</small></div>
-        </button>`).join("") : empty("No hay conversaciones.");
+        </button>`).join("") : empty("Aun no hay conversaciones.");
       const chat = activeThread ? `
         <div class="chat">
           <div class="bubble-stack">
@@ -245,37 +311,37 @@
           </div>
           <form class="inline-form" data-message="${esc(activeThread.id)}">
             <input name="message" placeholder="Mensaje" required>
-            <button class="secondary" type="submit">Enviar</button>
+            <button class="primary" type="submit">Enviar</button>
           </form>
         </div>` : "";
-      return `<section class="screen">${header("Chat", "Mensajes")}
+      return `<section class="screen">${hero("Mensajes", "Conversaciones internas y contactos de la red Link.")}
         ${formError()}
-        <form class="panel grid-form" data-action="/api/threads">
-          <h2>Nueva conversacion</h2>
+        ${editor("Nueva conversacion", "/api/threads", `
           <div class="split">
             <input name="name" placeholder="Nombre" required>
             <input name="topic" placeholder="Tema">
           </div>
           <textarea name="message" placeholder="Mensaje inicial" required></textarea>
-          <button class="submit" type="submit">Guardar</button>
-        </form>
+        `)}
+        <div class="section-title"><h2>Conversaciones</h2><small>${state.threads.length}</small></div>
         <div class="threads">${threads}</div>
         ${chat}
       </section>`;
     }
 
     function bindForms() {
+      const installButton = document.querySelector("#installButton");
+      if (installButton) installButton.onclick = installApp;
       document.querySelectorAll("form[data-action]").forEach((form) => {
         form.onsubmit = async (event) => {
           event.preventDefault();
-          await submitForm(form.dataset.action, form);
+          await save(form.dataset.action, Object.fromEntries(new FormData(form).entries()));
         };
       });
       document.querySelectorAll("form[data-message]").forEach((form) => {
         form.onsubmit = async (event) => {
           event.preventDefault();
-          const payload = Object.fromEntries(new FormData(form).entries());
-          await save(`/api/threads/${form.dataset.message}/messages`, payload);
+          await save(`/api/threads/${form.dataset.message}/messages`, Object.fromEntries(new FormData(form).entries()));
         };
       });
       document.querySelectorAll(".thread[data-thread]").forEach((button) => {
@@ -284,11 +350,6 @@
           render();
         };
       });
-    }
-
-    async function submitForm(path, form) {
-      const payload = Object.fromEntries(new FormData(form).entries());
-      await save(path, payload);
     }
 
     async function save(path, payload) {
@@ -316,7 +377,7 @@
 
     async function boot() {
       renderTabs();
-      content.innerHTML = `<section class="screen">${header("Link", "Cargando", true)}${empty("Cargando datos...")}</section>`;
+      content.innerHTML = `<section class="screen splash"><div class="logo-hero" role="img" aria-label="Logo Link"></div><h1>Link</h1><p>Cargando la aplicacion...</p><div class="loader"></div></section>`;
       try {
         state = await api.state();
       } catch {
