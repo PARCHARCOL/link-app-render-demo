@@ -29,6 +29,10 @@
     .logo-hero{width:148px;height:148px;margin-bottom:20px;background:url("/logolink.png") center/contain no-repeat;border-radius:28px;filter:drop-shadow(0 18px 34px rgba(202,166,76,.18))}
     .splash h1{margin:0;color:var(--gold2);font-size:38px;line-height:1;font-weight:900}
     .splash p{max-width:260px;margin:12px 0 0;color:var(--muted);font-size:14px;line-height:1.45}
+    .splash-news{width:100%;max-width:300px;margin-top:18px;padding:12px 14px;background:#101010;border:1px solid rgba(202,166,76,.2);border-radius:16px;text-align:left}
+    .splash-news strong,.splash-news span{display:block}
+    .splash-news strong{color:var(--gold2);font-size:12px;text-transform:uppercase}
+    .splash-news span{margin-top:4px;color:var(--muted);font-size:12px;line-height:1.35}
     .loader{width:118px;height:3px;overflow:hidden;margin-top:24px;background:#1d1d1d;border-radius:999px}
     .loader::after{content:"";display:block;width:44%;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:999px;animation:load 1.2s ease-in-out infinite}
     @keyframes load{0%{transform:translateX(-110%)}100%{transform:translateX(260%)}}
@@ -43,6 +47,20 @@
     .install-btn,.primary{height:40px;padding:0 14px;color:#171105;background:linear-gradient(180deg,var(--gold2),var(--gold));border:0;border-radius:12px;font-weight:900}
     .install-help{display:none;margin:-6px 0 14px;padding:10px 12px;color:#e9dbc0;background:rgba(202,166,76,.08);border:1px solid rgba(202,166,76,.18);border-radius:12px;font-size:12px;line-height:1.35}
     .install-help.show{display:block}
+    .official-strip{display:grid;gap:9px;margin:-2px 0 14px;padding:12px;background:#0c0c0c;border:1px solid rgba(202,166,76,.2);border-radius:16px}
+    .official-strip-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+    .official-strip-head strong{color:var(--gold2);font-size:12px;text-transform:uppercase}
+    .official-strip-head span{color:var(--muted2);font-size:11px;font-weight:800}
+    .official-links{display:grid;gap:7px}
+    .official-link{display:grid;gap:2px;padding:9px 10px;color:inherit;text-decoration:none;background:#151515;border:1px solid rgba(255,255,255,.06);border-radius:12px}
+    .official-link strong{color:var(--gold2);font-size:11px}
+    .official-link span{overflow:hidden;color:var(--text);font-size:12px;font-weight:800;line-height:1.25;text-overflow:ellipsis;white-space:nowrap}
+    .official-list{display:grid;gap:10px;margin-bottom:14px}
+    .source-card{display:block;padding:14px;color:inherit;text-decoration:none;background:var(--panel);border:1px solid var(--line);border-radius:16px}
+    .source-card:focus,.source-card:hover{border-color:rgba(202,166,76,.48)}
+    .source-card h3{margin:0;color:var(--text);font-size:15px;line-height:1.25}
+    .source-card p{margin:7px 0 0;color:var(--muted);font-size:13px;line-height:1.38}
+    .origin-link{display:inline-flex;margin-top:10px;color:var(--gold2);font-size:12px;font-weight:900}
     details.editor{margin-bottom:14px;background:var(--panel);border:1px solid var(--line);border-radius:16px}
     details.editor summary{list-style:none;padding:14px 14px;color:var(--text);font-size:14px;font-weight:900}
     details.editor summary::-webkit-details-marker{display:none}
@@ -136,7 +154,7 @@
     let active = "inicio";
     let activeThreadId = "";
     let installPromptEvent = null;
-    let state = { news: [], jobs: [], products: [], threads: [] };
+    let state = { news: [], jobs: [], products: [], threads: [], officialNews: [], officialNewsUpdatedAt: null, officialNewsError: null, officialSources: [] };
     const content = document.querySelector("#content");
     const nav = document.querySelector(".tabs");
 
@@ -163,8 +181,31 @@
       return new Date(value).toLocaleDateString("es-CO", { day: "2-digit", month: "short" });
     }
 
-    function hero(title, subtitle) {
-      return `<div class="hero"><div class="logo-card" role="img" aria-label="Logo Link"></div><div><p class="hero-kicker">Link</p><h1>${esc(title)}</h1><p>${esc(subtitle)}</p></div></div>${installCard()}`;
+    function dateTimeLabel(value) {
+      if (!value) return "Actualizando";
+      return new Date(value).toLocaleString("es-CO", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+    }
+
+    function officialItems() {
+      return Array.isArray(state.officialNews) ? state.officialNews : [];
+    }
+
+    function officialStrip() {
+      const items = officialItems().slice(0, 3);
+      const status = state.officialNewsError || "Consultando Coljuegos, UIAF, Supersalud y DIAN";
+      if (!items.length) {
+        return `<div class="official-strip"><div class="official-strip-head"><strong>Fuentes oficiales</strong><span>${esc(status)}</span></div></div>`;
+      }
+      return `<div class="official-strip">
+        <div class="official-strip-head"><strong>Fuentes oficiales</strong><span>${esc(dateTimeLabel(state.officialNewsUpdatedAt))}</span></div>
+        <div class="official-links">
+          ${items.map((item) => `<a class="official-link" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer"><strong>${esc(item.entity)}</strong><span>${esc(item.title)}</span></a>`).join("")}
+        </div>
+      </div>`;
+    }
+
+    function hero(title, subtitle, showOfficial = false) {
+      return `<div class="hero"><div class="logo-card" role="img" aria-label="Logo Link"></div><div><p class="hero-kicker">Link</p><h1>${esc(title)}</h1><p>${esc(subtitle)}</p></div></div>${showOfficial ? officialStrip() : ""}${installCard()}`;
     }
 
     function installCard() {
@@ -210,6 +251,14 @@
     }
 
     function renderInicio() {
+      const official = officialItems();
+      const officialList = official.length ? official.map((item) => `
+        <a class="source-card" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">
+          <div class="topline"><span>${esc(item.entity)}</span><strong>ORIGEN</strong></div>
+          <h3>${esc(item.title)}</h3>
+          ${item.summary ? `<p>${esc(item.summary)}</p>` : ""}
+          <span class="origin-link">Abrir en ${esc(item.entity)}</span>
+        </a>`).join("") : empty(state.officialNewsError || "Aun no se encontraron publicaciones oficiales con palabras de casinos o juegos localizados.");
       const list = state.news.length ? state.news.map((item) => `
         <article class="card">
           <div class="topline"><span>${esc(item.category)}</span><strong>${esc(dateLabel(item.createdAt))}</strong></div>
@@ -217,7 +266,9 @@
           <p>${esc(item.body)}</p>
           <div class="meta">${item.contact ? `<span class="pill">Fuente: ${esc(item.contact)}</span>` : ""}</div>
         </article>`).join("") : empty("Aun no hay informacion publicada.");
-      return `<section class="screen">${hero("Al Dia", "Noticias, resoluciones e informacion de interes de entidades del sector.")}
+      return `<section class="screen">${hero("Al Dia", "Noticias, resoluciones e informacion de interes de entidades del sector.", true)}
+        <div class="section-title"><h2>Fuentes oficiales</h2><small>${official.length}</small></div>
+        <div class="official-list">${officialList}</div>
         ${formError()}
         ${editor("Nueva informacion", "/api/news", `
           <input name="title" placeholder="Titulo de la noticia, resolucion o comunicado" required>
@@ -233,7 +284,7 @@
           </div>
           <textarea name="body" placeholder="Resumen o contenido" required></textarea>
         `)}
-        <div class="section-title"><h2>Informacion publicada</h2><small>${state.news.length}</small></div>
+        <div class="section-title"><h2>Publicaciones internas</h2><small>${state.news.length}</small></div>
         <div class="stack">${list}</div>
       </section>`;
     }
@@ -377,11 +428,11 @@
 
     async function boot() {
       renderTabs();
-      content.innerHTML = `<section class="screen splash"><div class="logo-hero" role="img" aria-label="Logo Link"></div><h1>Link</h1><p>Cargando la aplicacion...</p><div class="loader"></div></section>`;
+      content.innerHTML = `<section class="screen splash"><div class="logo-hero" role="img" aria-label="Logo Link"></div><h1>Link</h1><p>Cargando la aplicacion...</p><div class="splash-news"><strong>Al Dia</strong><span>Consultando publicaciones oficiales de Coljuegos, UIAF, Supersalud y DIAN.</span></div><div class="loader"></div></section>`;
       try {
         state = await api.state();
       } catch {
-        state = { news: [], jobs: [], products: [], threads: [] };
+        state = { news: [], jobs: [], products: [], threads: [], officialNews: [], officialNewsUpdatedAt: null, officialNewsError: null, officialSources: [] };
       }
       render();
     }

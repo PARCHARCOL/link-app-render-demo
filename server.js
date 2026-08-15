@@ -10,12 +10,95 @@ const publicDir = path.join(__dirname, "public");
 const dataDir = path.join(__dirname, "data");
 const dataFile = path.join(dataDir, "link-data.json");
 const port = Number(process.env.PORT || 3000);
+const officialNewsTtlMs = Number(process.env.OFFICIAL_NEWS_TTL_MS || 30 * 60 * 1000);
+const officialNewsTimeoutMs = Number(process.env.OFFICIAL_NEWS_TIMEOUT_MS || 12_000);
 
 const emptyData = {
   news: [],
   jobs: [],
   products: [],
   threads: [],
+};
+
+const officialSources = [
+  {
+    entity: "Coljuegos",
+    home: "https://www.coljuegos.gov.co/",
+    urls: [
+      "https://www.coljuegos.gov.co/",
+      "https://www.coljuegos.gov.co/publicaciones/noticias/index.php",
+      "https://www.coljuegos.gov.co/publicaciones/noticias/?tema=300014",
+    ],
+  },
+  {
+    entity: "UIAF",
+    home: "https://www.uiaf.gov.co/",
+    urls: [
+      "https://www.uiaf.gov.co/noticias-y-comunicados",
+      "https://www.uiaf.gov.co/sector/coljuegos",
+      "https://uiaf.gov.co/index.php/Nueva-resoluci%C3%B3n-de-Coljuegos-para-el-sector-de-Juegos-de-Suerte-y-Azar",
+      "https://www.uiaf.gov.co/resolucion-20195100044514",
+      "https://www.uiaf.gov.co/node/1776",
+    ],
+  },
+  {
+    entity: "DIAN",
+    home: "https://www.dian.gov.co/",
+    urls: [
+      "https://www.dian.gov.co/Prensa/Paginas/Comunicados-de-Prensa.aspx",
+      "https://normograma.dian.gov.co/dian/compilacion/docs/oficio_dian_1661_2025.htm",
+      "https://normograma.dian.gov.co/dian/compilacion/docs/oficio_dian_12496_2025.htm",
+      "https://normograma.dian.gov.co/dian/compilacion/docs/oficio_dian_3320_2025.htm",
+    ],
+  },
+  {
+    entity: "Supersalud",
+    home: "https://www.supersalud.gov.co/",
+    urls: [
+      "https://www.supersalud.gov.co/es-co/Noticias/listanoticias",
+      "https://normograma.supersalud.gov.co/compilacion/docs/circular_supersalud_0005_2011.htm",
+      "https://normograma.supersalud.gov.co/compilacion/docs/decreto_1278_2014.htm",
+      "https://normograma.supersalud.gov.co/compilacion/docs/resolucion_coljuegos_7074_2025.htm",
+    ],
+  },
+];
+
+const casinoKeywords = [
+  "juegos localizados",
+  "juego localizado",
+  "juegos de suerte y azar localizados",
+  "casino",
+  "casinos",
+  "bingo",
+  "bingos",
+  "sillas de bingo",
+  "tragamonedas",
+  "maquinas tragamonedas",
+  "maquinas electronicas tragamonedas",
+  "maquinas electronicas de juego",
+  "maquinitas",
+  "mesas de casino",
+  "mesas de juegos",
+  "salas de juego",
+  "operadores de juegos localizados",
+  "establecimientos de juegos",
+];
+
+const officialHostSuffixes = [
+  "coljuegos.gov.co",
+  "uiaf.gov.co",
+  "dian.gov.co",
+  "normograma.dian.gov.co",
+  "supersalud.gov.co",
+  "normograma.supersalud.gov.co",
+  "docs.supersalud.gov.co",
+];
+
+let officialNewsCache = {
+  items: [],
+  updatedAt: null,
+  error: null,
+  promise: null,
 };
 
 const mimeTypes = new Map([
@@ -46,6 +129,363 @@ function text(value, max = 500) {
 
 function nowStamp() {
   return new Date().toISOString();
+}
+
+function normalizeText(value) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function decodeEntities(value) {
+  const named = new Map([
+    ["amp", "&"],
+    ["lt", "<"],
+    ["gt", ">"],
+    ["quot", '"'],
+    ["apos", "'"],
+    ["nbsp", " "],
+    ["aacute", "\u00e1"],
+    ["eacute", "\u00e9"],
+    ["iacute", "\u00ed"],
+    ["oacute", "\u00f3"],
+    ["uacute", "\u00fa"],
+    ["ntilde", "\u00f1"],
+    ["Aacute", "\u00c1"],
+    ["Eacute", "\u00c9"],
+    ["Iacute", "\u00cd"],
+    ["Oacute", "\u00d3"],
+    ["Uacute", "\u00da"],
+    ["Ntilde", "\u00d1"],
+  ]);
+  return String(value ?? "").replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, (_, entity) => {
+    const normalizedEntity = entity.toLowerCase();
+    if (normalizedEntity.startsWith("#x")) {
+      const code = Number.parseInt(normalizedEntity.slice(2), 16);
+      return Number.isFinite(code) ? String.fromCodePoint(code) : "";
+    }
+    if (normalizedEntity.startsWith("#")) {
+      const code = Number.parseInt(normalizedEntity.slice(1), 10);
+      return Number.isFinite(code) ? String.fromCodePoint(code) : "";
+    }
+    return named.get(entity) || `&${entity};`;
+  });
+}
+
+function htmlToText(html, max = 600) {
+  return decodeEntities(String(html ?? "")
+    .replace(/<!--[\s\S]*?-->/g, " ")
+    .replace(/<script\b[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style\b[\s\S]*?<\/style>/gi, " ")
+    .replace(/<noscript\b[\s\S]*?<\/noscript>/gi, " ")
+    .replace(/<svg\b[\s\S]*?<\/svg>/gi, " "))
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\b(?:class|title|href|src|alt|aria-label|role|data-[\w-]+)=["'][^"']*["']/gi, " ")
+    .replace(/\b[\w-]+=["'][^"']*["']>?/g, " ")
+    .replace(/https?:\/\/\S+/gi, " ")
+    .replace(/-->/g, " ")
+    .replace(/[<>]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, max);
+}
+
+function extractPageTitle(html) {
+  const h1 = html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i);
+  const title = h1 || html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
+  return htmlToText(title?.[1] || "", 180);
+}
+
+function safeUrl(value, base) {
+  try {
+    return new URL(decodeEntities(value), base).toString();
+  } catch {
+    return "";
+  }
+}
+
+function isOfficialUrl(value) {
+  try {
+    const host = new URL(value).hostname.toLowerCase().replace(/^www\./, "");
+    return officialHostSuffixes.some((suffix) => host === suffix || host.endsWith(`.${suffix}`));
+  } catch {
+    return false;
+  }
+}
+
+function hashId(value) {
+  let hash = 0;
+  for (const char of String(value)) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  return hash.toString(36);
+}
+
+function matchedCasinoKeywords(value) {
+  const normalized = normalizeText(value);
+  return casinoKeywords.filter((keyword) => normalized.includes(normalizeText(keyword)));
+}
+
+function isGenericLinkText(value) {
+  const normalized = normalizeText(value);
+  return !normalized || [
+    "ver mas",
+    "leer mas",
+    "descargar",
+    "image",
+    "imagen",
+    "buscar",
+    "indice",
+    "coljuegos",
+    "juegos de suerte y azar",
+    "juegos localizados",
+    "juegos promocionales",
+    "juegos novedosos",
+    "rifas",
+    "perfil del apostador colombiano",
+    "compilacion juridica dian",
+  ].includes(normalized);
+}
+
+function isLikelyContentTitle(value) {
+  const normalized = normalizeText(value);
+  if (isGenericLinkText(value)) return false;
+  if (normalized.length >= 32) return true;
+  return /\b(concepto|oficio|circular|decreto|resolucion|resolucion|acuerdo|comunicado)\b/i.test(normalized);
+}
+
+function isListingSourceUrl(source, sourceUrl) {
+  const normalizedUrl = normalizeText(sourceUrl).replace(/\/$/, "");
+  const normalizedHome = normalizeText(source.home).replace(/\/$/, "");
+  if (normalizedUrl === normalizedHome) return true;
+  try {
+    const url = new URL(sourceUrl);
+    const path = normalizeText(url.pathname);
+    return /\/publicaciones\/noticias\/?(index\.php)?$/.test(path)
+      || /comunicados-de-prensa\.aspx$/.test(path)
+      || /listanoticias$/.test(path)
+      || /noticias-y-comunicados$/.test(path);
+  } catch {
+    return false;
+  }
+}
+
+function inferOfficialTitle(pageText, fallbackTitle, sourceUrl) {
+  const textBody = String(pageText || "");
+  const patterns = [
+    /\bConcepto\s+\d+\s+de\s+\d{4}\s+DIAN\b/i,
+    /\bOficio\s+\d+\s+de\s+\d{4}\s+DIAN\b/i,
+    /\bCircular\s+\d+\s+de\s+\d{4}\s+SNS\b/i,
+    /\bDecreto\s+\d+\s+de\s+\d{4}\b/i,
+    /\bResolucion\s+(?:No\.?\s*)?\d+[\w.-]*\s*(?:de\s+\d{4})?\b/i,
+    /\bAcuerdo\s+(?:No\.?\s*)?\d+[\w.-]*\s*(?:de\s+\d{4})?\b/i,
+  ];
+  for (const pattern of patterns) {
+    const match = textBody.match(pattern);
+    if (match?.[0]) return match[0].replace(/\s+/g, " ").trim();
+  }
+  const fromPath = decodeURIComponent(new URL(sourceUrl).pathname.split("/").pop() || "")
+    .replace(/\.(html?|aspx)$/i, "")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (fromPath && isLikelyContentTitle(fromPath)) return fromPath;
+  return fallbackTitle;
+}
+
+function candidateScore(candidate) {
+  const titleMatches = matchedCasinoKeywords(candidate.title);
+  const contextMatches = matchedCasinoKeywords(candidate.context);
+  if (!isLikelyContentTitle(candidate.title)) return -10;
+  if (titleMatches.length === 0 && contextMatches.length === 0) return -10;
+
+  const normalized = normalizeText(`${candidate.title} ${candidate.url}`);
+  let score = titleMatches.length * 4 + contextMatches.length;
+  if (/\b(noticia|noticias|comunicado|resolucion|concepto|oficio|circular|decreto|acuerdo)\b/.test(normalized)) score += 4;
+  if (candidate.url.includes("/publicaciones/")) score += 2;
+  if (candidate.kind === "page") score += 1;
+  if (/^(las medidas|el operativo|esta iniciativa|lo anterior|en el caso)\b/.test(normalizeText(candidate.title))) score -= 5;
+  if (candidate.url.includes("#")) score -= 2;
+  if (candidate.url.endsWith("#")) score -= 10;
+  return score;
+}
+
+function cleanSummary(value) {
+  return String(value || "")
+    .replace(/contraste aumentar tamano letra disminuir tamano letra/gi, " ")
+    .replace(/breadcrumb\s+home\s+(?:&raquo;|»)?/gi, " ")
+    .replace(/\S*\.gov\.co\/\S*/gi, " ")
+    .replace(/\S*\.co\/\S*/gi, " ")
+    .replace(/\b[\w-]+=["'][^"']*["']>?/g, " ")
+    .replace(/[<>]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function keywordWindow(value, max = 260) {
+  const original = String(value || "");
+  const normalized = normalizeText(original);
+  let firstIndex = -1;
+  for (const keyword of casinoKeywords) {
+    const index = normalized.indexOf(normalizeText(keyword));
+    if (index >= 0 && (firstIndex === -1 || index < firstIndex)) firstIndex = index;
+  }
+  if (firstIndex < 0) return "";
+  const start = Math.max(0, firstIndex - 90);
+  return original.slice(start, start + max);
+}
+
+function summaryFromContext(title, context) {
+  const cleanedTitle = normalizeText(title);
+  const scopedContext = keywordWindow(context) || context;
+  const sentences = String(scopedContext || "")
+    .split(/(?<=[.!?])\s+|\s{2,}/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const selected = sentences.find((sentence) => {
+    const normalized = normalizeText(sentence);
+    return normalized !== cleanedTitle && matchedCasinoKeywords(sentence).length > 0;
+  }) || sentences.find((sentence) => normalizeText(sentence) !== cleanedTitle) || "";
+  return cleanSummary(selected).slice(0, 220);
+}
+
+async function fetchOfficialHtml(url) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), officialNewsTimeoutMs);
+  try {
+    const response = await fetch(url, {
+      redirect: "follow",
+      signal: controller.signal,
+      headers: {
+        "accept": "text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.2",
+        "user-agent": "LinkApp/1.0",
+      },
+    });
+    if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+    const contentType = response.headers.get("content-type") || "";
+    if (!/text\/html|text\/plain|application\/xhtml\+xml/i.test(contentType)) return "";
+    return response.text();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function extractOfficialCandidates(source, sourceUrl, html) {
+  const candidates = [];
+  const pageText = htmlToText(html, 2600);
+  const pageTitle = inferOfficialTitle(pageText, extractPageTitle(html), sourceUrl);
+  if (!isListingSourceUrl(source, sourceUrl) && pageTitle && isLikelyContentTitle(pageTitle)) {
+    candidates.push({
+      entity: source.entity,
+      title: pageTitle,
+      url: sourceUrl,
+      sourceUrl,
+      context: pageText,
+      kind: "page",
+    });
+  }
+
+  const anchorPattern = /<a\b[^>]*href\s*=\s*(["'])(.*?)\1[^>]*>([\s\S]*?)<\/a>/gi;
+  let match;
+  while ((match = anchorPattern.exec(html)) !== null) {
+    const url = safeUrl(match[2], sourceUrl);
+    if (!url || !isOfficialUrl(url)) continue;
+    if (/^(mailto|tel|javascript):/i.test(match[2])) continue;
+    if (url.endsWith("#")) continue;
+
+    const title = htmlToText(match[3], 180);
+    if (!isLikelyContentTitle(title)) continue;
+
+    const start = Math.max(0, match.index - 700);
+    const end = Math.min(html.length, match.index + match[0].length + 900);
+    const context = htmlToText(html.slice(start, end), 1200);
+    candidates.push({
+      entity: source.entity,
+      title,
+      url,
+      sourceUrl,
+      context,
+      kind: "link",
+    });
+  }
+  return candidates;
+}
+
+async function scrapeOfficialSource(source, sourceUrl) {
+  const html = await fetchOfficialHtml(sourceUrl);
+  if (!html) return [];
+  return extractOfficialCandidates(source, sourceUrl, html)
+    .map((candidate) => {
+      const combined = `${candidate.title} ${candidate.context} ${candidate.url}`;
+      const matchedKeywords = matchedCasinoKeywords(combined);
+      const score = candidateScore(candidate);
+      if (matchedKeywords.length === 0 || score < 1) return null;
+      return {
+        id: `${normalizeText(candidate.entity).replace(/\W+/g, "-")}-${hashId(candidate.url + candidate.title)}`,
+        entity: candidate.entity,
+        title: text(candidate.title, 180),
+        summary: text(summaryFromContext(candidate.title, candidate.context), 240),
+        url: candidate.url,
+        sourceUrl: candidate.sourceUrl,
+        matchedKeywords: matchedKeywords.slice(0, 4),
+        score,
+        fetchedAt: nowStamp(),
+      };
+    })
+    .filter(Boolean);
+}
+
+function officialSourcesPublic() {
+  return officialSources.map((source) => ({ entity: source.entity, home: source.home }));
+}
+
+function officialNewsSnapshot() {
+  return {
+    items: officialNewsCache.items,
+    updatedAt: officialNewsCache.updatedAt,
+    error: officialNewsCache.error,
+    sources: officialSourcesPublic(),
+  };
+}
+
+async function refreshOfficialNews() {
+  const tasks = officialSources.flatMap((source) =>
+    source.urls.map((sourceUrl) => scrapeOfficialSource(source, sourceUrl)),
+  );
+  const results = await Promise.allSettled(tasks);
+  const byKey = new Map();
+  const errors = [];
+
+  for (const result of results) {
+    if (result.status === "rejected") {
+      errors.push(result.reason?.message || "No se pudo consultar una fuente oficial");
+      continue;
+    }
+    for (const item of result.value) {
+      const key = normalizeText(`${item.entity}|${item.url}`);
+      const current = byKey.get(key);
+      if (!current || item.score > current.score) byKey.set(key, item);
+    }
+  }
+
+  officialNewsCache.items = [...byKey.values()]
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 18)
+    .map(({ score, ...item }) => item);
+  officialNewsCache.updatedAt = nowStamp();
+  officialNewsCache.error = errors.length && officialNewsCache.items.length === 0
+    ? "No se pudieron consultar las fuentes oficiales en este momento."
+    : null;
+  return officialNewsSnapshot();
+}
+
+async function getOfficialNews(force = false) {
+  const updatedAt = officialNewsCache.updatedAt ? Date.parse(officialNewsCache.updatedAt) : 0;
+  if (!force && updatedAt && Date.now() - updatedAt < officialNewsTtlMs) return officialNewsSnapshot();
+  if (officialNewsCache.promise) return officialNewsCache.promise;
+  officialNewsCache.promise = refreshOfficialNews().finally(() => {
+    officialNewsCache.promise = null;
+  });
+  return officialNewsCache.promise;
 }
 
 async function ensureDataFile() {
@@ -106,7 +546,20 @@ function invalid(res, message) {
 
 async function handleApi(req, res, url) {
   if (req.method === "GET" && url.pathname === "/api/state") {
-    json(res, 200, await readData());
+    const data = await readData();
+    const officialNews = await getOfficialNews(url.searchParams.get("refresh") === "1").catch(() => officialNewsSnapshot());
+    json(res, 200, {
+      ...data,
+      officialNews: officialNews.items,
+      officialNewsUpdatedAt: officialNews.updatedAt,
+      officialNewsError: officialNews.error,
+      officialSources: officialNews.sources,
+    });
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/official-news") {
+    json(res, 200, await getOfficialNews(url.searchParams.get("refresh") === "1"));
     return;
   }
 
