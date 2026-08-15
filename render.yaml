@@ -1,12 +1,12 @@
 services:
   - type: web
-    name: link-app-demo
-    runtime: static
+    name: link-app
+    runtime: node
     plan: free
-    buildCommand: ""
-    staticPublishPath: ./public
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
     autoDeployTrigger: commit
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
+    envVars:
+      - key: NODE_ENV
+        value: production

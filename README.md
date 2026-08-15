@@ -1,12 +1,22 @@
-# Link App Demo para Render
+# Link
 
-Este paquete es la version web estatica de Link lista para Render Free.
+Aplicacion web online para Link con backend Node en Render.
 
-## Configuracion Render
+## Que incluye
 
-- Tipo: Static Site
-- Build Command: dejar vacio
-- Publish Directory: `public`
-- Blueprint: `render.yaml`
+- Logo oficial en el encabezado.
+- API real en `/api/state`.
+- Formularios para publicar alertas, perfiles, productos y conversaciones.
+- Datos guardados en `data/link-data.json` dentro del servicio.
 
-Render necesita que esta carpeta este en un repositorio GitHub, GitLab o Bitbucket conectado a tu cuenta de Render.
+## Render
+
+Este repo usa `render.yaml` como Blueprint.
+
+- Plan: Free
+- Runtime: Node
+- Build Command: `npm install`
+- Start Command: `npm start`
+- Health Check: `/health`
+
+Nota: esta persistencia por archivo sirve para prueba online. Para produccion permanente conviene conectar PostgreSQL.
