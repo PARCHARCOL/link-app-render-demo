@@ -1,4 +1,4 @@
-const CACHE_NAME = "link-app-v7";
+const CACHE_NAME = "link-app-v8";
 const CORE_ASSETS = [
   "/",
   "/index.html",
@@ -14,7 +14,6 @@ self.addEventListener("install", (event) => {
       cache.addAll(CORE_ASSETS.map((asset) => new Request(asset, { cache: "reload" }))),
     ),
   );
-  self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {

@@ -55,6 +55,9 @@
     .hero p{margin:7px 0 0;color:var(--muted);font-size:13px;line-height:1.34}
     .notice,.error{margin:0 0 13px;padding:11px 12px;border-radius:14px;font-size:12px;line-height:1.35}
     .notice{color:#5b3100;background:#fff0cc;border:1px solid #ffd37a}
+    .update-banner{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin:0 0 13px;padding:12px;background:#fff;border:2px solid var(--red);border-radius:16px;box-shadow:0 14px 30px rgba(215,25,32,.14)}
+    .update-banner strong{display:block;color:var(--red);font-size:13px}
+    .update-banner span{display:block;margin-top:3px;color:var(--muted);font-size:12px;line-height:1.35}
     .error{display:none;color:#7a090d;background:#ffe6e5;border:1px solid #ffb8b3}
     .error.show{display:block}
     .verify-row,.account-card,.locked,.settings-card{display:grid;gap:10px;margin-bottom:13px;padding:13px;background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:0 12px 28px rgba(146,70,18,.08)}
@@ -139,7 +142,7 @@
     .admin-row p{margin:4px 0 0;color:var(--muted);font-size:12px;line-height:1.28}
     .admin-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}
     .admin-actions button{min-height:31px;padding:0 9px;border-radius:10px;font-size:11px}
-    @media (max-width:520px){.stage{padding:0;background:#fff6ef}.app{width:100%;height:100vh;min-height:100vh;border:0;border-radius:0}.screen{padding-left:14px;padding-right:14px}.split,.auth-grid,.verify-row{grid-template-columns:1fr}.hero{grid-template-columns:76px 1fr}.logo-card{width:76px;height:68px}.hero h1{font-size:26px}.product-grid{grid-template-columns:1fr}.admin-row{grid-template-columns:1fr}}
+    @media (max-width:520px){.stage{padding:0;background:#fff6ef}.app{width:100%;height:100vh;min-height:100vh;border:0;border-radius:0}.screen{padding-left:14px;padding-right:14px}.split,.auth-grid,.verify-row,.update-banner{grid-template-columns:1fr}.hero{grid-template-columns:76px 1fr}.logo-card{width:76px;height:68px}.hero h1{font-size:26px}.product-grid{grid-template-columns:1fr}.admin-row{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -160,6 +163,8 @@
     let activeThreadId = "";
     let installPromptEvent = null;
     let installMessage = "";
+    let pendingUpdateWorker = null;
+    let updateAvailable = false;
     let adminState = null;
     let adminLoading = false;
     let state = baseState();
@@ -222,13 +227,13 @@
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("/service-worker.js").then((registration) => {
           registration.update().catch(() => {});
-          if (registration.waiting) registration.waiting.postMessage({ type: "SKIP_WAITING" });
+          if (registration.waiting) showAppUpdate(registration.waiting);
           registration.addEventListener("updatefound", () => {
             const worker = registration.installing;
             if (!worker) return;
             worker.addEventListener("statechange", () => {
               if (worker.state === "installed" && navigator.serviceWorker.controller) {
-                worker.postMessage({ type: "SKIP_WAITING" });
+                showAppUpdate(worker);
               }
             });
           });
@@ -305,6 +310,28 @@
       return installMessage ? `<p class="notice">${esc(installMessage)}</p>` : "";
     }
 
+    function updateNotice() {
+      if (!updateAvailable) return "";
+      return `<div class="update-banner">
+        <div><strong>Hay una nueva version de Link</strong><span>Actualiza para ver los ultimos cambios de la app.</span></div>
+        <button class="primary" type="button" id="updateAppButton">Actualizar app</button>
+      </div>`;
+    }
+
+    function showAppUpdate(worker) {
+      pendingUpdateWorker = worker;
+      updateAvailable = true;
+      render();
+    }
+
+    function updateAppNow() {
+      if (!pendingUpdateWorker) {
+        window.location.reload();
+        return;
+      }
+      pendingUpdateWorker.postMessage({ type: "SKIP_WAITING" });
+    }
+
     function renderHeader() {
       const verified = state.officialNewsUpdatedAt ? `Fuentes verificadas ${dateTimeLabel(state.officialNewsUpdatedAt)}` : "Consultando fuentes oficiales";
       headerBrand.innerHTML = `<div class="brand-row">
@@ -369,7 +396,7 @@
     }
 
     function hero(title, subtitle) {
-      return `${installNotice()}<div class="hero">${logoImg("logo-card")}<div><p class="hero-kicker">Link</p><h1>${esc(title)}</h1><p>${esc(subtitle)}</p></div></div>`;
+      return `${updateNotice()}${installNotice()}<div class="hero">${logoImg("logo-card")}<div><p class="hero-kicker">Link</p><h1>${esc(title)}</h1><p>${esc(subtitle)}</p></div></div>`;
     }
 
     function accountPanel() {
@@ -712,6 +739,8 @@
     }
 
     function bindForms() {
+      const updateAppButton = document.querySelector("#updateAppButton");
+      if (updateAppButton) updateAppButton.onclick = updateAppNow;
       const refreshButton = document.querySelector("#refreshOfficialButton");
       if (refreshButton) refreshButton.onclick = refreshOfficialNews;
       const logoutButton = document.querySelector("#logoutButton");
