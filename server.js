@@ -16,10 +16,11 @@ const dataDir = path.join(__dirname, "data");
 const dataFile = path.join(dataDir, "link-data.json");
 const port = Number(process.env.PORT || 3000);
 const databaseUrl = process.env.DATABASE_URL || "";
-const officialNewsTtlMs = Number(process.env.OFFICIAL_NEWS_TTL_MS || 30 * 60 * 1000);
+const officialNewsTtlMs = Number(process.env.OFFICIAL_NEWS_TTL_MS || 10 * 60 * 1000);
 const officialNewsTimeoutMs = Number(process.env.OFFICIAL_NEWS_TIMEOUT_MS || 12_000);
 const bodyLimitBytes = Number(process.env.BODY_LIMIT_BYTES || 6_000_000);
 const sessionDays = Number(process.env.SESSION_DAYS || 30);
+const configuredAdminEmails = process.env.LINK_ADMIN_EMAILS || process.env.ADMIN_EMAILS || "jhonsilvadiaz@gmail.com";
 
 const emptyData = {
   users: [],
@@ -30,6 +31,10 @@ const emptyData = {
   vacancies: [],
   products: [],
   threads: [],
+  settings: {
+    logoData: "",
+    updatedAt: null,
+  },
 };
 
 const officialSources = [
@@ -165,6 +170,21 @@ function dataText(value, max) {
   return output;
 }
 
+function imageDataText(value, max) {
+  const output = dataText(value, max);
+  if (!output) return "";
+  if (!/^data:image\/(?:png|jpe?g|webp);base64,/i.test(output)) fail(400, "El logo debe ser una imagen PNG, JPG o WebP");
+  return output;
+}
+
+function normalizeSettings(settings = {}) {
+  const logoData = String(settings.logoData || "").trim();
+  return {
+    logoData: /^data:image\/(?:png|jpe?g|webp);base64,/i.test(logoData) && logoData.length <= 3_000_000 ? logoData : "",
+    updatedAt: settings.updatedAt || settings.updated_at || null,
+  };
+}
+
 function nowStamp() {
   return new Date().toISOString();
 }
@@ -173,8 +193,31 @@ function normalizeEmail(value) {
   return text(value, 160).toLowerCase();
 }
 
+const adminEmails = new Set(
+  configuredAdminEmails
+    .split(/[,\s;]+/)
+    .map((email) => normalizeEmail(email))
+    .filter(Boolean),
+);
+
 function normalizeAccountType(value) {
   return value === "company" ? "company" : "person";
+}
+
+function isAdminEmail(value) {
+  return adminEmails.has(normalizeEmail(value));
+}
+
+function isAdminUser(user) {
+  return Boolean(user?.isAdmin || user?.is_admin || isAdminEmail(user?.email));
+}
+
+function normalizeStatus(value) {
+  return ["pending", "published", "hidden"].includes(value) ? value : "published";
+}
+
+function newContentStatus(user) {
+  return isAdminUser(user) ? "published" : "pending";
 }
 
 function tokenHash(token) {
@@ -384,6 +427,15 @@ function candidateScore(candidate) {
   return score;
 }
 
+function officialItemYear(item) {
+  const years = `${item.title || ""} ${item.summary || ""} ${item.url || ""} ${item.sourceUrl || ""}`.match(/\b20\d{2}\b/g) || [];
+  return years.length ? Math.max(...years.map((year) => Number(year))) : new Date().getFullYear();
+}
+
+function isRecentOfficialItem(item) {
+  return officialItemYear(item) >= new Date().getFullYear() - 1;
+}
+
 function cleanSummary(value) {
   return String(value || "")
     .replace(/contraste aumentar tamano letra disminuir tamano letra/gi, " ")
@@ -542,8 +594,11 @@ async function refreshOfficialNews() {
     }
   }
 
-  officialNewsCache.items = [...byKey.values()]
-    .sort((a, b) => b.score - a.score)
+  const rankedItems = [...byKey.values()]
+    .sort((a, b) => officialItemYear(b) - officialItemYear(a) || b.score - a.score);
+  const recentItems = rankedItems.filter(isRecentOfficialItem);
+
+  officialNewsCache.items = (recentItems.length >= 3 ? recentItems : rankedItems)
     .slice(0, 18)
     .map(({ score, ...item }) => item);
   officialNewsCache.updatedAt = nowStamp();
@@ -567,12 +622,13 @@ function normalizeData(parsed = {}) {
   return {
     users: Array.isArray(parsed.users) ? parsed.users : [],
     sessions: Array.isArray(parsed.sessions) ? parsed.sessions : [],
-    news: Array.isArray(parsed.news) ? parsed.news : [],
+    news: Array.isArray(parsed.news) ? parsed.news.map((item) => ({ ...item, status: normalizeStatus(item.status) })) : [],
     jobs: Array.isArray(parsed.jobs) ? parsed.jobs : [],
-    resumes: Array.isArray(parsed.resumes) ? parsed.resumes : [],
-    vacancies: Array.isArray(parsed.vacancies) ? parsed.vacancies : [],
-    products: Array.isArray(parsed.products) ? parsed.products : [],
-    threads: Array.isArray(parsed.threads) ? parsed.threads : [],
+    resumes: Array.isArray(parsed.resumes) ? parsed.resumes.map((item) => ({ ...item, status: normalizeStatus(item.status) })) : [],
+    vacancies: Array.isArray(parsed.vacancies) ? parsed.vacancies.map((item) => ({ ...item, status: normalizeStatus(item.status) })) : [],
+    products: Array.isArray(parsed.products) ? parsed.products.map((item) => ({ ...item, status: normalizeStatus(item.status) })) : [],
+    threads: Array.isArray(parsed.threads) ? parsed.threads.map((item) => ({ ...item, status: normalizeStatus(item.status) })) : [],
+    settings: normalizeSettings(parsed.settings || emptyData.settings),
   };
 }
 
@@ -602,6 +658,33 @@ async function writeJsonData(data) {
   await rename(tempFile, dataFile);
 }
 
+async function readSettings() {
+  if (dbReady) {
+    const result = await pool.query("SELECT value, updated_at FROM link_settings WHERE key = 'app'");
+    const row = result.rows[0];
+    return normalizeSettings(row ? { ...row.value, updatedAt: row.updated_at } : emptyData.settings);
+  }
+  const data = await readJsonData();
+  return normalizeSettings(data.settings);
+}
+
+async function writeSettings(settings) {
+  const next = normalizeSettings(settings);
+  if (dbReady) {
+    await pool.query(
+      `INSERT INTO link_settings (key, value, updated_at)
+       VALUES ('app', $1::jsonb, now())
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`,
+      [JSON.stringify(next)],
+    );
+    return readSettings();
+  }
+  const data = await readJsonData();
+  data.settings = { ...next, updatedAt: nowStamp() };
+  await writeJsonData(data);
+  return data.settings;
+}
+
 async function initDb() {
   if (!pool) return;
   await pool.query(`
@@ -616,7 +699,14 @@ async function initDb() {
       company_name text DEFAULT '',
       nit text DEFAULT '',
       role text DEFAULT '',
+      is_admin boolean NOT NULL DEFAULT false,
       created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS link_settings (
+      key text PRIMARY KEY,
+      value jsonb NOT NULL DEFAULT '{}'::jsonb,
       updated_at timestamptz NOT NULL DEFAULT now()
     );
 
@@ -634,6 +724,7 @@ async function initDb() {
       body text NOT NULL,
       category text NOT NULL DEFAULT 'General',
       contact text DEFAULT '',
+      status text NOT NULL DEFAULT 'published',
       created_at timestamptz NOT NULL DEFAULT now()
     );
 
@@ -645,6 +736,7 @@ async function initDb() {
       condition text NOT NULL DEFAULT 'Disponible',
       description text DEFAULT '',
       contact text DEFAULT '',
+      status text NOT NULL DEFAULT 'published',
       created_at timestamptz NOT NULL DEFAULT now()
     );
 
@@ -653,6 +745,7 @@ async function initDb() {
       author_id uuid REFERENCES link_users(id) ON DELETE SET NULL,
       name text NOT NULL,
       topic text NOT NULL DEFAULT 'Conversacion',
+      status text NOT NULL DEFAULT 'published',
       created_at timestamptz NOT NULL DEFAULT now()
     );
 
@@ -685,6 +778,7 @@ async function initDb() {
       attachment_name text DEFAULT '',
       attachment_data text DEFAULT '',
       is_public boolean NOT NULL DEFAULT true,
+      status text NOT NULL DEFAULT 'published',
       created_at timestamptz NOT NULL DEFAULT now(),
       updated_at timestamptz NOT NULL DEFAULT now()
     );
@@ -699,9 +793,24 @@ async function initDb() {
       contact text DEFAULT '',
       description text DEFAULT '',
       requirements text DEFAULT '',
+      status text NOT NULL DEFAULT 'published',
       created_at timestamptz NOT NULL DEFAULT now()
     );
+
+    ALTER TABLE link_users ADD COLUMN IF NOT EXISTS is_admin boolean NOT NULL DEFAULT false;
+    ALTER TABLE link_news ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'published';
+    ALTER TABLE link_products ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'published';
+    ALTER TABLE link_threads ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'published';
+    ALTER TABLE link_resumes ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'published';
+    ALTER TABLE link_vacancies ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'published';
   `);
+
+  if (adminEmails.size) {
+    await pool.query(
+      "UPDATE link_users SET is_admin = true WHERE lower(email) = ANY($1::text[])",
+      [Array.from(adminEmails)],
+    );
+  }
 }
 
 async function initializeStorage() {
@@ -751,6 +860,7 @@ function sanitizeUser(user) {
     companyName: user.companyName || user.company_name || "",
     nit: user.nit || "",
     role: user.role || "",
+    isAdmin: isAdminUser(user),
     createdAt: user.createdAt || user.created_at || null,
   };
 }
@@ -767,6 +877,7 @@ function rowUser(row) {
     companyName: row.company_name || "",
     nit: row.nit || "",
     role: row.role || "",
+    isAdmin: isAdminUser(row),
     createdAt: row.createdAt || row.created_at,
   };
 }
@@ -799,7 +910,7 @@ async function getAuthUser(req) {
   const hashed = tokenHash(token);
   if (dbReady) {
     const result = await pool.query(
-      `SELECT u.id, u.email, u.account_type, u.display_name, u.phone, u.city, u.company_name, u.nit, u.role, u.created_at
+      `SELECT u.id, u.email, u.account_type, u.display_name, u.phone, u.city, u.company_name, u.nit, u.role, u.is_admin, u.created_at
        FROM link_sessions s
        JOIN link_users u ON u.id = s.user_id
        WHERE s.token_hash = $1 AND s.expires_at > now()`,
@@ -816,6 +927,12 @@ async function getAuthUser(req) {
 async function requireUser(req) {
   const user = await getAuthUser(req);
   if (!user) fail(401, "Debes iniciar sesion");
+  return user;
+}
+
+async function requireAdmin(req) {
+  const user = await requireUser(req);
+  if (!isAdminUser(user)) fail(403, "Solo administrador");
   return user;
 }
 
@@ -839,6 +956,7 @@ async function registerUser(body) {
     companyName: accountType === "company" ? text(body.companyName, 140) : "",
     nit: accountType === "company" ? text(body.nit, 40) : "",
     role: text(body.role, 120),
+    isAdmin: isAdminEmail(email),
     createdAt: nowStamp(),
   };
 
@@ -846,9 +964,9 @@ async function registerUser(body) {
     try {
       await pool.query(
         `INSERT INTO link_users
-         (id, email, password_hash, account_type, display_name, phone, city, company_name, nit, role)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-        [user.id, user.email, user.passwordHash, user.accountType, user.displayName, user.phone, user.city, user.companyName, user.nit, user.role],
+         (id, email, password_hash, account_type, display_name, phone, city, company_name, nit, role, is_admin)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+        [user.id, user.email, user.passwordHash, user.accountType, user.displayName, user.phone, user.city, user.companyName, user.nit, user.role, user.isAdmin],
       );
     } catch (error) {
       if (error.code === "23505") fail(409, "Ese correo ya esta registrado");
@@ -872,7 +990,7 @@ async function loginUser(body) {
   let passwordHash;
   if (dbReady) {
     const result = await pool.query(
-      `SELECT id, email, password_hash, account_type, display_name, phone, city, company_name, nit, role, created_at
+      `SELECT id, email, password_hash, account_type, display_name, phone, city, company_name, nit, role, is_admin, created_at
        FROM link_users WHERE email = $1`,
       [email],
     );
@@ -909,6 +1027,7 @@ async function logoutUser(req) {
 
 async function readData(authUser = null) {
   if (dbReady) {
+    const authUserId = authUser?.id || null;
     const [
       news,
       products,
@@ -916,21 +1035,47 @@ async function readData(authUser = null) {
       messages,
       resumes,
       vacancies,
+      settings,
     ] = await Promise.all([
-      pool.query(`SELECT id, title, body, category, contact, created_at AS "createdAt" FROM link_news ORDER BY created_at DESC LIMIT 100`),
-      pool.query(`SELECT id, name, price, condition, description, contact, created_at AS "createdAt" FROM link_products ORDER BY created_at DESC LIMIT 100`),
-      pool.query(`SELECT id, name, topic, created_at AS "createdAt" FROM link_threads ORDER BY created_at DESC LIMIT 50`),
+      pool.query(
+        `SELECT id, title, body, category, contact, status, created_at AS "createdAt"
+         FROM link_news
+         WHERE status = 'published' OR ($1::uuid IS NOT NULL AND author_id = $1::uuid)
+         ORDER BY created_at DESC LIMIT 100`,
+        [authUserId],
+      ),
+      pool.query(
+        `SELECT id, name, price, condition, description, contact, status, created_at AS "createdAt"
+         FROM link_products
+         WHERE status = 'published' OR ($1::uuid IS NOT NULL AND author_id = $1::uuid)
+         ORDER BY created_at DESC LIMIT 100`,
+        [authUserId],
+      ),
+      pool.query(
+        `SELECT id, name, topic, status, created_at AS "createdAt"
+         FROM link_threads
+         WHERE status = 'published' OR ($1::uuid IS NOT NULL AND author_id = $1::uuid)
+         ORDER BY created_at DESC LIMIT 50`,
+        [authUserId],
+      ),
       pool.query(`SELECT id, thread_id AS "threadId", author, text, created_at AS "createdAt" FROM link_messages ORDER BY created_at ASC LIMIT 500`),
       pool.query(
         `SELECT id, full_name AS "fullName", headline, document_id AS "documentId", city, phone, email, availability, salary,
                 summary, experience, education, skills, references_text AS "referencesText", photo_data AS "photoData",
-                attachment_name AS "attachmentName", created_at AS "createdAt", updated_at AS "updatedAt"
+                attachment_name AS "attachmentName", status, created_at AS "createdAt", updated_at AS "updatedAt"
          FROM link_resumes
-         WHERE is_public = true OR ($1::uuid IS NOT NULL AND user_id = $1::uuid)
+         WHERE (is_public = true AND status = 'published') OR ($1::uuid IS NOT NULL AND user_id = $1::uuid)
          ORDER BY updated_at DESC LIMIT 100`,
-        [authUser?.id || null],
+        [authUserId],
       ),
-      pool.query(`SELECT id, company, title, city, salary, contact, description, requirements, created_at AS "createdAt" FROM link_vacancies ORDER BY created_at DESC LIMIT 100`),
+      pool.query(
+        `SELECT id, company, title, city, salary, contact, description, requirements, status, created_at AS "createdAt"
+         FROM link_vacancies
+         WHERE status = 'published' OR ($1::uuid IS NOT NULL AND user_id = $1::uuid)
+         ORDER BY created_at DESC LIMIT 100`,
+        [authUserId],
+      ),
+      readSettings(),
     ]);
 
     const messagesByThread = new Map();
@@ -949,19 +1094,23 @@ async function readData(authUser = null) {
       threads: threads.rows.map((thread) => ({ ...thread, messages: messagesByThread.get(thread.id) || [] })),
       currentUser: authUser,
       storage: storageInfo(),
+      settings,
     };
   }
 
   const data = await readJsonData();
+  const visibleAuthor = (item) => normalizeStatus(item.status) === "published" || (authUser?.id && item.authorId === authUser.id);
+  const visibleOwner = (item) => normalizeStatus(item.status) === "published" || (authUser?.id && item.userId === authUser.id);
   return {
-    news: data.news,
+    news: data.news.filter(visibleAuthor),
     jobs: data.jobs,
-    resumes: data.resumes,
-    vacancies: data.vacancies,
-    products: data.products,
-    threads: data.threads,
+    resumes: data.resumes.filter(visibleOwner),
+    vacancies: data.vacancies.filter(visibleOwner),
+    products: data.products.filter(visibleAuthor),
+    threads: data.threads.filter(visibleAuthor),
     currentUser: authUser,
     storage: storageInfo(),
+    settings: data.settings,
   };
 }
 
@@ -975,12 +1124,13 @@ async function saveNews(body, user) {
     body: bodyText,
     category: text(body.category, 80) || "General",
     contact: text(body.contact, 120),
+    status: newContentStatus(user),
     createdAt: nowStamp(),
   };
   if (dbReady) {
     await pool.query(
-      `INSERT INTO link_news (id, author_id, title, body, category, contact) VALUES ($1, $2, $3, $4, $5, $6)`,
-      [item.id, user.id, item.title, item.body, item.category, item.contact],
+      `INSERT INTO link_news (id, author_id, title, body, category, contact, status) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [item.id, user.id, item.title, item.body, item.category, item.contact, item.status],
     );
   } else {
     const data = await readJsonData();
@@ -1001,13 +1151,14 @@ async function saveProduct(body, user) {
     condition: text(body.condition, 80) || "Disponible",
     description: text(body.description, 500),
     contact: text(body.contact, 160) || user.phone || user.email,
+    status: newContentStatus(user),
     createdAt: nowStamp(),
   };
   if (dbReady) {
     await pool.query(
-      `INSERT INTO link_products (id, author_id, name, price, condition, description, contact)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [item.id, user.id, item.name, item.price, item.condition, item.description, item.contact],
+      `INSERT INTO link_products (id, author_id, name, price, condition, description, contact, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [item.id, user.id, item.name, item.price, item.condition, item.description, item.contact, item.status],
     );
   } else {
     const data = await readJsonData();
@@ -1024,6 +1175,7 @@ async function saveThread(body, user) {
     id: randomUUID(),
     name: publicAuthor(user),
     topic: text(body.topic, 120) || "Conversacion",
+    status: newContentStatus(user),
     createdAt: nowStamp(),
     messages: [
       {
@@ -1035,7 +1187,7 @@ async function saveThread(body, user) {
     ],
   };
   if (dbReady) {
-    await pool.query(`INSERT INTO link_threads (id, author_id, name, topic) VALUES ($1, $2, $3, $4)`, [item.id, user.id, item.name, item.topic]);
+    await pool.query(`INSERT INTO link_threads (id, author_id, name, topic, status) VALUES ($1, $2, $3, $4, $5)`, [item.id, user.id, item.name, item.topic, item.status]);
     await pool.query(
       `INSERT INTO link_messages (id, thread_id, author_id, author, text) VALUES ($1, $2, $3, $4, $5)`,
       [item.messages[0].id, item.id, user.id, item.messages[0].author, item.messages[0].text],
@@ -1098,6 +1250,7 @@ async function saveResume(body, user) {
     photoData: dataText(body.photoData, 2_000_000),
     attachmentName: text(body.attachmentName, 160),
     attachmentData: dataText(body.attachmentData, 4_000_000),
+    status: newContentStatus(user),
     createdAt: nowStamp(),
     updatedAt: nowStamp(),
   };
@@ -1107,12 +1260,12 @@ async function saveResume(body, user) {
     await pool.query(
       `INSERT INTO link_resumes
        (id, user_id, full_name, headline, document_id, city, phone, email, availability, salary, summary, experience,
-        education, skills, references_text, photo_data, attachment_name, attachment_data)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
+        education, skills, references_text, photo_data, attachment_name, attachment_data, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)`,
       [
         item.id, item.userId, item.fullName, item.headline, item.documentId, item.city, item.phone, item.email,
         item.availability, item.salary, item.summary, item.experience, item.education, item.skills,
-        item.referencesText, item.photoData, item.attachmentName, item.attachmentData,
+        item.referencesText, item.photoData, item.attachmentName, item.attachmentData, item.status,
       ],
     );
   } else {
@@ -1139,13 +1292,14 @@ async function saveVacancy(body, user) {
     contact: text(body.contact, 160) || user.phone || user.email,
     description: text(body.description, 1200),
     requirements: text(body.requirements, 1200),
+    status: newContentStatus(user),
     createdAt: nowStamp(),
   };
   if (dbReady) {
     await pool.query(
-      `INSERT INTO link_vacancies (id, user_id, company, title, city, salary, contact, description, requirements)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-      [item.id, item.userId, item.company, item.title, item.city, item.salary, item.contact, item.description, item.requirements],
+      `INSERT INTO link_vacancies (id, user_id, company, title, city, salary, contact, description, requirements, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      [item.id, item.userId, item.company, item.title, item.city, item.salary, item.contact, item.description, item.requirements, item.status],
     );
   } else {
     const data = await readJsonData();
@@ -1161,13 +1315,13 @@ async function getResume(id) {
       `SELECT id, full_name AS "fullName", headline, document_id AS "documentId", city, phone, email, availability, salary,
               summary, experience, education, skills, references_text AS "referencesText", photo_data AS "photoData",
               attachment_name AS "attachmentName", attachment_data AS "attachmentData", created_at AS "createdAt", updated_at AS "updatedAt"
-       FROM link_resumes WHERE id = $1 AND is_public = true`,
+       FROM link_resumes WHERE id = $1 AND is_public = true AND status = 'published'`,
       [id],
     );
     return result.rows[0] || null;
   }
   const data = await readJsonData();
-  return data.resumes.find((item) => item.id === id) || null;
+  return data.resumes.find((item) => item.id === id && normalizeStatus(item.status) === "published") || null;
 }
 
 function resumePrintHtml(resume) {
@@ -1216,6 +1370,143 @@ function resumePrintHtml(resume) {
 </html>`;
 }
 
+const moderationTargets = {
+  news: { table: "link_news", collection: "news" },
+  products: { table: "link_products", collection: "products" },
+  threads: { table: "link_threads", collection: "threads" },
+  resumes: { table: "link_resumes", collection: "resumes" },
+  vacancies: { table: "link_vacancies", collection: "vacancies" },
+};
+
+function adminLabelUser(users, id) {
+  const found = users.find((item) => item.id === id);
+  return found?.displayName || found?.display_name || found?.email || "";
+}
+
+function statusFromAction(action) {
+  if (action === "publish") return "published";
+  if (action === "hide") return "hidden";
+  if (action === "pending") return "pending";
+  fail(400, "Accion no permitida");
+}
+
+async function readAdminState() {
+  const settings = await readSettings();
+  if (dbReady) {
+    const [users, news, products, threads, resumes, vacancies] = await Promise.all([
+      pool.query(
+        `SELECT id, email, account_type AS "accountType", display_name AS "displayName", city, company_name AS "companyName",
+                is_admin AS "isAdmin", created_at AS "createdAt"
+         FROM link_users ORDER BY created_at DESC LIMIT 200`,
+      ),
+      pool.query(
+        `SELECT n.id, n.title, n.category, n.status, n.created_at AS "createdAt", u.display_name AS author
+         FROM link_news n LEFT JOIN link_users u ON u.id = n.author_id
+         ORDER BY n.created_at DESC LIMIT 200`,
+      ),
+      pool.query(
+        `SELECT p.id, p.name AS title, p.condition AS category, p.status, p.created_at AS "createdAt", u.display_name AS author
+         FROM link_products p LEFT JOIN link_users u ON u.id = p.author_id
+         ORDER BY p.created_at DESC LIMIT 200`,
+      ),
+      pool.query(
+        `SELECT t.id, t.topic AS title, 'Conversacion' AS category, t.status, t.created_at AS "createdAt", u.display_name AS author
+         FROM link_threads t LEFT JOIN link_users u ON u.id = t.author_id
+         ORDER BY t.created_at DESC LIMIT 200`,
+      ),
+      pool.query(
+        `SELECT r.id, r.full_name AS title, r.headline AS category, r.status, r.updated_at AS "createdAt", u.display_name AS author
+         FROM link_resumes r LEFT JOIN link_users u ON u.id = r.user_id
+         ORDER BY r.updated_at DESC LIMIT 200`,
+      ),
+      pool.query(
+        `SELECT v.id, v.title, v.company AS category, v.status, v.created_at AS "createdAt", u.display_name AS author
+         FROM link_vacancies v LEFT JOIN link_users u ON u.id = v.user_id
+         ORDER BY v.created_at DESC LIMIT 200`,
+      ),
+    ]);
+    return {
+      settings,
+      users: users.rows,
+      content: {
+        news: news.rows,
+        products: products.rows,
+        threads: threads.rows,
+        resumes: resumes.rows,
+        vacancies: vacancies.rows,
+      },
+      storage: storageInfo(),
+    };
+  }
+
+  const data = await readJsonData();
+  const users = data.users.map((item) => sanitizeUser(item));
+  const author = (item) => adminLabelUser(users, item.authorId || item.userId);
+  const summarize = (items, titleKey, categoryKey) => items.map((item) => ({
+    id: item.id,
+    title: item[titleKey] || item.title || item.name || "",
+    category: item[categoryKey] || item.category || "",
+    status: normalizeStatus(item.status),
+    author: author(item),
+    createdAt: item.updatedAt || item.createdAt || null,
+  }));
+  return {
+    settings: data.settings,
+    users,
+    content: {
+      news: summarize(data.news, "title", "category"),
+      products: summarize(data.products, "name", "condition"),
+      threads: summarize(data.threads, "topic", "name"),
+      resumes: summarize(data.resumes, "fullName", "headline"),
+      vacancies: summarize(data.vacancies, "title", "company"),
+    },
+    storage: storageInfo(),
+  };
+}
+
+async function moderateContent(body) {
+  const type = text(body.type, 40);
+  const id = text(body.id, 80);
+  const action = text(body.action, 40);
+  const target = moderationTargets[type];
+  if (!target || !id) fail(400, "Publicacion no valida");
+
+  if (dbReady) {
+    if (action === "delete") {
+      await pool.query(`DELETE FROM ${target.table} WHERE id = $1`, [id]);
+      return { ok: true };
+    }
+    const status = statusFromAction(action);
+    const result = await pool.query(`UPDATE ${target.table} SET status = $1 WHERE id = $2`, [status, id]);
+    if (!result.rowCount) fail(404, "Publicacion no encontrada");
+    return { ok: true, status };
+  }
+
+  const data = await readJsonData();
+  const list = data[target.collection];
+  const index = list.findIndex((item) => item.id === id);
+  if (index < 0) fail(404, "Publicacion no encontrada");
+  if (action === "delete") {
+    list.splice(index, 1);
+  } else {
+    list[index].status = statusFromAction(action);
+  }
+  await writeJsonData(data);
+  return { ok: true, status: list[index]?.status || "deleted" };
+}
+
+async function updateAdminSettings(body) {
+  const current = await readSettings();
+  const next = { ...current };
+  if (body.clearLogo) {
+    next.logoData = "";
+  } else if (body.logoData) {
+    next.logoData = imageDataText(body.logoData, 3_000_000);
+  }
+  next.updatedAt = nowStamp();
+  return writeSettings(next);
+}
+
 async function readBody(req) {
   const chunks = [];
   let size = 0;
@@ -1262,6 +1553,24 @@ async function handleApi(req, res, url) {
 
   if (req.method === "GET" && url.pathname === "/api/me") {
     json(res, 200, { user: await getAuthUser(req), storage: storageInfo() });
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/admin/state") {
+    await requireAdmin(req);
+    json(res, 200, await readAdminState());
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/admin/moderate") {
+    await requireAdmin(req);
+    json(res, 200, await moderateContent(await readBody(req)));
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/admin/settings") {
+    await requireAdmin(req);
+    json(res, 200, { settings: await updateAdminSettings(await readBody(req)) });
     return;
   }
 

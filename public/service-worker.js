@@ -1,6 +1,7 @@
-const CACHE_NAME = "link-app-v5";
+const CACHE_NAME = "link-app-v7";
 const CORE_ASSETS = [
   "/",
+  "/index.html",
   "/manifest.webmanifest",
   "/logolink.png",
   "/icon-192.png",
@@ -9,7 +10,9 @@ const CORE_ASSETS = [
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS)),
+    caches.open(CACHE_NAME).then((cache) =>
+      cache.addAll(CORE_ASSETS.map((asset) => new Request(asset, { cache: "reload" }))),
+    ),
   );
   self.skipWaiting();
 });
@@ -21,6 +24,10 @@ self.addEventListener("activate", (event) => {
     ),
   );
   self.clients.claim();
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("fetch", (event) => {

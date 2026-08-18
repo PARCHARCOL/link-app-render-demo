@@ -12,6 +12,7 @@ Aplicacion web online para Link con backend Node en Render.
 - Tipo de cuenta: persona natural o empresa.
 - Bolsa de Empleo con hojas de vida, vacantes y CV imprimible en `/cv/:id`.
 - Formularios protegidos para publicar informacion, productos y conversaciones.
+- Modulo Admin para cambiar logo visible, revisar usuarios y aprobar/ocultar/eliminar publicaciones.
 - Persistencia en PostgreSQL cuando existe `DATABASE_URL`; fallback local en `data/link-data.json` para pruebas.
 
 ## Render

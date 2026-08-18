@@ -4,141 +4,169 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Link</title>
-  <meta name="description" content="Link: aplicacion online para informacion oficial, bolsa de empleo, mercado y mensajes del sector.">
-  <meta name="theme-color" content="#050505">
+  <meta name="description" content="Link: aplicacion online para noticias oficiales, bolsa de empleo, mercado, mensajes y administracion del sector.">
+  <meta name="theme-color" content="#ff6a00">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="apple-touch-icon" href="/icon-192.png">
   <link rel="preload" href="/logolink.png" as="image">
   <style>
-    :root{--bg:#050505;--panel:#111112;--panel2:#181819;--field:#202022;--line:#2a2926;--line2:#3a3425;--gold:#caa64c;--gold2:#f0d27a;--text:#f7f3ea;--muted:#aaa39a;--muted2:#77736d;--blue:#6aa7ff;--green:#47c97a;--red:#ff6b61;--shadow:0 20px 70px rgba(0,0,0,.45)}
+    :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
-    html,body{min-height:100%;margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    html,body{min-height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
     button,input,textarea,select{font:inherit}
     button{cursor:pointer}
-    .stage{min-height:100vh;display:grid;place-items:center;padding:22px;background:linear-gradient(160deg,#050505 0%,#0b0b0b 58%,#17130a 100%)}
-    .app{width:min(100%,430px);height:min(860px,calc(100vh - 44px));min-height:690px;overflow:hidden;display:grid;grid-template-rows:auto 1fr auto;background:#050505;border:1px solid #2b2b2b;border-radius:32px;box-shadow:var(--shadow)}
-    .topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 18px 10px;color:#eee7d8;font-size:12px;font-weight:800;border-bottom:1px solid rgba(255,255,255,.04)}
-    .topbar small{color:var(--gold2);font-weight:900}
+    .stage{min-height:100vh;display:grid;place-items:center;padding:20px;background:linear-gradient(135deg,#fffdf8 0%,#fff2e7 46%,#ffd5c2 100%)}
+    .app{width:min(100%,460px);height:min(900px,calc(100vh - 40px));min-height:700px;overflow:hidden;display:grid;grid-template-rows:auto 1fr;background:var(--paper);border:1px solid rgba(215,25,32,.22);border-radius:34px;box-shadow:var(--shadow)}
+    .app-header{padding:10px 14px 12px;background:linear-gradient(180deg,#ffffff 0%,#fff5ed 100%);border-bottom:1px solid var(--line)}
+    .phone-status{display:flex;align-items:center;justify-content:space-between;padding:0 4px 8px;color:#2a211b;font-size:12px;font-weight:900}
+    .phone-status small{color:var(--red);font-weight:900}
+    .brand-row{display:grid;grid-template-columns:58px 1fr;gap:12px;align-items:center;margin-bottom:12px}
+    .brand-mark,.logo-card,.logo-hero{display:grid;place-items:center;overflow:hidden;background:#130d09;border:2px solid #fff;border-radius:18px;box-shadow:0 12px 24px rgba(255,106,0,.24)}
+    .brand-mark{width:58px;height:58px}
+    .brand-mark img,.logo-card img,.logo-hero img,.product-logo img{width:100%;height:100%;object-fit:contain}
+    .brand-copy p{margin:0 0 2px;color:var(--red);font-size:11px;font-weight:900;text-transform:uppercase}
+    .brand-copy strong{display:block;margin:0;color:var(--ink);font-size:25px;line-height:1;font-weight:950}
+    .brand-copy span{display:block;margin-top:4px;color:var(--muted);font-size:12px;line-height:1.28}
+    .tabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(70px,1fr);gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+    .tabs::-webkit-scrollbar{display:none}
+    .menu-btn{min-width:0;display:grid;justify-items:center;gap:5px;padding:7px 5px;color:#6f5b4c;background:transparent;border:0;border-radius:16px}
+    .menu-icon{width:38px;height:38px;display:grid;place-items:center;color:#ffffff;background:linear-gradient(180deg,#ff9b2a,#d71920);border-radius:12px;box-shadow:0 9px 18px rgba(215,25,32,.26);font-size:16px;font-weight:950}
+    .menu-btn span:last-child{max-width:100%;overflow:hidden;font-size:11px;font-weight:900;text-overflow:ellipsis;white-space:nowrap}
+    .menu-btn.active{background:#ffffff;color:var(--red);box-shadow:inset 0 0 0 1px rgba(215,25,32,.16)}
+    .menu-btn.active .menu-icon{background:linear-gradient(180deg,#1476ff,#0042b8)}
+    .download-menu .menu-icon{background:linear-gradient(180deg,#ffd76a,#ff6a00);color:#241407}
     #content{min-height:0;overflow:hidden}
-    .screen{height:100%;overflow-y:auto;padding:16px 18px 22px;scrollbar-width:none}
+    .screen{height:100%;overflow-y:auto;padding:16px 16px 24px;scrollbar-width:none}
     .screen::-webkit-scrollbar{display:none}
-    .splash{height:100%;display:grid;align-content:center;justify-items:center;padding:34px;text-align:center}
-    .logo-hero{width:148px;height:148px;margin-bottom:20px;background:url("/logolink.png") center/contain no-repeat;border-radius:28px;filter:drop-shadow(0 18px 34px rgba(202,166,76,.18))}
-    .splash h1{margin:0;color:var(--gold2);font-size:38px;line-height:1;font-weight:900}
-    .splash p{max-width:260px;margin:12px 0 0;color:var(--muted);font-size:14px;line-height:1.45}
-    .splash-news{width:100%;max-width:300px;margin-top:18px;padding:12px 14px;background:#101010;border:1px solid rgba(202,166,76,.2);border-radius:16px;text-align:left}
-    .splash-news strong,.splash-news span{display:block}
-    .splash-news strong{color:var(--gold2);font-size:12px;text-transform:uppercase}
-    .splash-news span{margin-top:4px;color:var(--muted);font-size:12px;line-height:1.35}
-    .loader{width:118px;height:3px;overflow:hidden;margin-top:24px;background:#1d1d1d;border-radius:999px}
-    .loader::after{content:"";display:block;width:44%;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:999px;animation:load 1.2s ease-in-out infinite}
+    .splash{height:100%;display:grid;align-content:center;justify-items:center;padding:34px;text-align:center;background:linear-gradient(180deg,#fffaf4,#fff1e6)}
+    .logo-hero{width:168px;height:126px;margin-bottom:18px;border-radius:24px}
+    .splash h1{margin:0;color:var(--red);font-size:42px;line-height:1;font-weight:950}
+    .splash p{max-width:280px;margin:12px 0 0;color:var(--muted);font-size:14px;line-height:1.45}
+    .loader{width:132px;height:4px;overflow:hidden;margin-top:24px;background:#f2d4bf;border-radius:999px}
+    .loader::after{content:"";display:block;width:44%;height:100%;background:linear-gradient(90deg,var(--red),var(--orange));border-radius:999px;animation:load 1.1s ease-in-out infinite}
     @keyframes load{0%{transform:translateX(-110%)}100%{transform:translateX(260%)}}
-    .hero{display:grid;grid-template-columns:86px 1fr;gap:14px;align-items:center;margin-bottom:14px}
-    .logo-card{width:86px;height:86px;background:#030303 url("/logolink.png") center/contain no-repeat;border:1px solid rgba(202,166,76,.34);border-radius:20px;box-shadow:0 12px 30px rgba(0,0,0,.28)}
-    .hero-kicker{margin:0 0 3px;color:var(--gold2);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:0}
-    .hero h1{margin:0;color:var(--text);font-size:29px;line-height:1.03;font-weight:900}
+    .hero{display:grid;grid-template-columns:82px 1fr;gap:13px;align-items:center;margin-bottom:13px}
+    .logo-card{width:82px;height:72px;border-radius:18px}
+    .hero-kicker{margin:0 0 3px;color:var(--red);font-size:11px;font-weight:950;text-transform:uppercase}
+    .hero h1{margin:0;color:var(--ink);font-size:29px;line-height:1.02;font-weight:950}
     .hero p{margin:7px 0 0;color:var(--muted);font-size:13px;line-height:1.34}
-    .install-card,.account-card,.locked{display:grid;gap:10px;margin-bottom:14px;padding:12px;background:linear-gradient(180deg,#151411,#0e0e0e);border:1px solid rgba(202,166,76,.18);border-radius:16px}
-    .install-card{grid-template-columns:1fr auto;align-items:center}
-    .install-card strong,.account-card strong,.locked strong{display:block;font-size:13px}
-    .install-card span,.account-card span,.locked span{display:block;margin-top:2px;color:var(--muted);font-size:12px;line-height:1.35}
-    .install-btn,.primary,.secondary{min-height:40px;padding:0 14px;border:0;border-radius:12px;font-weight:900}
-    .install-btn,.primary{color:#171105;background:linear-gradient(180deg,var(--gold2),var(--gold))}
-    .secondary{color:var(--text);background:#202020;border:1px solid #373737}
-    .install-help{display:none;margin:-6px 0 14px;padding:10px 12px;color:#e9dbc0;background:rgba(202,166,76,.08);border:1px solid rgba(202,166,76,.18);border-radius:12px;font-size:12px;line-height:1.35}
-    .install-help.show{display:block}
-    .official-strip{display:grid;gap:9px;margin:-2px 0 14px;padding:12px;background:#0c0c0c;border:1px solid rgba(202,166,76,.2);border-radius:16px}
-    .official-strip-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
-    .official-strip-head strong{color:var(--gold2);font-size:12px;text-transform:uppercase}
-    .official-strip-head span{color:var(--muted2);font-size:11px;font-weight:800}
-    .official-links{display:grid;gap:7px}
-    .official-link{display:grid;gap:2px;padding:9px 10px;color:inherit;text-decoration:none;background:#151515;border:1px solid rgba(255,255,255,.06);border-radius:12px}
-    .official-link strong{color:var(--gold2);font-size:11px}
-    .official-link span{overflow:hidden;color:var(--text);font-size:12px;font-weight:800;line-height:1.25;text-overflow:ellipsis;white-space:nowrap}
-    .official-list{display:grid;gap:10px;margin-bottom:14px}
-    .source-card{display:block;padding:14px;color:inherit;text-decoration:none;background:var(--panel);border:1px solid var(--line);border-radius:16px}
-    .source-card:focus,.source-card:hover{border-color:rgba(202,166,76,.48)}
-    .source-card h3{margin:0;color:var(--text);font-size:15px;line-height:1.25}
-    .source-card p{margin:7px 0 0;color:var(--muted);font-size:13px;line-height:1.38}
-    .origin-link,.text-link{display:inline-flex;margin-top:10px;color:var(--gold2);font-size:12px;font-weight:900;text-decoration:none}
-    details.editor{margin-bottom:14px;background:var(--panel);border:1px solid var(--line);border-radius:16px}
-    details.editor summary{list-style:none;padding:14px 14px;color:var(--text);font-size:14px;font-weight:900}
+    .notice,.error{margin:0 0 13px;padding:11px 12px;border-radius:14px;font-size:12px;line-height:1.35}
+    .notice{color:#5b3100;background:#fff0cc;border:1px solid #ffd37a}
+    .error{display:none;color:#7a090d;background:#ffe6e5;border:1px solid #ffb8b3}
+    .error.show{display:block}
+    .verify-row,.account-card,.locked,.settings-card{display:grid;gap:10px;margin-bottom:13px;padding:13px;background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:0 12px 28px rgba(146,70,18,.08)}
+    .verify-row{grid-template-columns:1fr auto;align-items:center}
+    .verify-row strong,.account-card strong,.locked strong,.settings-card strong{display:block;font-size:13px}
+    .verify-row span,.account-card span,.locked span,.settings-card span{display:block;margin-top:3px;color:var(--muted);font-size:12px;line-height:1.35}
+    .primary,.secondary,.mini-btn,.danger-btn{min-height:40px;padding:0 14px;border:0;border-radius:13px;font-weight:950}
+    .primary,.mini-btn{color:#ffffff;background:linear-gradient(180deg,var(--orange),var(--red))}
+    .secondary{color:var(--red);background:#ffffff;border:1px solid rgba(215,25,32,.26)}
+    .danger-btn{color:#ffffff;background:#9b1118}
+    .mini-btn{display:inline-flex;align-items:center;justify-content:center;min-height:32px;padding:0 10px;font-size:12px;text-decoration:none}
+    .newspaper{display:grid;gap:10px;margin-bottom:15px}
+    .lead-story,.story-card,.source-card,.card{display:block;color:inherit;text-decoration:none;background:#ffffff;border:1px solid var(--line);border-radius:18px;box-shadow:0 12px 26px rgba(146,70,18,.08)}
+    .lead-story{padding:16px;border-left:6px solid var(--red)}
+    .story-list{display:grid;gap:9px}
+    .story-card{padding:13px;border-left:4px solid var(--orange)}
+    .source-card{padding:14px}
+    .lead-story:hover,.story-card:hover,.source-card:hover{border-color:var(--red)}
+    .news-tag,.status-badge{display:inline-flex;align-items:center;min-height:22px;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:950}
+    .news-tag{color:#ffffff;background:linear-gradient(180deg,var(--red2),var(--red))}
+    .status-badge{color:#7a3a00;background:#fff0cc;border:1px solid #ffd28a}
+    .status-badge.published{color:#0d6730;background:#e7f8ee;border-color:#a7dfbd}
+    .status-badge.hidden{color:#6f1720;background:#ffe8e7;border-color:#ffb6b4}
+    .lead-story h2,.story-card h3,.source-card h3,.card h3{margin:8px 0 0;color:var(--ink);line-height:1.18;font-weight:950}
+    .lead-story h2{font-size:24px}
+    .story-card h3,.source-card h3,.card h3{font-size:16px}
+    .lead-story p,.story-card p,.source-card p,.card p{margin:8px 0 0;color:var(--muted);font-size:13px;line-height:1.4;white-space:pre-line}
+    .origin-link,.text-link{display:inline-flex;margin-top:10px;color:var(--red);font-size:12px;font-weight:950;text-decoration:none}
+    details.editor{margin-bottom:13px;background:#ffffff;border:1px solid var(--line);border-radius:18px;box-shadow:0 12px 26px rgba(146,70,18,.07)}
+    details.editor summary{list-style:none;padding:14px;color:var(--ink);font-size:14px;font-weight:950}
     details.editor summary::-webkit-details-marker{display:none}
     details.editor[open] summary{border-bottom:1px solid var(--line)}
     .form{display:grid;gap:10px;padding:12px 14px 14px}
     .split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    input,textarea,select{width:100%;min-width:0;color:var(--text);background:var(--field);border:1px solid #343436;border-radius:12px;outline:0;padding:11px 12px}
+    input,textarea,select{width:100%;min-width:0;color:var(--ink);background:var(--field);border:1px solid #efbea0;border-radius:13px;outline:0;padding:11px 12px}
     input[type="file"]{padding:9px 10px;color:var(--muted);font-size:12px}
     textarea{min-height:92px;resize:vertical}
-    input:focus,textarea:focus,select:focus{border-color:rgba(202,166,76,.58);box-shadow:0 0 0 3px rgba(202,166,76,.1)}
+    input:focus,textarea:focus,select:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(255,106,0,.14)}
     input::placeholder,textarea::placeholder{color:var(--muted2)}
-    .error{display:none;margin:0 0 12px;padding:10px 12px;color:#ffd9d5;background:rgba(255,107,97,.12);border:1px solid rgba(255,107,97,.22);border-radius:12px;font-size:12px}
-    .error.show{display:block}
-    .section-title{display:flex;align-items:end;justify-content:space-between;gap:10px;margin:8px 0 10px}
-    .section-title h2{margin:0;font-size:16px}
-    .section-title small{color:var(--muted2);font-size:12px;font-weight:800}
+    .check{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:12px;font-weight:800}
+    .check input{width:auto}
+    .section-title{display:flex;align-items:end;justify-content:space-between;gap:10px;margin:10px 0 10px}
+    .section-title h2{margin:0;font-size:17px;line-height:1.1}
+    .section-title small{color:var(--muted2);font-size:12px;font-weight:900}
     .stack{display:grid;gap:10px}
-    .empty{display:grid;place-items:center;min-height:110px;padding:18px 14px;color:var(--muted);background:#080808;border:1px dashed #2e2e2e;border-radius:16px;text-align:center;font-size:13px;line-height:1.35}
-    .card{padding:14px;background:var(--panel);border:1px solid var(--line);border-radius:16px}
-    .topline{display:flex;justify-content:space-between;gap:10px;margin-bottom:8px;color:var(--muted);font-size:11px;font-weight:900}
-    .topline strong{color:var(--gold2);white-space:nowrap}
-    .card h3{margin:0;color:var(--text);font-size:16px;line-height:1.22}
-    .card p{margin:7px 0 0;color:var(--muted);font-size:13px;line-height:1.38;white-space:pre-line}
+    .empty{display:grid;place-items:center;min-height:108px;padding:18px 14px;color:var(--muted);background:#fffdf9;border:1px dashed #e9b596;border-radius:18px;text-align:center;font-size:13px;line-height:1.35}
+    .card{padding:14px}
+    .topline{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;color:var(--muted);font-size:11px;font-weight:950}
+    .topline strong{color:var(--red);white-space:nowrap}
     .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
-    .pill{display:inline-flex;align-items:center;min-height:23px;padding:3px 8px;color:#f2ddaa;background:rgba(202,166,76,.1);border:1px solid rgba(202,166,76,.18);border-radius:8px;font-size:11px;font-weight:900}
+    .pill{display:inline-flex;align-items:center;min-height:24px;padding:3px 8px;color:#7a3a00;background:#fff0cc;border:1px solid #ffd28a;border-radius:9px;font-size:11px;font-weight:950}
     .auth-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .profile-row{display:grid;grid-template-columns:54px 1fr;gap:11px;align-items:center}
-    .profile-photo{width:54px;height:62px;display:grid;place-items:center;overflow:hidden;background:#080808;border:1px solid rgba(202,166,76,.2);border-radius:12px;color:var(--gold2);font-weight:900}
+    .profile-row{display:grid;grid-template-columns:56px 1fr;gap:11px;align-items:center}
+    .profile-photo{width:56px;height:64px;display:grid;place-items:center;overflow:hidden;background:#fff1e6;border:1px solid var(--line);border-radius:13px;color:var(--red);font-weight:950}
     .profile-photo img{width:100%;height:100%;object-fit:cover}
     .resume-card{display:grid;gap:12px}
     .action-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-    .mini-btn{display:inline-flex;align-items:center;justify-content:center;min-height:32px;padding:0 10px;color:#171105;background:linear-gradient(180deg,var(--gold2),var(--gold));border-radius:10px;font-size:12px;font-weight:900;text-decoration:none}
     .product-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
     .product{overflow:hidden;padding:0}
-    .product-logo{height:104px;background:#070707 url("/logolink.png") center/64px no-repeat;border-bottom:1px solid var(--line)}
-    .product-body{padding:11px}
+    .product-logo{height:104px;display:grid;place-items:center;overflow:hidden;background:#160e08;border-bottom:1px solid var(--line)}
+    .product-logo img{max-width:92%;max-height:86%;object-fit:contain}
+    .product-body{padding:12px}
     .product h3{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
-    .price{display:block;margin-top:4px;color:var(--gold2);font-size:13px;font-weight:900}
+    .price{display:block;margin-top:4px;color:var(--red);font-size:13px;font-weight:950}
     .threads{display:grid;gap:8px;margin-bottom:12px}
-    .thread{width:100%;display:grid;grid-template-columns:42px 1fr;gap:10px;align-items:center;padding:10px;color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:14px;text-align:left}
-    .thread.active{border-color:rgba(202,166,76,.52);background:#15130e}
-    .avatar{width:42px;height:42px;display:grid;place-items:center;color:#191204;background:linear-gradient(180deg,var(--gold2),var(--gold));border-radius:50%;font-size:16px;font-weight:900}
+    .thread{width:100%;display:grid;grid-template-columns:44px 1fr;gap:10px;align-items:center;padding:10px;color:var(--ink);background:#ffffff;border:1px solid var(--line);border-radius:16px;text-align:left}
+    .thread.active{border-color:var(--red);background:#fff0e3}
+    .avatar{width:44px;height:44px;display:grid;place-items:center;color:#ffffff;background:linear-gradient(180deg,var(--orange),var(--red));border-radius:14px;font-size:16px;font-weight:950}
     .thread strong,.thread small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .thread small{margin-top:3px;color:var(--muted);font-size:12px}
-    .chat{padding:12px;background:var(--panel);border:1px solid var(--line);border-radius:16px}
+    .chat{padding:12px;background:#ffffff;border:1px solid var(--line);border-radius:18px}
     .bubble-stack{display:grid;gap:8px;margin-bottom:10px}
-    .bubble{max-width:86%;justify-self:start;padding:9px 11px;background:var(--field);border-radius:14px}
-    .bubble.mine{justify-self:end;color:#161005;background:linear-gradient(180deg,var(--gold2),var(--gold))}
+    .bubble{max-width:86%;justify-self:start;padding:9px 11px;background:#fff0e3;border-radius:15px}
+    .bubble.mine{justify-self:end;color:#ffffff;background:linear-gradient(180deg,var(--orange),var(--red))}
     .bubble strong{display:block;margin-bottom:3px;color:inherit;opacity:.75;font-size:10px}
     .bubble p{margin:0;font-size:13px;line-height:1.32}
     .inline-form{display:grid;grid-template-columns:1fr auto;gap:8px}
-    .tabs{display:grid;grid-template-columns:repeat(4,1fr);align-items:center;padding:8px 8px 12px;background:#101010;border-top:1px solid #272727}
-    .tab{display:grid;justify-items:center;gap:4px;min-width:0;color:#9f9b93;background:transparent;border:0}
-    .tab i{width:22px;height:22px;display:block;position:relative}
-    .tab i::before,.tab i::after{content:"";position:absolute;inset:4px;border:1.8px solid currentColor;border-radius:5px}
-    .tab[data-tab="empleos"] i::before{border-radius:50% 50% 44% 44%}
-    .tab[data-tab="marketplace"] i::before{inset:5px 3px 4px;border-radius:4px}
-    .tab[data-tab="mensajes"] i::before{border-radius:8px}
-    .tab[data-tab="mensajes"] i::after{inset:auto 4px 2px auto;width:6px;height:6px;border-width:0 1.8px 1.8px 0;border-radius:0;transform:rotate(35deg)}
-    .tab small{max-width:100%;overflow:hidden;font-size:11px;font-weight:800;text-overflow:ellipsis;white-space:nowrap}
-    .tab.active{color:var(--gold2)}
-    @media (max-width:520px){.stage{padding:0;background:#050505}.app{width:100%;height:100vh;min-height:100vh;border:0;border-radius:0}.screen{padding-left:16px;padding-right:16px}.split,.auth-grid{grid-template-columns:1fr}.hero{grid-template-columns:76px 1fr}.logo-card{width:76px;height:76px}.hero h1{font-size:27px}.product-grid{grid-template-columns:1fr}}
+    .admin-grid{display:grid;gap:12px}
+    .admin-list{display:grid;gap:8px}
+    .admin-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:11px;background:#ffffff;border:1px solid var(--line);border-radius:15px}
+    .admin-row h3{margin:0;color:var(--ink);font-size:14px;line-height:1.25}
+    .admin-row p{margin:4px 0 0;color:var(--muted);font-size:12px;line-height:1.28}
+    .admin-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}
+    .admin-actions button{min-height:31px;padding:0 9px;border-radius:10px;font-size:11px}
+    @media (max-width:520px){.stage{padding:0;background:#fff6ef}.app{width:100%;height:100vh;min-height:100vh;border:0;border-radius:0}.screen{padding-left:14px;padding-right:14px}.split,.auth-grid,.verify-row{grid-template-columns:1fr}.hero{grid-template-columns:76px 1fr}.logo-card{width:76px;height:68px}.hero h1{font-size:26px}.product-grid{grid-template-columns:1fr}.admin-row{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
   <main class="stage">
     <section class="app" aria-label="Link">
-      <header class="topbar"><span>9:41</span><small>LINK ONLINE</small></header>
+      <header class="app-header">
+        <div class="phone-status"><span>9:41</span><small>LINK ONLINE</small></div>
+        <div id="headerBrand"></div>
+        <nav class="tabs" aria-label="Navegacion principal"></nav>
+      </header>
       <div id="content"></div>
-      <nav class="tabs" aria-label="Navegacion principal"></nav>
     </section>
   </main>
   <script>
     const authKey = "linkSessionToken";
     let sessionToken = localStorage.getItem(authKey) || "";
+    let active = "inicio";
+    let activeThreadId = "";
+    let installPromptEvent = null;
+    let installMessage = "";
+    let adminState = null;
+    let adminLoading = false;
+    let state = baseState();
+
+    const content = document.querySelector("#content");
+    const nav = document.querySelector(".tabs");
+    const headerBrand = document.querySelector("#headerBrand");
 
     const api = {
       headers() {
@@ -147,15 +175,17 @@
           ...(sessionToken ? { authorization: `Bearer ${sessionToken}` } : {}),
         };
       },
+      async get(path) {
+        const res = await fetch(path, { cache: "no-store", headers: sessionToken ? { authorization: `Bearer ${sessionToken}` } : {} });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || "No se pudo cargar");
+        return data;
+      },
       async state() {
-        const res = await fetch("/api/state", { cache: "no-store", headers: sessionToken ? { authorization: `Bearer ${sessionToken}` } : {} });
-        if (!res.ok) throw new Error("No se pudo cargar la informacion");
-        return res.json();
+        return this.get("/api/state");
       },
       async officialNews(refresh = false) {
-        const res = await fetch(`/api/official-news${refresh ? "?refresh=1" : ""}`, { cache: "no-store" });
-        if (!res.ok) throw new Error("No se pudo consultar el servidor de noticias oficiales");
-        return res.json();
+        return this.get(`/api/official-news${refresh ? "?refresh=1" : ""}`);
       },
       async post(path, payload) {
         const res = await fetch(path, {
@@ -169,19 +199,12 @@
       },
     };
 
-    const tabs = [
-      ["inicio", "Al Dia"],
-      ["empleos", "Bolsa"],
-      ["marketplace", "Mercado"],
-      ["mensajes", "Mensajes"],
+    const mainTabs = [
+      { key: "inicio", label: "Al Dia", icon: "N" },
+      { key: "empleos", label: "Bolsa", icon: "B" },
+      { key: "marketplace", label: "Mercado", icon: "M" },
+      { key: "mensajes", label: "Mensajes", icon: "C" },
     ];
-
-    let active = "inicio";
-    let activeThreadId = "";
-    let installPromptEvent = null;
-    let state = baseState();
-    const content = document.querySelector("#content");
-    const nav = document.querySelector(".tabs");
 
     window.addEventListener("beforeinstallprompt", (event) => {
       event.preventDefault();
@@ -190,8 +213,26 @@
     });
 
     if ("serviceWorker" in navigator) {
+      let reloadingForUpdate = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (reloadingForUpdate) return;
+        reloadingForUpdate = true;
+        window.location.reload();
+      });
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("/service-worker.js").catch(() => {});
+        navigator.serviceWorker.register("/service-worker.js").then((registration) => {
+          registration.update().catch(() => {});
+          if (registration.waiting) registration.waiting.postMessage({ type: "SKIP_WAITING" });
+          registration.addEventListener("updatefound", () => {
+            const worker = registration.installing;
+            if (!worker) return;
+            worker.addEventListener("statechange", () => {
+              if (worker.state === "installed" && navigator.serviceWorker.controller) {
+                worker.postMessage({ type: "SKIP_WAITING" });
+              }
+            });
+          });
+        }).catch(() => {});
       });
     }
 
@@ -209,6 +250,7 @@
         officialSources: [],
         currentUser: null,
         storage: { mode: "json", dbConfigured: false, dbReady: false },
+        settings: { logoData: "", updatedAt: null },
       };
     }
 
@@ -232,56 +274,82 @@
       return state.currentUser || null;
     }
 
+    function isAdmin() {
+      return Boolean(user()?.isAdmin);
+    }
+
+    function logoSrc() {
+      return state.settings?.logoData || "/logolink.png";
+    }
+
+    function logoImg(className, alt = "Link") {
+      return `<div class="${className}"><img src="${esc(logoSrc())}" alt="${esc(alt)}"></div>`;
+    }
+
+    function statusText(status) {
+      if (status === "pending") return "Pendiente";
+      if (status === "hidden") return "Oculto";
+      return "Publicado";
+    }
+
+    function statusBadge(status) {
+      const clean = status || "published";
+      return `<span class="status-badge ${esc(clean)}">${esc(statusText(clean))}</span>`;
+    }
+
     function officialItems() {
       return Array.isArray(state.officialNews) ? state.officialNews : [];
     }
 
-    function officialStrip() {
-      const items = officialItems().slice(0, 3);
-      const status = state.officialNewsError || "Consultando Coljuegos, UIAF, Supersalud y DIAN";
-      if (!items.length) {
-        return `<div class="official-strip"><div class="official-strip-head"><strong>Fuentes oficiales</strong><span>${esc(status)}</span></div></div>`;
-      }
-      return `<div class="official-strip">
-        <div class="official-strip-head"><strong>Fuentes oficiales</strong><span>${esc(dateTimeLabel(state.officialNewsUpdatedAt))}</span></div>
-        <div class="official-links">
-          ${items.map((item) => `<a class="official-link" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer"><strong>${esc(item.entity)}</strong><span>${esc(item.title)}</span></a>`).join("")}
-        </div>
+    function installNotice() {
+      return installMessage ? `<p class="notice">${esc(installMessage)}</p>` : "";
+    }
+
+    function renderHeader() {
+      const verified = state.officialNewsUpdatedAt ? `Fuentes verificadas ${dateTimeLabel(state.officialNewsUpdatedAt)}` : "Consultando fuentes oficiales";
+      headerBrand.innerHTML = `<div class="brand-row">
+        ${logoImg("brand-mark")}
+        <div class="brand-copy"><p>Link</p><strong>Al Dia</strong><span>${esc(verified)}</span></div>
       </div>`;
     }
 
-    function hero(title, subtitle, showOfficial = false) {
-      return `<div class="hero"><div class="logo-card" role="img" aria-label="Logo Link"></div><div><p class="hero-kicker">Link</p><h1>${esc(title)}</h1><p>${esc(subtitle)}</p></div></div>${showOfficial ? officialStrip() : ""}${installCard()}`;
-    }
-
-    function installCard() {
-      return `<div class="install-card"><div><strong>Instalar Link</strong><span>Agregala al celular como app.</span></div><button class="install-btn" type="button" id="installButton">Descargar app</button></div><p class="install-help" id="installHelp"></p>`;
-    }
-
-    async function installApp() {
-      const help = document.querySelector("#installHelp");
-      if (installPromptEvent) {
-        installPromptEvent.prompt();
-        await installPromptEvent.userChoice.catch(() => {});
-        installPromptEvent = null;
-        return;
-      }
-      if (help) {
-        help.textContent = /iphone|ipad|ipod/i.test(navigator.userAgent)
-          ? "En iPhone abre esta pagina en Safari, toca Compartir y luego Agregar a pantalla de inicio."
-          : "Si no aparece el instalador, abre el menu del navegador y elige Instalar app o Agregar a pantalla principal.";
-        help.classList.add("show");
-      }
+    function menuItems() {
+      const items = [...mainTabs];
+      if (isAdmin()) items.push({ key: "admin", label: "Admin", icon: "A" });
+      return items;
     }
 
     function renderTabs() {
-      nav.innerHTML = tabs.map((tab) => `<button class="tab ${active === tab[0] ? "active" : ""}" data-tab="${tab[0]}" type="button"><i aria-hidden="true"></i><small>${tab[1]}</small></button>`).join("");
-      nav.querySelectorAll("button").forEach((button) => {
+      if (active === "admin" && !isAdmin()) active = "inicio";
+      nav.innerHTML = `${menuItems().map((tab) => `
+        <button class="menu-btn ${active === tab.key ? "active" : ""}" data-tab="${tab.key}" type="button">
+          <span class="menu-icon">${esc(tab.icon)}</span><span>${esc(tab.label)}</span>
+        </button>`).join("")}
+        <button class="menu-btn download-menu" data-install="1" type="button">
+          <span class="menu-icon">D</span><span>Descargar</span>
+        </button>`;
+      nav.querySelectorAll("[data-tab]").forEach((button) => {
         button.onclick = () => {
           active = button.dataset.tab;
           render();
         };
       });
+      nav.querySelector("[data-install]").onclick = installApp;
+    }
+
+    async function installApp() {
+      if (installPromptEvent) {
+        installPromptEvent.prompt();
+        await installPromptEvent.userChoice.catch(() => {});
+        installPromptEvent = null;
+        installMessage = "Si aceptaste, Link quedo agregada al celular como app.";
+        render();
+        return;
+      }
+      installMessage = /iphone|ipad|ipod/i.test(navigator.userAgent)
+        ? "En iPhone abre Link en Safari, toca Compartir y luego Agregar a pantalla de inicio."
+        : "Si no aparece el instalador, abre el menu del navegador y elige Instalar app o Agregar a pantalla principal.";
+      render();
     }
 
     function formError(message = "") {
@@ -292,12 +360,16 @@
       return `<div class="empty">${esc(text)}</div>`;
     }
 
-    function editor(summary, action, fields) {
-      return `<details class="editor"><summary>${esc(summary)}</summary><form class="form" data-action="${action}">${fields}<button class="primary" type="submit">Guardar</button></form></details>`;
+    function editor(summary, action, fields, open = false) {
+      return `<details class="editor" ${open ? "open" : ""}><summary>${esc(summary)}</summary><form class="form" data-action="${action}">${fields}<button class="primary" type="submit">Guardar</button></form></details>`;
     }
 
     function locked(label) {
       return `<div class="locked"><strong>Cuenta requerida</strong><span>${esc(label)}</span></div>`;
+    }
+
+    function hero(title, subtitle) {
+      return `${installNotice()}<div class="hero">${logoImg("logo-card")}<div><p class="hero-kicker">Link</p><h1>${esc(title)}</h1><p>${esc(subtitle)}</p></div></div>`;
     }
 
     function accountPanel() {
@@ -305,7 +377,7 @@
       if (current) {
         const type = current.accountType === "company" ? "Empresa" : "Persona natural";
         return `<div class="account-card">
-          <div><strong>${esc(current.displayName)}</strong><span>${esc(type)} · ${esc(current.email)} · ${esc(state.storage?.mode === "postgres" ? "PostgreSQL" : "JSON local")}</span></div>
+          <div><strong>${esc(current.displayName)}</strong><span>${esc(type)} | ${esc(current.email)} | ${esc(state.storage?.mode === "postgres" ? "PostgreSQL" : "JSON local")}${current.isAdmin ? " | Admin" : ""}</span></div>
           <button class="secondary" type="button" id="logoutButton">Cerrar sesion</button>
         </div>`;
       }
@@ -345,25 +417,45 @@
       </div>`;
     }
 
-    function renderInicio() {
+    function renderOfficialNews() {
       const official = officialItems();
-      const officialList = official.length ? official.map((item) => `
-        <a class="source-card" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">
-          <div class="topline"><span>${esc(item.entity)}</span><strong>ORIGEN</strong></div>
-          <h3>${esc(item.title)}</h3>
-          ${item.summary ? `<p>${esc(item.summary)}</p>` : ""}
-          <span class="origin-link">Abrir en ${esc(item.entity)}</span>
-        </a>`).join("") : empty(state.officialNewsError || "Aun no se encontraron publicaciones oficiales con palabras de casinos o juegos localizados.");
+      if (!official.length) {
+        return empty(state.officialNewsError || "Aun no se encontraron publicaciones oficiales con palabras de casinos o juegos localizados.");
+      }
+      const lead = official[0];
+      const rest = official.slice(1, 7);
+      return `<div class="newspaper">
+        <a class="lead-story" href="${esc(lead.url)}" target="_blank" rel="noopener noreferrer">
+          <span class="news-tag">${esc(lead.entity)}</span>
+          <h2>${esc(lead.title)}</h2>
+          ${lead.summary ? `<p>${esc(lead.summary)}</p>` : ""}
+          <span class="origin-link">Abrir fuente oficial</span>
+        </a>
+        <div class="story-list">
+          ${rest.map((item) => `<a class="story-card" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">
+            <span class="news-tag">${esc(item.entity)}</span>
+            <h3>${esc(item.title)}</h3>
+            ${item.summary ? `<p>${esc(item.summary)}</p>` : ""}
+            <span class="origin-link">Ver en origen</span>
+          </a>`).join("")}
+        </div>
+      </div>`;
+    }
+
+    function renderInicio() {
       const list = state.news.length ? state.news.map((item) => `
         <article class="card">
           <div class="topline"><span>${esc(item.category)}</span><strong>${esc(dateLabel(item.createdAt))}</strong></div>
           <h3>${esc(item.title)}</h3>
           <p>${esc(item.body)}</p>
-          <div class="meta">${item.contact ? `<span class="pill">Fuente: ${esc(item.contact)}</span>` : ""}</div>
-        </article>`).join("") : empty("Aun no hay publicaciones internas.");
-      return `<section class="screen">${hero("Al Dia", "Informacion oficial y publicaciones de interes del sector.", true)}
-        <div class="section-title"><h2>Fuentes oficiales</h2><small>${official.length}</small></div>
-        <div class="official-list">${officialList}</div>
+          <div class="meta">${statusBadge(item.status)}${item.contact ? `<span class="pill">Fuente: ${esc(item.contact)}</span>` : ""}</div>
+        </article>`).join("") : empty("Aun no hay publicaciones internas aprobadas.");
+      return `<section class="screen">${hero("Noticias oficiales", "Informacion de Coljuegos, UIAF, Supersalud y DIAN filtrada para casinos y juegos localizados.")}
+        <div class="verify-row">
+          <div><strong>Portada oficial</strong><span>${esc(state.officialNewsError || `Ultima verificacion: ${dateTimeLabel(state.officialNewsUpdatedAt)}`)}</span></div>
+          <button class="secondary" type="button" id="refreshOfficialButton">Verificar ahora</button>
+        </div>
+        ${renderOfficialNews()}
         ${formError()}
         ${user() ? editor("Nueva informacion interna", "/api/news", `
           <input name="title" placeholder="Titulo de la noticia, resolucion o comunicado" required>
@@ -378,7 +470,7 @@
             <input name="contact" placeholder="Fuente o enlace oficial">
           </div>
           <textarea name="body" placeholder="Resumen o contenido" required></textarea>
-        `) : locked("Inicia sesion para publicar informacion interna.")}
+        `) : locked("Inicia sesion para publicar informacion interna. El admin debe aprobar lo que no sea oficial.")}
         <div class="section-title"><h2>Publicaciones internas</h2><small>${state.news.length}</small></div>
         <div class="stack">${list}</div>
       </section>`;
@@ -402,13 +494,13 @@
           </div>
           ${item.summary ? `<p>${esc(item.summary)}</p>` : ""}
           <div class="meta">
+            ${statusBadge(item.status)}
             ${item.phone ? `<span class="pill">${esc(item.phone)}</span>` : ""}
             ${item.email ? `<span class="pill">${esc(item.email)}</span>` : ""}
             ${item.availability ? `<span class="pill">${esc(item.availability)}</span>` : ""}
           </div>
-          <div class="action-row"><a class="mini-btn" href="/cv/${esc(item.id)}" target="_blank" rel="noopener noreferrer">Imprimir CV</a></div>
-        </article>`).join("") : empty("Aun no hay hojas de vida publicadas.");
-
+          ${item.status === "published" ? `<div class="action-row"><a class="mini-btn" href="/cv/${esc(item.id)}" target="_blank" rel="noopener noreferrer">Imprimir CV</a></div>` : ""}
+        </article>`).join("") : empty("Aun no hay hojas de vida aprobadas.");
       const vacancies = state.vacancies.length ? state.vacancies.map((item) => `
         <article class="card">
           <div class="topline"><span>${esc(item.city || "Sin ciudad")}</span><strong>${esc(dateLabel(item.createdAt))}</strong></div>
@@ -417,11 +509,11 @@
           ${item.description ? `<p>${esc(item.description)}</p>` : ""}
           ${item.requirements ? `<p>${esc(item.requirements)}</p>` : ""}
           <div class="meta">
+            ${statusBadge(item.status)}
             ${item.salary ? `<span class="pill">${esc(item.salary)}</span>` : ""}
             ${item.contact ? `<span class="pill">${esc(item.contact)}</span>` : ""}
           </div>
-        </article>`).join("") : empty("Aun no hay vacantes publicadas.");
-
+        </article>`).join("") : empty("Aun no hay vacantes aprobadas.");
       const personForm = editor("Crear hoja de vida", "/api/resumes", `
         <input name="photoFile" type="file" accept="image/*">
         <input name="fullName" placeholder="Nombre completo" required>
@@ -445,7 +537,6 @@
         <textarea name="referencesText" placeholder="Referencias"></textarea>
         <input name="attachmentFile" type="file" accept="application/pdf,.pdf">
       `);
-
       const companyForm = editor("Publicar vacante", "/api/vacancies", `
         <input name="company" placeholder="Empresa" required>
         <input name="title" placeholder="Cargo requerido" required>
@@ -457,11 +548,9 @@
         <textarea name="description" placeholder="Descripcion del cargo"></textarea>
         <textarea name="requirements" placeholder="Requisitos"></textarea>
       `);
-
       const publishBlock = current
         ? `${current.accountType === "company" ? companyForm : personForm}`
         : locked("Crea una cuenta para subir hoja de vida o publicar vacantes.");
-
       return `<section class="screen">${hero("Bolsa de Empleo", "Hojas de vida, vacantes y contactos profesionales del sector.")}
         ${formError()}
         ${accountPanel()}
@@ -476,14 +565,14 @@
     function renderMarketplace() {
       const list = state.products.length ? state.products.map((item) => `
         <article class="card product">
-          <div class="product-logo" aria-hidden="true"></div>
+          <div class="product-logo" aria-hidden="true"><img src="${esc(logoSrc())}" alt=""></div>
           <div class="product-body">
             <h3>${esc(item.name)}</h3>
             <strong class="price">${esc(item.price)}</strong>
             <p>${esc(item.description || "")}</p>
-            <div class="meta"><span class="pill">${esc(item.condition)}</span>${item.contact ? `<span class="pill">${esc(item.contact)}</span>` : ""}</div>
+            <div class="meta">${statusBadge(item.status)}<span class="pill">${esc(item.condition)}</span>${item.contact ? `<span class="pill">${esc(item.contact)}</span>` : ""}</div>
           </div>
-        </article>`).join("") : empty("Aun no hay productos publicados.");
+        </article>`).join("") : empty("Aun no hay productos aprobados.");
       return `<section class="screen">${hero("Mercado", "Clasificados de equipos, repuestos y servicios del sector.")}
         ${formError()}
         ${accountPanel()}
@@ -513,8 +602,8 @@
       const threads = state.threads.length ? state.threads.map((thread) => `
         <button class="thread ${thread.id === activeThreadId ? "active" : ""}" data-thread="${esc(thread.id)}" type="button">
           <div class="avatar">${esc(thread.name[0] || "L")}</div>
-          <div><strong>${esc(thread.name)}</strong><small>${esc(thread.topic)}</small></div>
-        </button>`).join("") : empty("Aun no hay conversaciones.");
+          <div><strong>${esc(thread.name)}</strong><small>${esc(thread.topic)} | ${esc(statusText(thread.status))}</small></div>
+        </button>`).join("") : empty("Aun no hay conversaciones aprobadas.");
       const chat = activeThread ? `
         <div class="chat">
           <div class="bubble-stack">
@@ -532,6 +621,63 @@
         <div class="section-title"><h2>Conversaciones</h2><small>${state.threads.length}</small></div>
         <div class="threads">${threads}</div>
         ${chat}
+      </section>`;
+    }
+
+    function adminRow(type, item) {
+      return `<div class="admin-row">
+        <div>
+          <h3>${esc(item.title || "Sin titulo")}</h3>
+          <p>${esc(item.category || "General")} | ${esc(item.author || "Sin autor")} | ${esc(dateLabel(item.createdAt))} ${statusBadge(item.status)}</p>
+        </div>
+        <div class="admin-actions">
+          <button class="secondary" data-admin-action="publish" data-type="${esc(type)}" data-id="${esc(item.id)}" type="button">Aprobar</button>
+          <button class="secondary" data-admin-action="hide" data-type="${esc(type)}" data-id="${esc(item.id)}" type="button">Ocultar</button>
+          <button class="danger-btn" data-admin-action="delete" data-type="${esc(type)}" data-id="${esc(item.id)}" type="button">Eliminar</button>
+        </div>
+      </div>`;
+    }
+
+    function renderAdminGroup(type, label) {
+      const items = adminState?.content?.[type] || [];
+      return `<details class="editor" open>
+        <summary>${esc(label)} (${items.length})</summary>
+        <div class="form admin-list">${items.length ? items.map((item) => adminRow(type, item)).join("") : empty("No hay contenido en esta seccion.")}</div>
+      </details>`;
+    }
+
+    function renderAdmin() {
+      if (!user()) {
+        return `<section class="screen">${hero("Admin", "Control de marca, usuarios y publicaciones.")}${accountPanel()}</section>`;
+      }
+      if (!isAdmin()) {
+        return `<section class="screen">${hero("Admin", "Control de marca, usuarios y publicaciones.")}${locked("Tu cuenta no tiene permisos de administrador.")}</section>`;
+      }
+      if (!adminState && !adminLoading) loadAdminState();
+      const body = adminState ? `<div class="admin-grid">
+        <div class="settings-card">
+          <strong>Marca Link</strong>
+          <span>Cambia el logo visible en la app. El logo base del servidor queda como respaldo.</span>
+          <form class="form" data-admin-settings>
+            <input name="logoFile" type="file" accept="image/png,image/jpeg,image/webp">
+            <label class="check"><input name="clearLogo" type="checkbox"> Restaurar logo base</label>
+            <button class="primary" type="submit">Guardar logo</button>
+          </form>
+        </div>
+        ${renderAdminGroup("news", "Noticias internas")}
+        ${renderAdminGroup("resumes", "Hojas de vida")}
+        ${renderAdminGroup("vacancies", "Vacantes")}
+        ${renderAdminGroup("products", "Mercado")}
+        ${renderAdminGroup("threads", "Conversaciones")}
+        <details class="editor">
+          <summary>Usuarios (${adminState.users?.length || 0})</summary>
+          <div class="form admin-list">${(adminState.users || []).map((item) => `<div class="admin-row"><div><h3>${esc(item.displayName || item.email)}</h3><p>${esc(item.email)} | ${esc(item.accountType)}${item.isAdmin ? " | Admin" : ""}</p></div></div>`).join("")}</div>
+        </details>
+      </div>` : empty("Cargando panel de administracion.");
+      return `<section class="screen">${hero("Admin", "Moderacion de publicaciones, usuarios y marca.")}
+        ${formError()}
+        ${accountPanel()}
+        ${body}
       </section>`;
     }
 
@@ -566,8 +712,8 @@
     }
 
     function bindForms() {
-      const installButton = document.querySelector("#installButton");
-      if (installButton) installButton.onclick = installApp;
+      const refreshButton = document.querySelector("#refreshOfficialButton");
+      if (refreshButton) refreshButton.onclick = refreshOfficialNews;
       const logoutButton = document.querySelector("#logoutButton");
       if (logoutButton) logoutButton.onclick = logout;
       document.querySelectorAll("form[data-auth]").forEach((form) => {
@@ -587,6 +733,15 @@
           event.preventDefault();
           await save(`/api/threads/${form.dataset.message}/messages`, await payloadFromForm(form));
         };
+      });
+      document.querySelectorAll("form[data-admin-settings]").forEach((form) => {
+        form.onsubmit = async (event) => {
+          event.preventDefault();
+          await saveAdminSettings(form);
+        };
+      });
+      document.querySelectorAll("[data-admin-action]").forEach((button) => {
+        button.onclick = () => moderate(button.dataset.type, button.dataset.id, button.dataset.adminAction);
       });
       document.querySelectorAll(".thread[data-thread]").forEach((button) => {
         button.onclick = () => {
@@ -610,6 +765,7 @@
         sessionToken = data.token;
         localStorage.setItem(authKey, sessionToken);
         state = await api.state();
+        adminState = null;
         render();
       } catch (error) {
         showError(error);
@@ -622,6 +778,8 @@
       } catch {}
       sessionToken = "";
       localStorage.removeItem(authKey);
+      adminState = null;
+      active = active === "admin" ? "inicio" : active;
       state = await api.state().catch(() => ({ ...baseState(), officialNews: state.officialNews, officialNewsUpdatedAt: state.officialNewsUpdatedAt }));
       render();
     }
@@ -630,24 +788,17 @@
       try {
         await api.post(path, payload);
         state = await api.state();
+        adminState = null;
         render();
       } catch (error) {
         showError(error);
       }
     }
 
-    function render() {
-      renderTabs();
-      if (active === "inicio") content.innerHTML = renderInicio();
-      if (active === "empleos") content.innerHTML = renderBolsa();
-      if (active === "marketplace") content.innerHTML = renderMarketplace();
-      if (active === "mensajes") content.innerHTML = renderMensajes();
-      bindForms();
-    }
-
-    async function hydrateOfficialNews() {
-      if (officialItems().length || state.officialNewsError) return;
+    async function refreshOfficialNews() {
       try {
+        const button = document.querySelector("#refreshOfficialButton");
+        if (button) button.textContent = "Verificando...";
         const official = await api.officialNews(true);
         state = {
           ...state,
@@ -656,20 +807,75 @@
           officialNewsError: official.error || null,
           officialSources: official.sources || [],
         };
+        render();
       } catch {
-        state = {
-          ...state,
-          officialNews: [],
-          officialNewsUpdatedAt: null,
-          officialNewsError: "Backend no conectado. Esta pantalla no esta recibiendo datos del servidor.",
-        };
+        state = { ...state, officialNewsError: "No se pudo verificar en este momento. Intenta de nuevo." };
+        render();
       }
-      if (active === "inicio") render();
+    }
+
+    async function loadAdminState() {
+      adminLoading = true;
+      try {
+        adminState = await api.get("/api/admin/state");
+      } catch (error) {
+        adminState = { error: error.message, users: [], content: {} };
+      } finally {
+        adminLoading = false;
+        if (active === "admin") render();
+      }
+    }
+
+    async function moderate(type, id, action) {
+      try {
+        await api.post("/api/admin/moderate", { type, id, action });
+        adminState = await api.get("/api/admin/state");
+        state = await api.state();
+        render();
+      } catch (error) {
+        showError(error);
+      }
+    }
+
+    async function saveAdminSettings(form) {
+      try {
+        const formData = new FormData(form);
+        const logoFile = formData.get("logoFile");
+        const clearLogo = formData.get("clearLogo") === "on";
+        const payload = { clearLogo };
+        if (logoFile instanceof File && logoFile.name) {
+          if (logoFile.size > 2_500_000) throw new Error("El logo debe pesar menos de 2.5 MB");
+          payload.logoData = await fileToDataUrl(logoFile);
+        }
+        const result = await api.post("/api/admin/settings", payload);
+        state = { ...state, settings: result.settings || state.settings };
+        adminState = await api.get("/api/admin/state");
+        render();
+      } catch (error) {
+        showError(error);
+      }
+    }
+
+    function render() {
+      renderHeader();
+      renderTabs();
+      if (active === "inicio") content.innerHTML = renderInicio();
+      if (active === "empleos") content.innerHTML = renderBolsa();
+      if (active === "marketplace") content.innerHTML = renderMarketplace();
+      if (active === "mensajes") content.innerHTML = renderMensajes();
+      if (active === "admin") content.innerHTML = renderAdmin();
+      bindForms();
+    }
+
+    async function hydrateOfficialNews() {
+      if (officialItems().length || state.officialNewsError) return;
+      await refreshOfficialNews();
     }
 
     async function boot() {
+      renderHeader();
       renderTabs();
-      content.innerHTML = `<section class="screen splash"><div class="logo-hero" role="img" aria-label="Logo Link"></div><h1>Link</h1><p>Cargando la aplicacion...</p><div class="splash-news"><strong>Al Dia</strong><span>Consultando publicaciones oficiales de Coljuegos, UIAF, Supersalud y DIAN.</span></div><div class="loader"></div></section>`;
+      content.innerHTML = `<section class="screen splash">${logoImg("logo-hero")}<h1>Link</h1><p>Cargando noticias oficiales y publicaciones aprobadas.</p><div class="loader"></div></section>`;
       try {
         state = await api.state();
       } catch {

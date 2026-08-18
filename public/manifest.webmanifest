@@ -1,12 +1,12 @@
 {
   "name": "Link",
   "short_name": "Link",
-  "description": "Aplicacion online de informacion oficial, bolsa de empleo, mercado y mensajes para la red Link.",
+  "description": "Aplicacion online de noticias oficiales, bolsa de empleo, mercado, mensajes y administracion para la red Link.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#050505",
-  "theme_color": "#050505",
+  "background_color": "#fff6ef",
+  "theme_color": "#ff6a00",
   "orientation": "portrait",
   "icons": [
     {
