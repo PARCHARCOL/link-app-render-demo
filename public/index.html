@@ -209,6 +209,7 @@
       { key: "empleos", label: "Bolsa", icon: "B" },
       { key: "marketplace", label: "Mercado", icon: "M" },
       { key: "mensajes", label: "Mensajes", icon: "C" },
+      { key: "cuenta", label: "Cuenta", icon: "U" },
     ];
 
     window.addEventListener("beforeinstallprompt", (event) => {
@@ -395,6 +396,14 @@
       return `<div class="locked"><strong>Cuenta requerida</strong><span>${esc(label)}</span></div>`;
     }
 
+    function accountCta(label) {
+      return `<div class="locked">
+        <strong>Cuenta requerida</strong>
+        <span>${esc(label)}</span>
+        <button class="primary" type="button" data-go-account="1">Crear cuenta o ingresar</button>
+      </div>`;
+    }
+
     function hero(title, subtitle) {
       return `${updateNotice()}${installNotice()}<div class="hero">${logoImg("logo-card")}<div><p class="hero-kicker">Link</p><h1>${esc(title)}</h1><p>${esc(subtitle)}</p></div></div>`;
     }
@@ -497,7 +506,7 @@
             <input name="contact" placeholder="Fuente o enlace oficial">
           </div>
           <textarea name="body" placeholder="Resumen o contenido" required></textarea>
-        `) : locked("Inicia sesion para publicar informacion interna. El admin debe aprobar lo que no sea oficial.")}
+        `) : accountCta("Inicia sesion para publicar informacion interna. El admin debe aprobar lo que no sea oficial.")}
         <div class="section-title"><h2>Publicaciones internas</h2><small>${state.news.length}</small></div>
         <div class="stack">${list}</div>
       </section>`;
@@ -577,10 +586,9 @@
       `);
       const publishBlock = current
         ? `${current.accountType === "company" ? companyForm : personForm}`
-        : locked("Crea una cuenta para subir hoja de vida o publicar vacantes.");
+        : accountCta("Crea una cuenta para subir hoja de vida o publicar vacantes.");
       return `<section class="screen">${hero("Bolsa de Empleo", "Hojas de vida, vacantes y contactos profesionales del sector.")}
         ${formError()}
-        ${accountPanel()}
         ${publishBlock}
         <div class="section-title"><h2>Hojas de vida</h2><small>${state.resumes.length}</small></div>
         <div class="stack">${resumes}</div>
@@ -602,7 +610,6 @@
         </article>`).join("") : empty("Aun no hay productos aprobados.");
       return `<section class="screen">${hero("Mercado", "Clasificados de equipos, repuestos y servicios del sector.")}
         ${formError()}
-        ${accountPanel()}
         ${user() ? editor("Publicar producto o servicio", "/api/products", `
           <input name="name" placeholder="Producto o servicio" required>
           <div class="split">
@@ -617,7 +624,7 @@
           </div>
           <input name="contact" placeholder="Contacto">
           <textarea name="description" placeholder="Descripcion"></textarea>
-        `) : locked("Inicia sesion para publicar en el mercado.")}
+        `) : accountCta("Inicia sesion para publicar en el mercado.")}
         <div class="section-title"><h2>Publicaciones</h2><small>${state.products.length}</small></div>
         <div class="product-grid">${list}</div>
       </section>`;
@@ -636,18 +643,24 @@
           <div class="bubble-stack">
             ${(activeThread.messages || []).map((message) => `<div class="bubble ${user() && message.author === user().displayName ? "mine" : ""}"><strong>${esc(message.author)}</strong><p>${esc(message.text)}</p></div>`).join("")}
           </div>
-          ${user() ? `<form class="inline-form" data-message="${esc(activeThread.id)}"><input name="message" placeholder="Mensaje" required><button class="primary" type="submit">Enviar</button></form>` : locked("Inicia sesion para responder.")}
+          ${user() ? `<form class="inline-form" data-message="${esc(activeThread.id)}"><input name="message" placeholder="Mensaje" required><button class="primary" type="submit">Enviar</button></form>` : accountCta("Inicia sesion para responder.")}
         </div>` : "";
       return `<section class="screen">${hero("Mensajes", "Conversaciones internas y contactos de la red Link.")}
         ${formError()}
-        ${accountPanel()}
         ${user() ? editor("Nueva conversacion", "/api/threads", `
           <input name="topic" placeholder="Tema">
           <textarea name="message" placeholder="Mensaje inicial" required></textarea>
-        `) : locked("Inicia sesion para crear conversaciones.")}
+        `) : accountCta("Inicia sesion para crear conversaciones.")}
         <div class="section-title"><h2>Conversaciones</h2><small>${state.threads.length}</small></div>
         <div class="threads">${threads}</div>
         ${chat}
+      </section>`;
+    }
+
+    function renderCuenta() {
+      return `<section class="screen">${hero("Cuenta", "Registro, ingreso y datos de contacto para publicar en Link.")}
+        ${formError()}
+        ${accountPanel()}
       </section>`;
     }
 
@@ -741,6 +754,12 @@
     function bindForms() {
       const updateAppButton = document.querySelector("#updateAppButton");
       if (updateAppButton) updateAppButton.onclick = updateAppNow;
+      document.querySelectorAll("[data-go-account]").forEach((button) => {
+        button.onclick = () => {
+          active = "cuenta";
+          render();
+        };
+      });
       const refreshButton = document.querySelector("#refreshOfficialButton");
       if (refreshButton) refreshButton.onclick = refreshOfficialNews;
       const logoutButton = document.querySelector("#logoutButton");
@@ -892,6 +911,7 @@
       if (active === "empleos") content.innerHTML = renderBolsa();
       if (active === "marketplace") content.innerHTML = renderMarketplace();
       if (active === "mensajes") content.innerHTML = renderMensajes();
+      if (active === "cuenta") content.innerHTML = renderCuenta();
       if (active === "admin") content.innerHTML = renderAdmin();
       bindForms();
     }
