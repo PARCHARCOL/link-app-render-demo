@@ -9,9 +9,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v25">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v25">
-  <link rel="preload" href="/logolink.png?v=link-app-v25" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v26">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v26">
+  <link rel="preload" href="/logolink.png?v=link-app-v26" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -263,7 +263,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v25";
+    const appBuild = "link-app-v26";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -407,7 +407,7 @@
     }
 
     function logoSrc() {
-      return state.settings?.logoData || "/logolink.png?v=link-app-v25";
+      return state.settings?.logoData || "/logolink.png?v=link-app-v26";
     }
 
     function logoImg(className, alt = "Link") {
@@ -626,23 +626,23 @@
         <div class="auth-grid">
         <details class="editor" ${authMode === "register" ? "open" : ""}>
           <summary>Registrarse</summary>
-          <form class="form" data-auth="register">
+          <form class="form" data-auth="register" autocomplete="off">
             <select name="accountType" data-account-type>
               <option value="person">Persona natural</option>
               <option value="company">Empresa</option>
             </select>
-            <input name="displayName" placeholder="Nombre completo" required data-display-name>
+            <input name="displayName" placeholder="Nombre completo" required data-display-name autocomplete="off">
             <div class="split">
-              <input name="email" type="email" placeholder="Correo" required>
-              <input name="password" type="password" placeholder="Clave" required minlength="6">
+              <input name="registerEmail" type="email" placeholder="Correo" required autocomplete="off" autocapitalize="none" spellcheck="false">
+              <input name="registerPassword" type="password" placeholder="Clave" required minlength="6" autocomplete="new-password">
             </div>
             <div class="split">
-              <input name="phone" placeholder="Telefono">
-              <input name="city" placeholder="Ciudad">
+              <input name="phone" placeholder="Telefono" autocomplete="off">
+              <input name="city" placeholder="Ciudad" autocomplete="off">
             </div>
             <div class="split" data-company-fields>
-              <input name="companyName" placeholder="Razon social">
-              <input name="nit" placeholder="NIT">
+              <input name="companyName" placeholder="Razon social" autocomplete="off">
+              <input name="nit" placeholder="NIT" autocomplete="off">
             </div>
             <select name="role">
               <option value="">Cargo u oficio</option>
@@ -658,18 +658,18 @@
         </details>
         <details class="editor" ${authMode === "login" ? "open" : ""}>
           <summary>Ingresar</summary>
-          <form class="form" data-auth="login">
-            <input name="email" type="email" placeholder="Correo" required>
-            <input name="password" type="password" placeholder="Clave" required>
+          <form class="form" data-auth="login" autocomplete="off">
+            <input name="loginEmail" type="email" placeholder="Correo" required autocomplete="off" autocapitalize="none" spellcheck="false">
+            <input name="loginPassword" type="password" placeholder="Clave" required autocomplete="off">
             <button class="primary" type="submit">Ingresar</button>
             <button class="secondary" type="button" data-auth-mode="recover">Recuperar clave</button>
           </form>
         </details>
         <details class="editor" ${authMode === "recover" ? "open" : ""}>
           <summary>Recuperar clave</summary>
-          <form class="form" data-auth="recover">
-            <input name="email" type="email" placeholder="Correo registrado" required>
-            <input name="password" type="password" placeholder="Nueva clave" required minlength="6">
+          <form class="form" data-auth="recover" autocomplete="off">
+            <input name="recoverEmail" type="email" placeholder="Correo registrado" required autocomplete="off" autocapitalize="none" spellcheck="false">
+            <input name="recoverPassword" type="password" placeholder="Nueva clave" required minlength="6" autocomplete="new-password">
             <input name="recoveryCode" placeholder="Codigo admin (solo administrador)">
             <p class="field-note">Usuario normal: se envia solicitud al administrador. Admin: solo cambia directo si escribe el Codigo admin configurado.</p>
             <button class="primary" type="submit">Enviar solicitud de clave</button>
@@ -1423,9 +1423,33 @@
       }
     }
 
+    function normalizeAuthPayload(kind, payload) {
+      const next = { ...payload };
+      if (kind === "register") {
+        next.email = next.registerEmail || "";
+        next.password = next.registerPassword || "";
+        delete next.registerEmail;
+        delete next.registerPassword;
+      }
+      if (kind === "login") {
+        next.email = next.loginEmail || "";
+        next.password = next.loginPassword || "";
+        delete next.loginEmail;
+        delete next.loginPassword;
+      }
+      if (kind === "recover") {
+        next.email = next.recoverEmail || "";
+        next.password = next.recoverPassword || "";
+        delete next.recoverEmail;
+        delete next.recoverPassword;
+      }
+      return next;
+    }
+
     async function auth(kind, payload) {
       try {
         clearError();
+        payload = normalizeAuthPayload(kind, payload);
         const authPaths = {
           register: "/api/auth/register",
           login: "/api/auth/login",
@@ -1476,7 +1500,9 @@
       sessionToken = "";
       localStorage.removeItem(authKey);
       adminState = null;
-      active = active === "admin" ? "inicio" : active;
+      authMode = "login";
+      accountMessage = "Sesion cerrada. Los formularios quedaron limpios.";
+      active = "cuenta";
       applyState(await api.state().catch(() => ({ ...baseState(), officialNews: state.officialNews, officialNewsUpdatedAt: state.officialNewsUpdatedAt, settings: state.settings })));
       render();
     }
