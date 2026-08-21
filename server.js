@@ -1934,6 +1934,8 @@ async function updateAdminSettings(body) {
     next.logoData = logoDataText(body.logoData, 16_000_000);
     next.logoType = text(body.logoType, 120);
     next.logoName = text(body.logoName, 160);
+  } else {
+    fail(400, "Seleccione un archivo de logo antes de guardar");
   }
   next.updatedAt = nowStamp();
   return writeSettings(next);
