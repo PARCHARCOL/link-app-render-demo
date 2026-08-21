@@ -1152,7 +1152,9 @@ async function loginUser(body) {
       passwordHash = found.passwordHash;
     }
   }
-  if (!user || !await verifyPassword(password, passwordHash)) fail(401, "Correo o clave incorrectos");
+  if (!user || !await verifyPassword(password, passwordHash)) {
+    fail(401, "Correo o clave incorrectos. Si es administrador, use Recuperar clave con Codigo admin.");
+  }
   if (user.status === "inactive") fail(403, "Usuario inactivo. Contacte al administrador.");
   if (dbReady) {
     await pool.query("UPDATE link_users SET last_seen_at = now(), updated_at = now() WHERE id = $1", [user.id]);
@@ -1175,6 +1177,9 @@ async function requestPasswordRecovery(body) {
   const password = String(body.password || "");
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) fail(400, "Correo invalido");
   if (password.length < 6) fail(400, "La nueva clave debe tener minimo 6 caracteres");
+  if (isAdminEmail(email)) {
+    fail(400, "Para cambiar la clave del administrador escriba el Codigo admin. Sin ese codigo no se cambia la clave.");
+  }
   const passwordHash = await hashPassword(password);
   const request = {
     id: randomUUID(),

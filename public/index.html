@@ -9,9 +9,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v17">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v17">
-  <link rel="preload" href="/logolink.png?v=link-app-v17" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v18">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v18">
+  <link rel="preload" href="/logolink.png?v=link-app-v18" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -66,6 +66,8 @@
     .update-banner span{display:block;margin-top:3px;color:var(--muted);font-size:12px;line-height:1.35}
     .error{display:none;color:#7a090d;background:#ffe6e5;border:1px solid #ffb8b3}
     .error.show{display:block}
+    .global-error{position:fixed;left:50%;bottom:18px;z-index:50;display:none;width:min(92vw,520px);transform:translateX(-50%);padding:13px 14px;color:#7a090d;background:#ffe6e5;border:1px solid #ff9f99;border-radius:14px;box-shadow:0 18px 40px rgba(100,10,10,.22);font-size:13px;font-weight:850;line-height:1.35}
+    .global-error.show{display:block}
     .verify-row,.account-card,.locked,.settings-card{display:grid;gap:10px;margin-bottom:13px;padding:13px;background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:0 12px 28px rgba(146,70,18,.08)}
     .verify-row{grid-template-columns:1fr auto;align-items:center}
     .verify-row strong,.account-card strong,.locked strong,.settings-card strong{display:block;font-size:13px}
@@ -192,6 +194,7 @@
       </header>
       <div id="content"></div>
     </section>
+    <div id="globalError" class="global-error" role="alert"></div>
   </main>
   <script>
     const authKey = "linkSessionToken";
@@ -251,7 +254,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v17";
+    const appBuild = "link-app-v18";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -395,7 +398,7 @@
     }
 
     function logoSrc() {
-      return state.settings?.logoData || "/logolink.png?v=link-app-v17";
+      return state.settings?.logoData || "/logolink.png?v=link-app-v18";
     }
 
     function logoImg(className, alt = "Link") {
@@ -639,7 +642,8 @@
             <input name="email" type="email" placeholder="Correo registrado" required>
             <input name="password" type="password" placeholder="Nueva clave" required minlength="6">
             <input name="recoveryCode" placeholder="Codigo admin (solo administrador)">
-            <button class="primary" type="submit">Solicitar recuperacion</button>
+            <p class="field-note">Admin: debe llenar Codigo admin para cambiar la clave. Sin codigo solo se envia solicitud para usuarios normales.</p>
+            <button class="primary" type="submit">Recuperar / cambiar clave</button>
             <button class="secondary" type="button" data-auth-mode="login">Volver a ingresar</button>
           </form>
         </details>
@@ -1214,16 +1218,37 @@
       });
     }
 
-    function showError(error) {
+    function clearError() {
+      const global = document.querySelector("#globalError");
+      if (global) {
+        global.textContent = "";
+        global.classList.remove("show");
+      }
       const box = document.querySelector("#formError");
       if (box) {
-        box.textContent = error.message;
+        box.textContent = "";
+        box.classList.remove("show");
+      }
+    }
+
+    function showError(error) {
+      const message = error?.message || "No se pudo completar la accion";
+      const box = document.querySelector("#formError");
+      if (box) {
+        box.textContent = message;
         box.classList.add("show");
+        box.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      const global = document.querySelector("#globalError");
+      if (global) {
+        global.textContent = message;
+        global.classList.add("show");
       }
     }
 
     async function auth(kind, payload) {
       try {
+        clearError();
         const authPaths = {
           register: "/api/auth/register",
           login: "/api/auth/login",
