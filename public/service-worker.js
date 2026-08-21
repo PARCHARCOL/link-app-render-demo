@@ -1,7 +1,5 @@
-const CACHE_NAME = "link-app-v12";
+const CACHE_NAME = "link-app-v13";
 const CORE_ASSETS = [
-  "/",
-  "/index.html",
   "/manifest.webmanifest",
   "/logolink.png",
   "/icon-192.png",
@@ -14,6 +12,7 @@ self.addEventListener("install", (event) => {
       cache.addAll(CORE_ASSETS.map((asset) => new Request(asset, { cache: "reload" }))),
     ),
   );
+  self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
@@ -32,6 +31,11 @@ self.addEventListener("message", (event) => {
 self.addEventListener("fetch", (event) => {
   const requestUrl = new URL(event.request.url);
   if (event.request.method !== "GET" || requestUrl.pathname.startsWith("/api/")) {
+    return;
+  }
+  const acceptsHtml = event.request.mode === "navigate" || (event.request.headers.get("accept") || "").includes("text/html");
+  if (acceptsHtml) {
+    event.respondWith(fetch(new Request(event.request, { cache: "no-store" })));
     return;
   }
   event.respondWith(

@@ -31,6 +31,7 @@ const emptyData = {
   vacancies: [],
   products: [],
   threads: [],
+  passwordRecoveryRequests: [],
   settings: {
     logoData: "",
     updatedAt: null,
@@ -708,6 +709,12 @@ function normalizeData(parsed = {}) {
       }))
       : [],
     sessions: Array.isArray(parsed.sessions) ? parsed.sessions : [],
+    passwordRecoveryRequests: Array.isArray(parsed.passwordRecoveryRequests)
+      ? parsed.passwordRecoveryRequests.map((item) => ({
+        ...item,
+        status: ["pending", "approved", "rejected"].includes(item.status) ? item.status : "pending",
+      }))
+      : [],
     news: Array.isArray(parsed.news) ? parsed.news.map((item) => ({ ...item, status: normalizeStatus(item.status) })) : [],
     jobs: Array.isArray(parsed.jobs) ? parsed.jobs : [],
     resumes: Array.isArray(parsed.resumes) ? parsed.resumes.map((item) => ({ ...item, status: normalizeStatus(item.status) })) : [],
@@ -797,6 +804,16 @@ async function initDb() {
       key text PRIMARY KEY,
       value jsonb NOT NULL DEFAULT '{}'::jsonb,
       updated_at timestamptz NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS link_password_recovery_requests (
+      id uuid PRIMARY KEY,
+      user_id uuid REFERENCES link_users(id) ON DELETE CASCADE,
+      email text NOT NULL,
+      password_hash text NOT NULL,
+      status text NOT NULL DEFAULT 'pending',
+      created_at timestamptz NOT NULL DEFAULT now(),
+      resolved_at timestamptz
     );
 
     CREATE TABLE IF NOT EXISTS link_sessions (
@@ -1150,6 +1167,47 @@ async function loginUser(body) {
   }
   const token = await createSession(user.id);
   return { token, user };
+}
+
+async function requestPasswordRecovery(body) {
+  const email = normalizeEmail(body.email);
+  const password = String(body.password || "");
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) fail(400, "Correo invalido");
+  if (password.length < 6) fail(400, "La nueva clave debe tener minimo 6 caracteres");
+  const passwordHash = await hashPassword(password);
+  const request = {
+    id: randomUUID(),
+    email,
+    passwordHash,
+    status: "pending",
+    createdAt: nowStamp(),
+    resolvedAt: null,
+  };
+
+  if (dbReady) {
+    const found = await pool.query("SELECT id FROM link_users WHERE email = $1 AND status = 'active'", [email]);
+    const userId = found.rows[0]?.id;
+    if (userId) {
+      await pool.query(
+        `INSERT INTO link_password_recovery_requests (id, user_id, email, password_hash, status)
+         VALUES ($1, $2, $3, $4, 'pending')`,
+        [request.id, userId, email, passwordHash],
+      );
+    }
+    return { ok: true, message: "Solicitud enviada. El administrador debe aprobar el cambio de clave." };
+  }
+
+  const data = await readJsonData();
+  const found = data.users.find((item) => normalizeEmail(item.email) === email && normalizeUserStatus(item.status) === "active");
+  if (found) {
+    data.passwordRecoveryRequests.unshift({
+      ...request,
+      userId: found.id,
+      displayName: found.displayName || found.email,
+    });
+    await writeJsonData(data);
+  }
+  return { ok: true, message: "Solicitud enviada. El administrador debe aprobar el cambio de clave." };
 }
 
 async function logoutUser(req) {
@@ -1559,12 +1617,20 @@ function statusFromAction(action) {
 async function readAdminState() {
   const settings = await readSettings();
   if (dbReady) {
-    const [users, news, products, threads, resumes, vacancies] = await Promise.all([
+    const [users, recovery, news, products, threads, resumes, vacancies] = await Promise.all([
       pool.query(
         `SELECT id, email, account_type AS "accountType", display_name AS "displayName", city, company_name AS "companyName",
                 role, is_admin AS "isAdmin", status, last_seen_at AS "lastSeenAt", deactivated_at AS "deactivatedAt",
                 created_at AS "createdAt"
          FROM link_users ORDER BY display_name ASC, email ASC LIMIT 300`,
+      ),
+      pool.query(
+        `SELECT r.id, r.email, r.status, r.created_at AS "createdAt", r.resolved_at AS "resolvedAt",
+                u.display_name AS "displayName"
+         FROM link_password_recovery_requests r
+         LEFT JOIN link_users u ON u.id = r.user_id
+         ORDER BY CASE WHEN r.status = 'pending' THEN 0 ELSE 1 END, r.created_at DESC
+         LIMIT 100`,
       ),
       pool.query(
         `SELECT n.id, n.title, n.category, n.status, n.created_at AS "createdAt", u.display_name AS author
@@ -1595,6 +1661,7 @@ async function readAdminState() {
     return {
       settings,
       users: users.rows,
+      passwordRecoveryRequests: recovery.rows,
       content: {
         news: news.rows,
         products: products.rows,
@@ -1611,6 +1678,14 @@ async function readAdminState() {
     .map((item) => sanitizeUser(item))
     .sort((a, b) => String(a.displayName || a.email).localeCompare(String(b.displayName || b.email), "es", { sensitivity: "base" }));
   const author = (item) => adminLabelUser(users, item.authorId || item.userId);
+  const recoveryRequests = data.passwordRecoveryRequests.map((item) => ({
+    id: item.id,
+    email: item.email,
+    displayName: item.displayName || adminLabelUser(users, item.userId),
+    status: item.status || "pending",
+    createdAt: item.createdAt || null,
+    resolvedAt: item.resolvedAt || null,
+  }));
   const summarize = (items, titleKey, categoryKey) => items.map((item) => ({
     id: item.id,
     title: item[titleKey] || item.title || item.name || "",
@@ -1622,6 +1697,7 @@ async function readAdminState() {
   return {
     settings: data.settings,
     users,
+    passwordRecoveryRequests: recoveryRequests,
     content: {
       news: summarize(data.news, "title", "category"),
       products: summarize(data.products, "name", "condition"),
@@ -1721,6 +1797,64 @@ async function moderateUser(body, admin) {
   fail(400, "Accion de usuario no permitida");
 }
 
+async function moderatePasswordRecovery(body) {
+  const id = text(body.id, 80);
+  const action = text(body.action, 40);
+  if (!id || !["approve", "reject", "delete"].includes(action)) fail(400, "Solicitud no valida");
+
+  if (dbReady) {
+    if (action === "delete") {
+      await pool.query("DELETE FROM link_password_recovery_requests WHERE id = $1", [id]);
+      return { ok: true, status: "deleted" };
+    }
+    const found = await pool.query(
+      `SELECT id, user_id, password_hash, status
+       FROM link_password_recovery_requests WHERE id = $1`,
+      [id],
+    );
+    const request = found.rows[0];
+    if (!request) fail(404, "Solicitud no encontrada");
+    if (request.status !== "pending") fail(400, "La solicitud ya fue procesada");
+    if (action === "approve") {
+      await pool.query("BEGIN");
+      try {
+        await pool.query("UPDATE link_users SET password_hash = $1, updated_at = now() WHERE id = $2", [request.password_hash, request.user_id]);
+        await pool.query("UPDATE link_password_recovery_requests SET status = 'approved', resolved_at = now() WHERE id = $1", [id]);
+        await pool.query("COMMIT");
+      } catch (error) {
+        await pool.query("ROLLBACK");
+        throw error;
+      }
+      return { ok: true, status: "approved" };
+    }
+    await pool.query("UPDATE link_password_recovery_requests SET status = 'rejected', resolved_at = now() WHERE id = $1", [id]);
+    return { ok: true, status: "rejected" };
+  }
+
+  const data = await readJsonData();
+  const index = data.passwordRecoveryRequests.findIndex((item) => item.id === id);
+  if (index < 0) fail(404, "Solicitud no encontrada");
+  const request = data.passwordRecoveryRequests[index];
+  if (action === "delete") {
+    data.passwordRecoveryRequests.splice(index, 1);
+    await writeJsonData(data);
+    return { ok: true, status: "deleted" };
+  }
+  if (request.status !== "pending") fail(400, "La solicitud ya fue procesada");
+  if (action === "approve") {
+    const user = data.users.find((item) => item.id === request.userId);
+    if (!user) fail(404, "Usuario no encontrado");
+    user.passwordHash = request.passwordHash;
+    request.status = "approved";
+    request.resolvedAt = nowStamp();
+  } else {
+    request.status = "rejected";
+    request.resolvedAt = nowStamp();
+  }
+  await writeJsonData(data);
+  return { ok: true, status: request.status };
+}
+
 async function updateAdminSettings(body) {
   const current = await readSettings();
   const next = { ...current };
@@ -1804,6 +1938,12 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (req.method === "POST" && url.pathname === "/api/admin/recovery") {
+    await requireAdmin(req);
+    json(res, 200, await moderatePasswordRecovery(await readBody(req)));
+    return;
+  }
+
   if (req.method === "POST" && url.pathname === "/api/admin/settings") {
     await requireAdmin(req);
     json(res, 200, { settings: await updateAdminSettings(await readBody(req)) });
@@ -1817,6 +1957,11 @@ async function handleApi(req, res, url) {
 
   if (req.method === "POST" && url.pathname === "/api/auth/login") {
     json(res, 200, await loginUser(await readBody(req)));
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/auth/recover") {
+    json(res, 200, await requestPasswordRecovery(await readBody(req)));
     return;
   }
 

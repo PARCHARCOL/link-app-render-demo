@@ -89,6 +89,8 @@
     .status-badge.hidden{color:#6f1720;background:#ffe8e7;border-color:#ffb6b4}
     .status-badge.active{color:#0d6730;background:#e7f8ee;border-color:#a7dfbd}
     .status-badge.inactive{color:#6f1720;background:#ffe8e7;border-color:#ffb6b4}
+    .status-badge.approved{color:#0d6730;background:#e7f8ee;border-color:#a7dfbd}
+    .status-badge.rejected{color:#6f1720;background:#ffe8e7;border-color:#ffb6b4}
     .lead-story h2,.story-card h3,.source-card h3,.card h3{margin:8px 0 0;color:var(--ink);line-height:1.18;font-weight:950}
     .lead-story h2{font-size:24px}
     .story-card h3,.source-card h3,.card h3{font-size:16px}
@@ -191,11 +193,16 @@
   <script>
     const authKey = "linkSessionToken";
     const logoCacheKey = "linkLogoData";
-    const initialTab = new URLSearchParams(window.location.search).get("tab");
+    const queryParams = new URLSearchParams(window.location.search);
+    const initialTab = queryParams.get("tab");
+    const initialAuth = queryParams.get("auth");
     let sessionToken = localStorage.getItem(authKey) || "";
-    let active = ["inicio", "cuenta"].includes(initialTab) ? initialTab : "inicio";
+    let active = ["register", "login", "recover"].includes(initialAuth)
+      ? "cuenta"
+      : (["inicio", "cuenta"].includes(initialTab) ? initialTab : "inicio");
     let activeThreadId = "";
-    let authMode = "register";
+    let authMode = ["register", "login", "recover"].includes(initialAuth) ? initialAuth : "register";
+    let accountMessage = "";
     let bolsaAction = "";
     let mercadoEditorOpen = false;
     let installPromptEvent = null;
@@ -241,6 +248,8 @@
       },
     };
 
+    const appBuild = "link-app-v13";
+
     const mainTabs = [
       { key: "inicio", label: "Link" },
       { key: "empleos", label: "Bolsa de Empleo" },
@@ -263,7 +272,7 @@
         window.location.reload();
       });
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("/service-worker.js").then((registration) => {
+        navigator.serviceWorker.register(`/service-worker.js?v=${appBuild}`).then((registration) => {
           registration.update().catch(() => {});
           if (registration.waiting) showAppUpdate(registration.waiting);
           registration.addEventListener("updatefound", () => {
@@ -328,6 +337,7 @@
 
     function goAccount(mode = "register") {
       authMode = mode;
+      accountMessage = "";
       active = "cuenta";
       render();
     }
@@ -418,6 +428,17 @@
     function userStatusBadge(status) {
       const clean = status === "inactive" ? "inactive" : "active";
       return `<span class="status-badge ${clean}">${userStatusText(clean)}</span>`;
+    }
+
+    function recoveryStatusText(status) {
+      if (status === "approved") return "Aprobada";
+      if (status === "rejected") return "Rechazada";
+      return "Pendiente";
+    }
+
+    function recoveryStatusBadge(status) {
+      const clean = status || "pending";
+      return `<span class="status-badge ${esc(clean)}">${esc(recoveryStatusText(clean))}</span>`;
     }
 
     function daysSince(value) {
@@ -571,6 +592,7 @@
           ${logoImg("login-logo")}
           <div><strong>Link</strong><span>Registro e ingreso de usuarios.</span></div>
         </div>
+        ${accountMessage ? `<p class="notice">${esc(accountMessage)}</p>` : ""}
         <div class="auth-grid">
         <details class="editor" ${authMode === "register" ? "open" : ""}>
           <summary>Registrarse</summary>
@@ -610,6 +632,16 @@
             <input name="email" type="email" placeholder="Correo" required>
             <input name="password" type="password" placeholder="Clave" required>
             <button class="primary" type="submit">Ingresar</button>
+            <button class="secondary" type="button" data-auth-mode="recover">Recuperar clave</button>
+          </form>
+        </details>
+        <details class="editor" ${authMode === "recover" ? "open" : ""}>
+          <summary>Recuperar clave</summary>
+          <form class="form" data-auth="recover">
+            <input name="email" type="email" placeholder="Correo registrado" required>
+            <input name="password" type="password" placeholder="Nueva clave" required minlength="6">
+            <button class="primary" type="submit">Solicitar recuperacion</button>
+            <button class="secondary" type="button" data-auth-mode="login">Volver a ingresar</button>
           </form>
         </details>
       </div>`;
@@ -944,6 +976,21 @@
       </div>`;
     }
 
+    function adminRecoveryRow(item) {
+      const pending = (item.status || "pending") === "pending";
+      return `<div class="admin-row">
+        <div>
+          <h3>${esc(item.displayName || item.email)}</h3>
+          <p>${esc(item.email)} | ${esc(dateTimeLabel(item.createdAt))} ${recoveryStatusBadge(item.status)}</p>
+        </div>
+        <div class="admin-actions">
+          ${pending ? `<button class="secondary" data-recovery-action="approve" data-id="${esc(item.id)}" type="button">Aprobar clave</button>
+          <button class="secondary" data-recovery-action="reject" data-id="${esc(item.id)}" type="button">Rechazar</button>` : ""}
+          <button class="danger-btn" data-recovery-action="delete" data-id="${esc(item.id)}" type="button">Eliminar</button>
+        </div>
+      </div>`;
+    }
+
     function renderAdmin() {
       if (!user()) {
         return `<section class="screen">${hero("Admin", "Control de marca, usuarios y publicaciones.")}${accountPanel()}</section>`;
@@ -967,6 +1014,10 @@
         ${renderAdminGroup("vacancies", "Vacantes")}
         ${renderAdminGroup("products", "Compra/Ventas")}
         ${renderAdminGroup("threads", "Conversaciones")}
+        <details class="editor" open>
+          <summary>Recuperacion de clave (${adminState.passwordRecoveryRequests?.length || 0})</summary>
+          <div class="form admin-list">${(adminState.passwordRecoveryRequests || []).length ? adminState.passwordRecoveryRequests.map((item) => adminRecoveryRow(item)).join("") : empty("No hay solicitudes de recuperacion pendientes.")}</div>
+        </details>
         <details class="editor">
           <summary>Usuarios (${adminState.users?.length || 0})</summary>
           <div class="form admin-list">${(adminState.users || []).map((item) => adminUserRow(item)).join("")}</div>
@@ -1062,6 +1113,14 @@
           goAccount("register");
         };
       });
+      document.querySelectorAll("[data-auth-mode]").forEach((button) => {
+        button.onclick = () => {
+          authMode = button.dataset.authMode || "login";
+          accountMessage = "";
+          active = "cuenta";
+          render();
+        };
+      });
       document.querySelectorAll("[data-protected-tab]").forEach((button) => {
         button.onclick = () => {
           const mode = button.dataset.protectedMode || "register";
@@ -1133,6 +1192,9 @@
       document.querySelectorAll("[data-user-action]").forEach((button) => {
         button.onclick = () => moderateUser(button.dataset.id, button.dataset.userAction);
       });
+      document.querySelectorAll("[data-recovery-action]").forEach((button) => {
+        button.onclick = () => moderateRecovery(button.dataset.id, button.dataset.recoveryAction);
+      });
       document.querySelectorAll(".thread[data-thread]").forEach((button) => {
         button.onclick = () => {
           activeThreadId = button.dataset.thread;
@@ -1151,9 +1213,21 @@
 
     async function auth(kind, payload) {
       try {
-        const data = await api.post(kind === "register" ? "/api/auth/register" : "/api/auth/login", payload);
+        const authPaths = {
+          register: "/api/auth/register",
+          login: "/api/auth/login",
+          recover: "/api/auth/recover",
+        };
+        const data = await api.post(authPaths[kind] || "/api/auth/login", payload);
+        if (kind === "recover") {
+          accountMessage = data.message || "Solicitud enviada. El administrador debe aprobar el cambio de clave.";
+          authMode = "login";
+          render();
+          return;
+        }
         sessionToken = data.token;
         localStorage.setItem(authKey, sessionToken);
+        accountMessage = "";
         applyState(await api.state());
         adminState = null;
         render();
@@ -1234,6 +1308,18 @@
         await api.post("/api/admin/users", { id, action });
         adminState = await api.get("/api/admin/state");
         applyState(await api.state());
+        render();
+      } catch (error) {
+        showError(error);
+      }
+    }
+
+    async function moderateRecovery(id, action) {
+      try {
+        const labels = { approve: "aprobar la nueva clave", reject: "rechazar la solicitud", delete: "eliminar la solicitud" };
+        if (!window.confirm(`Desea ${labels[action] || "procesar esta solicitud"}?`)) return;
+        await api.post("/api/admin/recovery", { id, action });
+        adminState = await api.get("/api/admin/state");
         render();
       } catch (error) {
         showError(error);
