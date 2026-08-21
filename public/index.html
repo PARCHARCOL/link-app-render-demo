@@ -24,10 +24,10 @@
     .phone-status{display:flex;align-items:center;justify-content:space-between;padding:0 4px 8px;color:#2a211b;font-size:12px;font-weight:900}
     .phone-status small{color:var(--red);font-weight:900}
     .brand-row{width:100%;min-width:0;display:grid;grid-template-columns:78px minmax(0,1fr) auto;gap:14px;align-items:center;margin-bottom:16px}
-    .brand-mark,.logo-card,.logo-hero{display:grid;place-items:center;overflow:hidden;background:radial-gradient(circle at 45% 32%,#3b230b 0%,#140d09 58%,#000 100%);border:3px solid #fff;border-radius:20px;box-shadow:0 14px 26px rgba(255,106,0,.28)}
+    .brand-mark,.logo-card,.logo-hero,.login-logo{display:grid;place-items:center;overflow:hidden;background:radial-gradient(circle at 45% 32%,#3b230b 0%,#140d09 58%,#000 100%);border:3px solid #fff;border-radius:20px;box-shadow:0 14px 26px rgba(255,106,0,.28)}
     .brand-mark{width:78px;height:78px}
-    .brand-mark img,.logo-card img,.logo-hero img,.product-logo img{width:100%;height:100%;object-fit:contain}
-    .brand-mark video,.logo-card video,.logo-hero video{width:100%;height:100%;object-fit:contain}
+    .brand-mark img,.logo-card img,.logo-hero img,.login-logo img,.product-logo img{width:100%;height:100%;object-fit:contain}
+    .brand-mark video,.logo-card video,.logo-hero video,.login-logo video{width:100%;height:100%;object-fit:contain}
     .brand-copy{min-width:0}
     .brand-copy p{margin:0 0 2px;color:var(--red);font-size:11px;font-weight:900;text-transform:uppercase}
     .brand-copy strong{display:block;margin:0;color:var(--ink);font-size:32px;line-height:1;font-weight:950}
@@ -118,6 +118,10 @@
     .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
     .pill{display:inline-flex;align-items:center;min-height:24px;padding:3px 8px;color:#7a3a00;background:#fff0cc;border:1px solid #ffd28a;border-radius:9px;font-size:11px;font-weight:950}
     .auth-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .login-brand{display:grid;grid-template-columns:76px minmax(0,1fr);gap:12px;align-items:center;margin-bottom:12px;padding:13px;background:#ffffff;border:1px solid var(--line);border-radius:18px;box-shadow:0 12px 28px rgba(146,70,18,.08)}
+    .login-logo{width:76px;height:76px}
+    .login-brand strong{display:block;margin:0;color:var(--ink);font-size:24px;line-height:1;font-weight:950}
+    .login-brand span{display:block;margin-top:4px;color:var(--muted);font-size:12px;line-height:1.35}
     .profile-row{display:grid;grid-template-columns:56px 1fr;gap:11px;align-items:center}
     .profile-photo{width:56px;height:64px;display:grid;place-items:center;overflow:hidden;background:#fff1e6;border:1px solid var(--line);border-radius:13px;color:var(--red);font-weight:950}
     .profile-photo img{width:100%;height:100%;object-fit:cover}
@@ -170,7 +174,7 @@
     .admin-row p{margin:4px 0 0;color:var(--muted);font-size:12px;line-height:1.28}
     .admin-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}
     .admin-actions button{min-height:31px;padding:0 9px;border-radius:10px;font-size:11px}
-    @media (max-width:620px){.stage{padding:0;background:#fff6ef}.app{width:100%;height:100vh;min-height:100vh;border:0;border-radius:0}.app-header{padding:10px 10px 12px;overflow:hidden}.brand-row{grid-template-columns:72px minmax(0,1fr);margin-bottom:12px}.brand-mark{width:72px;height:72px}.brand-copy strong{font-size:30px}.header-actions{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;justify-content:stretch}.header-action{width:100%;min-width:0;padding:0 8px}.tabs{grid-auto-flow:row;grid-auto-columns:unset;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible}.screen{padding-left:14px;padding-right:14px}.split,.auth-grid,.verify-row,.update-banner,.flow-branches{grid-template-columns:1fr}.hero{grid-template-columns:76px minmax(0,1fr)}.logo-card{width:76px;height:68px}.hero h1{font-size:26px}.product-grid{grid-template-columns:1fr}.admin-row{grid-template-columns:1fr}}
+    @media (max-width:620px){.stage{padding:0;background:#fff6ef}.app{width:100%;height:100vh;min-height:100vh;border:0;border-radius:0}.app-header{padding:10px 10px 12px;overflow:hidden}.brand-row{grid-template-columns:72px minmax(0,1fr);margin-bottom:12px}.brand-mark{width:72px;height:72px}.brand-copy strong{font-size:30px}.header-actions{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;justify-content:stretch}.header-action{width:100%;min-width:0;padding:0 8px}.tabs{grid-auto-flow:row;grid-auto-columns:unset;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible}.screen{padding-left:14px;padding-right:14px}.split,.auth-grid,.verify-row,.update-banner,.flow-branches{grid-template-columns:1fr}.hero{grid-template-columns:76px minmax(0,1fr)}.logo-card{width:76px;height:68px}.hero h1{font-size:26px}.product-grid{grid-template-columns:1fr}.admin-row{grid-template-columns:1fr}.login-brand{grid-template-columns:68px minmax(0,1fr)}.login-logo{width:68px;height:68px}}
   </style>
 </head>
 <body>
@@ -186,8 +190,10 @@
   </main>
   <script>
     const authKey = "linkSessionToken";
+    const logoCacheKey = "linkLogoData";
+    const initialTab = new URLSearchParams(window.location.search).get("tab");
     let sessionToken = localStorage.getItem(authKey) || "";
-    let active = "inicio";
+    let active = ["inicio", "cuenta"].includes(initialTab) ? initialTab : "inicio";
     let activeThreadId = "";
     let authMode = "register";
     let bolsaAction = "";
@@ -350,8 +356,38 @@
       render();
     }
 
+    function cachedLogoSrc() {
+      try {
+        return localStorage.getItem(logoCacheKey) || "";
+      } catch {
+        return "";
+      }
+    }
+
+    function syncLogoCache() {
+      try {
+        const logoData = state.settings?.logoData || "";
+        if (logoData) localStorage.setItem(logoCacheKey, logoData);
+        else localStorage.removeItem(logoCacheKey);
+      } catch {}
+    }
+
+    function applyState(nextState) {
+      const incoming = nextState || {};
+      state = {
+        ...baseState(),
+        ...incoming,
+        settings: {
+          ...baseState().settings,
+          ...(incoming.settings || {}),
+        },
+      };
+      syncLogoCache();
+      return state;
+    }
+
     function logoSrc() {
-      return state.settings?.logoData || "/logolink.png";
+      return state.settings?.logoData || cachedLogoSrc() || "/logolink.png";
     }
 
     function logoImg(className, alt = "Link") {
@@ -531,7 +567,11 @@
           <button class="secondary" type="button" id="logoutButton">Cerrar sesion</button>
         </div>`;
       }
-      return `<div class="auth-grid">
+      return `<div class="login-brand">
+          ${logoImg("login-logo")}
+          <div><strong>Link</strong><span>Registro e ingreso de usuarios.</span></div>
+        </div>
+        <div class="auth-grid">
         <details class="editor" ${authMode === "register" ? "open" : ""}>
           <summary>Registrarse</summary>
           <form class="form" data-auth="register">
@@ -1114,7 +1154,7 @@
         const data = await api.post(kind === "register" ? "/api/auth/register" : "/api/auth/login", payload);
         sessionToken = data.token;
         localStorage.setItem(authKey, sessionToken);
-        state = await api.state();
+        applyState(await api.state());
         adminState = null;
         render();
       } catch (error) {
@@ -1130,14 +1170,14 @@
       localStorage.removeItem(authKey);
       adminState = null;
       active = active === "admin" ? "inicio" : active;
-      state = await api.state().catch(() => ({ ...baseState(), officialNews: state.officialNews, officialNewsUpdatedAt: state.officialNewsUpdatedAt }));
+      applyState(await api.state().catch(() => ({ ...baseState(), officialNews: state.officialNews, officialNewsUpdatedAt: state.officialNewsUpdatedAt, settings: state.settings })));
       render();
     }
 
     async function save(path, payload) {
       try {
         await api.post(path, payload);
-        state = await api.state();
+        applyState(await api.state());
         adminState = null;
         render();
       } catch (error) {
@@ -1150,16 +1190,16 @@
         const button = document.querySelector("#refreshOfficialButton");
         if (button) button.textContent = "Verificando...";
         const official = await api.officialNews(true);
-        state = {
+        applyState({
           ...state,
           officialNews: official.items || [],
           officialNewsUpdatedAt: official.updatedAt || null,
           officialNewsError: official.error || null,
           officialSources: official.sources || [],
-        };
+        });
         render();
       } catch {
-        state = { ...state, officialNewsError: "No se pudo verificar en este momento. Intenta de nuevo." };
+        applyState({ ...state, officialNewsError: "No se pudo verificar en este momento. Intenta de nuevo." });
         render();
       }
     }
@@ -1180,7 +1220,7 @@
       try {
         await api.post("/api/admin/moderate", { type, id, action });
         adminState = await api.get("/api/admin/state");
-        state = await api.state();
+        applyState(await api.state());
         render();
       } catch (error) {
         showError(error);
@@ -1193,7 +1233,7 @@
         if (!window.confirm(`Desea ${labels[action] || "modificar"} este usuario?`)) return;
         await api.post("/api/admin/users", { id, action });
         adminState = await api.get("/api/admin/state");
-        state = await api.state();
+        applyState(await api.state());
         render();
       } catch (error) {
         showError(error);
@@ -1213,7 +1253,7 @@
           payload.logoName = logoFile.name;
         }
         const result = await api.post("/api/admin/settings", payload);
-        state = { ...state, settings: result.settings || state.settings };
+        applyState({ ...state, settings: result.settings || state.settings });
         adminState = await api.get("/api/admin/state");
         render();
       } catch (error) {
@@ -1243,12 +1283,13 @@
       renderTabs();
       content.innerHTML = `<section class="screen splash">${logoImg("logo-hero")}<h1>Link</h1><p>Cargando noticias oficiales y publicaciones aprobadas.</p><div class="loader"></div></section>`;
       try {
-        state = await api.state();
+        applyState(await api.state());
       } catch {
-        state = {
+        applyState({
           ...baseState(),
+          settings: state.settings,
           officialNewsError: "Backend no conectado. Abre la app desde el link publico de Render o desde localhost con el servidor activo.",
-        };
+        });
       }
       render();
       hydrateOfficialNews();
