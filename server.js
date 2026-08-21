@@ -2096,12 +2096,31 @@ function safePublicPath(urlPathname) {
   return filePath;
 }
 
+async function serveIndex(res) {
+  const filePath = path.join(publicDir, "index.html");
+  const settings = await readSettings();
+  const bootstrap = JSON.stringify({ settings }).replace(/</g, "\\u003c");
+  const html = (await readFile(filePath, "utf8")).replace(
+    "window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;",
+    `window.__LINK_BOOTSTRAP_SETTINGS__ = ${bootstrap};`,
+  );
+  res.writeHead(200, {
+    "content-type": "text/html; charset=utf-8",
+    "cache-control": "no-store",
+  });
+  res.end(html);
+}
+
 async function serveStatic(req, res, url) {
   const filePath = safePublicPath(url.pathname);
   if (!filePath) return notFound(res);
   try {
     const info = await stat(filePath);
     if (!info.isFile()) throw new Error("Not a file");
+    if (filePath.endsWith("index.html")) {
+      await serveIndex(res);
+      return;
+    }
     const contentType = mimeTypes.get(path.extname(filePath).toLowerCase()) || "application/octet-stream";
     res.writeHead(200, {
       "content-type": contentType,
@@ -2110,12 +2129,7 @@ async function serveStatic(req, res, url) {
     createReadStream(filePath).pipe(res);
   } catch {
     if (!path.extname(url.pathname)) {
-      const fallback = path.join(publicDir, "index.html");
-      res.writeHead(200, {
-        "content-type": "text/html; charset=utf-8",
-        "cache-control": "no-store",
-      });
-      createReadStream(fallback).pipe(res);
+      await serveIndex(res);
       return;
     }
     notFound(res);
