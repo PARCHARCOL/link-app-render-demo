@@ -1,4 +1,4 @@
-const CACHE_NAME = "link-app-v20";
+const CACHE_NAME = "link-app-v21";
 const CORE_ASSETS = [
   "/manifest.webmanifest",
   "/logolink.png",
@@ -12,7 +12,6 @@ self.addEventListener("install", (event) => {
       cache.addAll(CORE_ASSETS.map((asset) => new Request(asset, { cache: "reload" }))),
     ),
   );
-  self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {

@@ -1172,6 +1172,39 @@ async function loginUser(body) {
   return { token, user };
 }
 
+async function changePassword(body, user) {
+  const currentPassword = String(body.currentPassword || "");
+  const newPassword = String(body.newPassword || body.password || "");
+  if (newPassword.length < 6) fail(400, "La nueva clave debe tener minimo 6 caracteres");
+  if (currentPassword === newPassword) fail(400, "La nueva clave debe ser diferente a la actual");
+
+  let passwordHash;
+  if (dbReady) {
+    const result = await pool.query("SELECT password_hash FROM link_users WHERE id = $1 AND status = 'active'", [user.id]);
+    passwordHash = result.rows[0]?.password_hash || "";
+  } else {
+    const data = await readJsonData();
+    const found = data.users.find((item) => item.id === user.id && normalizeUserStatus(item.status) === "active");
+    passwordHash = found?.passwordHash || "";
+  }
+
+  if (!passwordHash || !await verifyPassword(currentPassword, passwordHash)) {
+    fail(401, "La clave actual no coincide");
+  }
+
+  const nextHash = await hashPassword(newPassword);
+  if (dbReady) {
+    await pool.query("UPDATE link_users SET password_hash = $1, updated_at = now() WHERE id = $2", [nextHash, user.id]);
+  } else {
+    const data = await readJsonData();
+    const found = data.users.find((item) => item.id === user.id);
+    if (!found) fail(404, "Usuario no encontrado");
+    found.passwordHash = nextHash;
+    await writeJsonData(data);
+  }
+  return { ok: true, message: "Clave actualizada correctamente. Use la nueva clave en el proximo ingreso." };
+}
+
 async function requestPasswordRecovery(body) {
   const email = normalizeEmail(body.email);
   const password = String(body.password || "");
@@ -1544,9 +1577,9 @@ async function saveResume(body, user) {
     education: text(body.education, 1600),
     skills: text(body.skills, 1000),
     referencesText: text(body.referencesText, 1000),
-    photoData: dataText(body.photoData, 2_000_000),
+    photoData: dataText(body.photoData, 4_000_000),
     attachmentName: text(body.attachmentName, 160),
-    attachmentData: dataText(body.attachmentData, 4_000_000),
+    attachmentData: dataText(body.attachmentData, 14_000_000),
     status: newContentStatus(user),
     createdAt: nowStamp(),
     updatedAt: nowStamp(),
@@ -2037,6 +2070,11 @@ async function handleApi(req, res, url) {
 
   if (req.method === "POST" && url.pathname === "/api/auth/recover") {
     json(res, 200, await requestPasswordRecovery(await readBody(req)));
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/auth/change-password") {
+    json(res, 200, await changePassword(await readBody(req), await requireUser(req)));
     return;
   }
 
