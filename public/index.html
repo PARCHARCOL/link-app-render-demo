@@ -9,9 +9,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v18">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v18">
-  <link rel="preload" href="/logolink.png?v=link-app-v18" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v19">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v19">
+  <link rel="preload" href="/logolink.png?v=link-app-v19" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -68,6 +68,8 @@
     .error.show{display:block}
     .global-error{position:fixed;left:50%;bottom:18px;z-index:50;display:none;width:min(92vw,520px);transform:translateX(-50%);padding:13px 14px;color:#7a090d;background:#ffe6e5;border:1px solid #ff9f99;border-radius:14px;box-shadow:0 18px 40px rgba(100,10,10,.22);font-size:13px;font-weight:850;line-height:1.35}
     .global-error.show{display:block}
+    .global-notice{position:fixed;left:50%;bottom:18px;z-index:49;display:none;width:min(92vw,520px);transform:translateX(-50%);padding:13px 14px;color:#063a1d;background:#e9f9ef;border:1px solid #9cdfb5;border-radius:14px;box-shadow:0 18px 40px rgba(10,80,35,.18);font-size:13px;font-weight:850;line-height:1.35}
+    .global-notice.show{display:block}
     .verify-row,.account-card,.locked,.settings-card{display:grid;gap:10px;margin-bottom:13px;padding:13px;background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:0 12px 28px rgba(146,70,18,.08)}
     .verify-row{grid-template-columns:1fr auto;align-items:center}
     .verify-row strong,.account-card strong,.locked strong,.settings-card strong{display:block;font-size:13px}
@@ -195,6 +197,7 @@
       <div id="content"></div>
     </section>
     <div id="globalError" class="global-error" role="alert"></div>
+    <div id="globalNotice" class="global-notice" role="status"></div>
   </main>
   <script>
     const authKey = "linkSessionToken";
@@ -254,7 +257,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v18";
+    const appBuild = "link-app-v19";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -398,7 +401,7 @@
     }
 
     function logoSrc() {
-      return state.settings?.logoData || "/logolink.png?v=link-app-v18";
+      return state.settings?.logoData || "/logolink.png?v=link-app-v19";
     }
 
     function logoImg(className, alt = "Link") {
@@ -868,7 +871,7 @@
             <input name="game" placeholder="Juego">
           </div>
           <input name="mediaFile" type="file" accept="image/*,video/*">
-          <p class="field-note">Puede subir una foto o un video maximo de 20 segundos.</p>
+          <p class="field-note">Puede subir una foto o un video maximo de 20 segundos. Las fotos se optimizan automaticamente.</p>
           <textarea name="description" placeholder="Descripcion, estado, ubicacion y condiciones de venta"></textarea>
         `, mercadoEditorOpen);
       return `<section class="screen">${hero("Compra/Ventas", "Clasificados de equipos, repuestos y servicios del sector.")}
@@ -1046,6 +1049,37 @@
       });
     }
 
+    function optimizeImageFile(file) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          const maxSide = 1600;
+          const scale = Math.min(1, maxSide / Math.max(img.width || maxSide, img.height || maxSide));
+          const width = Math.max(1, Math.round((img.width || maxSide) * scale));
+          const height = Math.max(1, Math.round((img.height || maxSide) * scale));
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob((blob) => {
+            if (!blob) {
+              reject(new Error("No se pudo preparar la foto"));
+              return;
+            }
+            resolve(new File([blob], file.name.replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" }));
+          }, "image/jpeg", 0.82);
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          reject(new Error("No se pudo leer la foto seleccionada"));
+        };
+        img.src = url;
+      });
+    }
+
     function videoDuration(file) {
       return new Promise((resolve, reject) => {
         const video = document.createElement("video");
@@ -1081,14 +1115,19 @@
               if (value.size > 12_000_000) throw new Error("El video debe pesar menos de 12 MB");
               const duration = await videoDuration(value);
               if (duration > 20.25) throw new Error("El video no puede superar 20 segundos");
+              payload.mediaName = value.name;
+              payload.mediaType = value.type;
+              payload.mediaData = await fileToDataUrl(value);
             } else if (value.type.startsWith("image/")) {
-              if (value.size > 2_500_000) throw new Error("La foto debe pesar menos de 2.5 MB");
+              if (value.size > 14_000_000) throw new Error("La foto debe pesar menos de 14 MB");
+              const imageFile = /image\/(?:gif|svg\+xml)/i.test(value.type) ? value : await optimizeImageFile(value);
+              if (imageFile.size > 3_500_000) throw new Error("La foto sigue muy pesada. Use una foto mas liviana");
+              payload.mediaName = imageFile.name;
+              payload.mediaType = imageFile.type;
+              payload.mediaData = await fileToDataUrl(imageFile);
             } else {
               throw new Error("Solo se permiten fotos o videos");
             }
-            payload.mediaName = value.name;
-            payload.mediaType = value.type;
-            payload.mediaData = await fileToDataUrl(value);
           }
         } else {
           payload[key] = value;
@@ -1229,6 +1268,18 @@
         box.textContent = "";
         box.classList.remove("show");
       }
+      const notice = document.querySelector("#globalNotice");
+      if (notice) {
+        notice.textContent = "";
+        notice.classList.remove("show");
+      }
+    }
+
+    function showNotice(message) {
+      const notice = document.querySelector("#globalNotice");
+      if (!notice) return;
+      notice.textContent = message;
+      notice.classList.add("show");
     }
 
     function showError(error) {
@@ -1299,10 +1350,16 @@
 
     async function save(path, payload) {
       try {
-        await api.post(path, payload);
+        clearError();
+        const result = await api.post(path, payload);
         applyState(await api.state());
         adminState = null;
         render();
+        if (path === "/api/products") {
+          mercadoEditorOpen = false;
+          render();
+          showNotice(result.status === "pending" ? "Venta guardada. Queda pendiente de aprobacion por Admin." : "Venta publicada correctamente.");
+        }
       } catch (error) {
         showError(error);
       }
