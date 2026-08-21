@@ -78,6 +78,16 @@ const officialSources = [
       "https://normograma.supersalud.gov.co/compilacion/docs/resolucion_coljuegos_7074_2025.htm",
     ],
   },
+  {
+    entity: "GAT Events",
+    home: "https://www.gatevents.net/",
+    urls: [
+      "https://www.gatevents.net/",
+      "https://www.gatevents.net/gat-expo/",
+      "https://www.gatevents.net/gat-expo-cartagena/",
+      "https://www.gatevents.net/gat-bogota/",
+    ],
+  },
 ];
 
 const casinoKeywords = [
@@ -93,12 +103,21 @@ const casinoKeywords = [
   "maquinas tragamonedas",
   "maquinas electronicas tragamonedas",
   "maquinas electronicas de juego",
+  "slots",
+  "ruletas",
   "maquinitas",
   "mesas de casino",
   "mesas de juegos",
   "salas de juego",
   "operadores de juegos localizados",
   "establecimientos de juegos",
+  "juegos de azar",
+  "apuestas",
+  "gaming",
+  "igaming",
+  "gat expo",
+  "fadja",
+  "feria",
 ];
 
 const officialHostSuffixes = [
@@ -109,6 +128,7 @@ const officialHostSuffixes = [
   "supersalud.gov.co",
   "normograma.supersalud.gov.co",
   "docs.supersalud.gov.co",
+  "gatevents.net",
 ];
 
 const mimeTypes = new Map([
@@ -180,8 +200,17 @@ function imageDataText(value, max) {
 function mediaDataText(value, max) {
   const output = dataText(value, max);
   if (!output) return "";
-  if (!/^data:(?:image\/(?:png|jpe?g|webp|gif)|video\/(?:mp4|webm|quicktime));base64,/i.test(output)) {
+  if (!/^data:(?:image\/(?:png|jpe?g|webp|gif|svg\+xml)|video\/(?:mp4|webm|quicktime));base64,/i.test(output)) {
     fail(400, "Solo se permiten fotos o videos compatibles");
+  }
+  return output;
+}
+
+function logoDataText(value, max) {
+  const output = dataText(value, max);
+  if (!output) return "";
+  if (!/^data:(?:image\/[a-z0-9.+-]+|video\/[a-z0-9.+-]+);base64,/i.test(output)) {
+    fail(400, "El logo debe ser imagen, GIF, SVG o video compatible");
   }
   return output;
 }
@@ -189,7 +218,9 @@ function mediaDataText(value, max) {
 function normalizeSettings(settings = {}) {
   const logoData = String(settings.logoData || "").trim();
   return {
-    logoData: /^data:image\/(?:png|jpe?g|webp);base64,/i.test(logoData) && logoData.length <= 3_000_000 ? logoData : "",
+    logoData: /^data:(?:image\/[a-z0-9.+-]+|video\/[a-z0-9.+-]+);base64,/i.test(logoData) && logoData.length <= 16_000_000 ? logoData : "",
+    logoType: text(settings.logoType || settings.logo_type, 120),
+    logoName: text(settings.logoName || settings.logo_name, 160),
     updatedAt: settings.updatedAt || settings.updated_at || null,
   };
 }
@@ -223,6 +254,10 @@ function isAdminUser(user) {
 
 function normalizeStatus(value) {
   return ["pending", "published", "hidden"].includes(value) ? value : "published";
+}
+
+function normalizeUserStatus(value) {
+  return ["active", "inactive"].includes(value) ? value : "active";
 }
 
 function newContentStatus(user) {
@@ -449,6 +484,9 @@ function cleanSummary(value) {
   return String(value || "")
     .replace(/contraste aumentar tamano letra disminuir tamano letra/gi, " ")
     .replace(/breadcrumb\s+home\s+(?:&raquo;|Â»)?/gi, " ")
+    .replace(/"library"\s*:\s*"[^"]*"\s*\}?\s*,?\s*"toggle"\s*:\s*"[^"]*"\s*\}?/gi, " ")
+    .replace(/"toggle"\s*:\s*"[^"]*"\s*\}?/gi, " ")
+    .replace(/\bHome\s+Eventos\b/gi, "Eventos")
     .replace(/\S*\.gov\.co\/\S*/gi, " ")
     .replace(/\S*\.co\/\S*/gi, " ")
     .replace(/\b[\w-]+=["'][^"']*["']>?/g, " ")
@@ -482,6 +520,40 @@ function summaryFromContext(title, context) {
     return normalized !== cleanedTitle && matchedCasinoKeywords(sentence).length > 0;
   }) || sentences.find((sentence) => normalizeText(sentence) !== cleanedTitle) || "";
   return cleanSummary(selected).slice(0, 220);
+}
+
+function eventNameFromPath(url) {
+  try {
+    const slug = new URL(url).pathname
+      .split("/")
+      .filter(Boolean)
+      .pop() || "";
+    const label = slug
+      .replace(/-/g, " ")
+      .replace(/\bgat\b/i, "GAT")
+      .replace(/\bexpo\b/i, "Expo")
+      .replace(/\bbogota\b/i, "Bogota")
+      .replace(/\bcartagena\b/i, "Cartagena")
+      .replace(/\bcolombia\b/i, "Colombia")
+      .trim();
+    return /^GAT\s+(Expo|Bogota|Cartagena)/i.test(label) ? label : "";
+  } catch {
+    return "";
+  }
+}
+
+function officialSummary(candidate) {
+  if (candidate.entity === "GAT Events") {
+    const cleaned = cleanSummary(candidate.context);
+    const eventName = eventNameFromPath(candidate.url)
+      || cleaned.match(/\bGAT\s+Expo\s+[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s]+(?:COL|PR|RD|MX|BRA)?\s+20\d{2}\b/i)?.[0]
+      || "Evento oficial GAT Events";
+    const dateText = /\b\d{1,2}\s*,\s*\d{1,2}\s+de\s+[a-záéíóúñ]+\s+&\s+\d{1,2}\s+[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+\s+de\s+20\d{2}\b/i.test(candidate.title)
+      ? ` Fechas: ${candidate.title}.`
+      : "";
+    return text(`${eventName}.${dateText} Organizador oficial: GAT Events.`, 240);
+  }
+  return text(summaryFromContext(candidate.title, candidate.context), 240);
 }
 
 async function fetchOfficialHtml(url) {
@@ -559,7 +631,7 @@ async function scrapeOfficialSource(source, sourceUrl) {
         id: `${normalizeText(candidate.entity).replace(/\W+/g, "-")}-${hashId(candidate.url + candidate.title)}`,
         entity: candidate.entity,
         title: text(candidate.title, 180),
-        summary: text(summaryFromContext(candidate.title, candidate.context), 240),
+        summary: officialSummary(candidate),
         url: candidate.url,
         sourceUrl: candidate.sourceUrl,
         matchedKeywords: matchedKeywords.slice(0, 4),
@@ -607,12 +679,10 @@ async function refreshOfficialNews() {
     .sort((a, b) => officialItemYear(b) - officialItemYear(a) || b.score - a.score);
   const recentItems = rankedItems.filter(isRecentOfficialItem);
 
-  officialNewsCache.items = (recentItems.length >= 3 ? recentItems : rankedItems)
-    .slice(0, 18)
-    .map(({ score, ...item }) => item);
+  officialNewsCache.items = recentItems.slice(0, 18).map(({ score, ...item }) => item);
   officialNewsCache.updatedAt = nowStamp();
-  officialNewsCache.error = errors.length && officialNewsCache.items.length === 0
-    ? "No se pudieron consultar las fuentes oficiales en este momento."
+  officialNewsCache.error = officialNewsCache.items.length === 0
+    ? "No se encontraron publicaciones recientes en las fuentes oficiales autorizadas."
     : null;
   return officialNewsSnapshot();
 }
@@ -629,7 +699,14 @@ async function getOfficialNews(force = false) {
 
 function normalizeData(parsed = {}) {
   return {
-    users: Array.isArray(parsed.users) ? parsed.users : [],
+    users: Array.isArray(parsed.users)
+      ? parsed.users.map((item) => ({
+        ...item,
+        status: normalizeUserStatus(item.status),
+        lastSeenAt: item.lastSeenAt || item.createdAt || null,
+        deactivatedAt: item.deactivatedAt || null,
+      }))
+      : [],
     sessions: Array.isArray(parsed.sessions) ? parsed.sessions : [],
     news: Array.isArray(parsed.news) ? parsed.news.map((item) => ({ ...item, status: normalizeStatus(item.status) })) : [],
     jobs: Array.isArray(parsed.jobs) ? parsed.jobs : [],
@@ -709,6 +786,9 @@ async function initDb() {
       nit text DEFAULT '',
       role text DEFAULT '',
       is_admin boolean NOT NULL DEFAULT false,
+      status text NOT NULL DEFAULT 'active',
+      last_seen_at timestamptz,
+      deactivated_at timestamptz,
       created_at timestamptz NOT NULL DEFAULT now(),
       updated_at timestamptz NOT NULL DEFAULT now()
     );
@@ -814,6 +894,9 @@ async function initDb() {
     );
 
     ALTER TABLE link_users ADD COLUMN IF NOT EXISTS is_admin boolean NOT NULL DEFAULT false;
+    ALTER TABLE link_users ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'active';
+    ALTER TABLE link_users ADD COLUMN IF NOT EXISTS last_seen_at timestamptz;
+    ALTER TABLE link_users ADD COLUMN IF NOT EXISTS deactivated_at timestamptz;
     ALTER TABLE link_news ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'published';
     ALTER TABLE link_products ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'published';
     ALTER TABLE link_products ADD COLUMN IF NOT EXISTS product_type text DEFAULT '';
@@ -873,6 +956,7 @@ async function verifyPassword(password, stored) {
 
 function sanitizeUser(user) {
   if (!user) return null;
+  const createdAt = user.createdAt || user.created_at || null;
   return {
     id: user.id,
     email: user.email,
@@ -884,12 +968,16 @@ function sanitizeUser(user) {
     nit: user.nit || "",
     role: user.role || "",
     isAdmin: isAdminUser(user),
-    createdAt: user.createdAt || user.created_at || null,
+    status: normalizeUserStatus(user.status),
+    createdAt,
+    lastSeenAt: user.lastSeenAt || user.last_seen_at || createdAt,
+    deactivatedAt: user.deactivatedAt || user.deactivated_at || null,
   };
 }
 
 function rowUser(row) {
   if (!row) return null;
+  const createdAt = row.createdAt || row.created_at || null;
   return {
     id: row.id,
     email: row.email,
@@ -901,7 +989,10 @@ function rowUser(row) {
     nit: row.nit || "",
     role: row.role || "",
     isAdmin: isAdminUser(row),
-    createdAt: row.createdAt || row.created_at,
+    status: normalizeUserStatus(row.status),
+    createdAt,
+    lastSeenAt: row.lastSeenAt || row.last_seen_at || createdAt,
+    deactivatedAt: row.deactivatedAt || row.deactivated_at || null,
   };
 }
 
@@ -933,18 +1024,27 @@ async function getAuthUser(req) {
   const hashed = tokenHash(token);
   if (dbReady) {
     const result = await pool.query(
-      `SELECT u.id, u.email, u.account_type, u.display_name, u.phone, u.city, u.company_name, u.nit, u.role, u.is_admin, u.created_at
+      `SELECT u.id, u.email, u.account_type, u.display_name, u.phone, u.city, u.company_name, u.nit, u.role,
+              u.is_admin, u.status, u.last_seen_at, u.deactivated_at, u.created_at
        FROM link_sessions s
        JOIN link_users u ON u.id = s.user_id
        WHERE s.token_hash = $1 AND s.expires_at > now()`,
       [hashed],
     );
-    return rowUser(result.rows[0]);
+    const user = rowUser(result.rows[0]);
+    if (!user || user.status === "inactive") return null;
+    await pool.query("UPDATE link_users SET last_seen_at = now(), updated_at = now() WHERE id = $1", [user.id]);
+    return { ...user, lastSeenAt: nowStamp() };
   }
   const data = await readJsonData();
   const session = data.sessions.find((item) => item.tokenHash === hashed && Date.parse(item.expiresAt) > Date.now());
   if (!session) return null;
-  return sanitizeUser(data.users.find((item) => item.id === session.userId));
+  const found = data.users.find((item) => item.id === session.userId);
+  const user = sanitizeUser(found);
+  if (!user || user.status === "inactive") return null;
+  found.lastSeenAt = nowStamp();
+  await writeJsonData(data);
+  return sanitizeUser(found);
 }
 
 async function requireUser(req) {
@@ -980,16 +1080,19 @@ async function registerUser(body) {
     nit: accountType === "company" ? text(body.nit, 40) : "",
     role: text(body.role, 120),
     isAdmin: isAdminEmail(email),
+    status: "active",
     createdAt: nowStamp(),
+    lastSeenAt: nowStamp(),
+    deactivatedAt: null,
   };
 
   if (dbReady) {
     try {
       await pool.query(
         `INSERT INTO link_users
-         (id, email, password_hash, account_type, display_name, phone, city, company_name, nit, role, is_admin)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-        [user.id, user.email, user.passwordHash, user.accountType, user.displayName, user.phone, user.city, user.companyName, user.nit, user.role, user.isAdmin],
+         (id, email, password_hash, account_type, display_name, phone, city, company_name, nit, role, is_admin, status, last_seen_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now())`,
+        [user.id, user.email, user.passwordHash, user.accountType, user.displayName, user.phone, user.city, user.companyName, user.nit, user.role, user.isAdmin, user.status],
       );
     } catch (error) {
       if (error.code === "23505") fail(409, "Ese correo ya esta registrado");
@@ -1013,7 +1116,8 @@ async function loginUser(body) {
   let passwordHash;
   if (dbReady) {
     const result = await pool.query(
-      `SELECT id, email, password_hash, account_type, display_name, phone, city, company_name, nit, role, is_admin, created_at
+      `SELECT id, email, password_hash, account_type, display_name, phone, city, company_name, nit, role, is_admin,
+              status, last_seen_at, deactivated_at, created_at
        FROM link_users WHERE email = $1`,
       [email],
     );
@@ -1031,6 +1135,19 @@ async function loginUser(body) {
     }
   }
   if (!user || !await verifyPassword(password, passwordHash)) fail(401, "Correo o clave incorrectos");
+  if (user.status === "inactive") fail(403, "Usuario inactivo. Contacte al administrador.");
+  if (dbReady) {
+    await pool.query("UPDATE link_users SET last_seen_at = now(), updated_at = now() WHERE id = $1", [user.id]);
+    user = { ...user, lastSeenAt: nowStamp() };
+  } else {
+    const data = await readJsonData();
+    const found = data.users.find((item) => item.id === user.id);
+    if (found) {
+      found.lastSeenAt = nowStamp();
+      await writeJsonData(data);
+      user = sanitizeUser(found);
+    }
+  }
   const token = await createSession(user.id);
   return { token, user };
 }
@@ -1445,8 +1562,9 @@ async function readAdminState() {
     const [users, news, products, threads, resumes, vacancies] = await Promise.all([
       pool.query(
         `SELECT id, email, account_type AS "accountType", display_name AS "displayName", city, company_name AS "companyName",
-                is_admin AS "isAdmin", created_at AS "createdAt"
-         FROM link_users ORDER BY created_at DESC LIMIT 200`,
+                role, is_admin AS "isAdmin", status, last_seen_at AS "lastSeenAt", deactivated_at AS "deactivatedAt",
+                created_at AS "createdAt"
+         FROM link_users ORDER BY display_name ASC, email ASC LIMIT 300`,
       ),
       pool.query(
         `SELECT n.id, n.title, n.category, n.status, n.created_at AS "createdAt", u.display_name AS author
@@ -1489,7 +1607,9 @@ async function readAdminState() {
   }
 
   const data = await readJsonData();
-  const users = data.users.map((item) => sanitizeUser(item));
+  const users = data.users
+    .map((item) => sanitizeUser(item))
+    .sort((a, b) => String(a.displayName || a.email).localeCompare(String(b.displayName || b.email), "es", { sensitivity: "base" }));
   const author = (item) => adminLabelUser(users, item.authorId || item.userId);
   const summarize = (items, titleKey, categoryKey) => items.map((item) => ({
     id: item.id,
@@ -1544,13 +1664,74 @@ async function moderateContent(body) {
   return { ok: true, status: list[index]?.status || "deleted" };
 }
 
+async function moderateUser(body, admin) {
+  const id = text(body.id, 80);
+  const action = text(body.action, 40);
+  if (!id) fail(400, "Usuario no valido");
+  if (id === admin.id && ["deactivate", "delete"].includes(action)) {
+    fail(400, "No puedes dar de baja o eliminar tu propia cuenta de administrador");
+  }
+
+  if (dbReady) {
+    if (action === "delete") {
+      const result = await pool.query("DELETE FROM link_users WHERE id = $1", [id]);
+      if (!result.rowCount) fail(404, "Usuario no encontrado");
+      return { ok: true, status: "deleted" };
+    }
+    if (action === "deactivate") {
+      const result = await pool.query(
+        "UPDATE link_users SET status = 'inactive', deactivated_at = now(), updated_at = now() WHERE id = $1",
+        [id],
+      );
+      if (!result.rowCount) fail(404, "Usuario no encontrado");
+      return { ok: true, status: "inactive" };
+    }
+    if (action === "activate") {
+      const result = await pool.query(
+        "UPDATE link_users SET status = 'active', deactivated_at = NULL, updated_at = now() WHERE id = $1",
+        [id],
+      );
+      if (!result.rowCount) fail(404, "Usuario no encontrado");
+      return { ok: true, status: "active" };
+    }
+    fail(400, "Accion de usuario no permitida");
+  }
+
+  const data = await readJsonData();
+  const index = data.users.findIndex((item) => item.id === id);
+  if (index < 0) fail(404, "Usuario no encontrado");
+  if (action === "delete") {
+    data.users.splice(index, 1);
+    data.sessions = data.sessions.filter((item) => item.userId !== id);
+    await writeJsonData(data);
+    return { ok: true, status: "deleted" };
+  }
+  if (action === "deactivate") {
+    data.users[index].status = "inactive";
+    data.users[index].deactivatedAt = nowStamp();
+    await writeJsonData(data);
+    return { ok: true, status: "inactive" };
+  }
+  if (action === "activate") {
+    data.users[index].status = "active";
+    data.users[index].deactivatedAt = null;
+    await writeJsonData(data);
+    return { ok: true, status: "active" };
+  }
+  fail(400, "Accion de usuario no permitida");
+}
+
 async function updateAdminSettings(body) {
   const current = await readSettings();
   const next = { ...current };
   if (body.clearLogo) {
     next.logoData = "";
+    next.logoType = "";
+    next.logoName = "";
   } else if (body.logoData) {
-    next.logoData = imageDataText(body.logoData, 3_000_000);
+    next.logoData = logoDataText(body.logoData, 16_000_000);
+    next.logoType = text(body.logoType, 120);
+    next.logoName = text(body.logoName, 160);
   }
   next.updatedAt = nowStamp();
   return writeSettings(next);
@@ -1614,6 +1795,12 @@ async function handleApi(req, res, url) {
   if (req.method === "POST" && url.pathname === "/api/admin/moderate") {
     await requireAdmin(req);
     json(res, 200, await moderateContent(await readBody(req)));
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/admin/users") {
+    const admin = await requireAdmin(req);
+    json(res, 200, await moderateUser(await readBody(req), admin));
     return;
   }
 

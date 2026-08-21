@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Link</title>
-  <meta name="description" content="Link: aplicacion online para noticias oficiales, bolsa de empleo, mercado, mensajes y administracion del sector.">
+  <meta name="description" content="Link: aplicacion online para noticias oficiales, bolsa de empleo, compra/ventas, mensajes y administracion del sector.">
   <meta name="theme-color" content="#ff6a00">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
@@ -23,22 +23,24 @@
     .app-header{padding:12px 24px 14px;background:linear-gradient(180deg,#ffffff 0%,#fff5ed 100%);border-bottom:1px solid var(--line)}
     .phone-status{display:flex;align-items:center;justify-content:space-between;padding:0 4px 8px;color:#2a211b;font-size:12px;font-weight:900}
     .phone-status small{color:var(--red);font-weight:900}
-    .brand-row{width:100%;min-width:0;display:grid;grid-template-columns:58px minmax(0,1fr) auto;gap:12px;align-items:center;margin-bottom:16px}
-    .brand-mark,.logo-card,.logo-hero{display:grid;place-items:center;overflow:hidden;background:#130d09;border:2px solid #fff;border-radius:18px;box-shadow:0 12px 24px rgba(255,106,0,.24)}
-    .brand-mark{width:58px;height:58px}
+    .brand-row{width:100%;min-width:0;display:grid;grid-template-columns:78px minmax(0,1fr) auto;gap:14px;align-items:center;margin-bottom:16px}
+    .brand-mark,.logo-card,.logo-hero{display:grid;place-items:center;overflow:hidden;background:radial-gradient(circle at 45% 32%,#3b230b 0%,#140d09 58%,#000 100%);border:3px solid #fff;border-radius:20px;box-shadow:0 14px 26px rgba(255,106,0,.28)}
+    .brand-mark{width:78px;height:78px}
     .brand-mark img,.logo-card img,.logo-hero img,.product-logo img{width:100%;height:100%;object-fit:contain}
+    .brand-mark video,.logo-card video,.logo-hero video{width:100%;height:100%;object-fit:contain}
     .brand-copy{min-width:0}
     .brand-copy p{margin:0 0 2px;color:var(--red);font-size:11px;font-weight:900;text-transform:uppercase}
-    .brand-copy strong{display:block;margin:0;color:var(--ink);font-size:25px;line-height:1;font-weight:950}
+    .brand-copy strong{display:block;margin:0;color:var(--ink);font-size:32px;line-height:1;font-weight:950}
     .brand-copy span{display:block;margin-top:4px;color:var(--muted);font-size:12px;line-height:1.28}
     .header-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:12px;min-width:0;max-width:100%}
     .header-action{min-height:44px;min-width:152px;padding:0 18px;color:#fff;background:linear-gradient(180deg,#ff9148,#ef5f00);border:0;border-radius:8px;box-shadow:0 7px 13px rgba(137,57,0,.28);font-weight:850;letter-spacing:.2px}
     .header-action.secondary-action{background:linear-gradient(180deg,#ff9148,#ef5f00)}
-    .tabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(86px,1fr);gap:10px;overflow-x:auto;padding:0 2px 2px;scrollbar-width:none}
+    .tabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(82px,1fr);gap:10px;overflow-x:auto;padding:0 2px 2px;scrollbar-width:none}
     .tabs::-webkit-scrollbar{display:none}
-    .menu-btn{min-width:0;display:grid;justify-items:center;gap:5px;padding:7px 5px;color:#6f5b4c;background:transparent;border:0;border-radius:16px}
-    .menu-icon{width:38px;height:38px;display:grid;place-items:center;color:#ffffff;background:linear-gradient(180deg,#ff9b2a,#d71920);border-radius:12px;box-shadow:0 9px 18px rgba(215,25,32,.26);font-size:16px;font-weight:950}
-    .menu-btn span:last-child{max-width:100%;overflow:hidden;font-size:11px;font-weight:900;text-overflow:ellipsis;white-space:nowrap}
+    .menu-btn{min-width:0;display:grid;justify-items:center;align-content:start;gap:5px;padding:7px 4px;color:#6f5b4c;background:transparent;border:0;border-radius:16px}
+    .menu-icon{width:56px;height:56px;display:grid;place-items:center;color:#ffffff;background:linear-gradient(180deg,#ff9b2a,#d71920);border-radius:16px;box-shadow:0 9px 18px rgba(215,25,32,.26);font-size:16px;font-weight:950}
+    .menu-icon svg{width:28px;height:28px;display:block}
+    .menu-btn span:last-child{max-width:108px;min-height:24px;overflow:hidden;font-size:10.5px;font-weight:900;line-height:1.1;text-align:center;white-space:normal}
     .menu-btn.active{background:#ffffff;color:var(--red);box-shadow:inset 0 0 0 1px rgba(215,25,32,.16)}
     .menu-btn.active .menu-icon{background:linear-gradient(180deg,#1476ff,#0042b8)}
     .download-menu .menu-icon{background:linear-gradient(180deg,#ffd76a,#ff6a00);color:#241407}
@@ -85,6 +87,8 @@
     .status-badge{color:#7a3a00;background:#fff0cc;border:1px solid #ffd28a}
     .status-badge.published{color:#0d6730;background:#e7f8ee;border-color:#a7dfbd}
     .status-badge.hidden{color:#6f1720;background:#ffe8e7;border-color:#ffb6b4}
+    .status-badge.active{color:#0d6730;background:#e7f8ee;border-color:#a7dfbd}
+    .status-badge.inactive{color:#6f1720;background:#ffe8e7;border-color:#ffb6b4}
     .lead-story h2,.story-card h3,.source-card h3,.card h3{margin:8px 0 0;color:var(--ink);line-height:1.18;font-weight:950}
     .lead-story h2{font-size:24px}
     .story-card h3,.source-card h3,.card h3{font-size:16px}
@@ -166,7 +170,7 @@
     .admin-row p{margin:4px 0 0;color:var(--muted);font-size:12px;line-height:1.28}
     .admin-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}
     .admin-actions button{min-height:31px;padding:0 9px;border-radius:10px;font-size:11px}
-    @media (max-width:620px){.stage{padding:0;background:#fff6ef}.app{width:100%;height:100vh;min-height:100vh;border:0;border-radius:0}.app-header{padding:10px 10px 12px;overflow:hidden}.brand-row{grid-template-columns:58px minmax(0,1fr);margin-bottom:12px}.header-actions{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;justify-content:stretch}.header-action{width:100%;min-width:0;padding:0 8px}.tabs{grid-auto-flow:row;grid-auto-columns:unset;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible}.screen{padding-left:14px;padding-right:14px}.split,.auth-grid,.verify-row,.update-banner,.flow-branches{grid-template-columns:1fr}.hero{grid-template-columns:76px minmax(0,1fr)}.logo-card{width:76px;height:68px}.hero h1{font-size:26px}.product-grid{grid-template-columns:1fr}.admin-row{grid-template-columns:1fr}}
+    @media (max-width:620px){.stage{padding:0;background:#fff6ef}.app{width:100%;height:100vh;min-height:100vh;border:0;border-radius:0}.app-header{padding:10px 10px 12px;overflow:hidden}.brand-row{grid-template-columns:72px minmax(0,1fr);margin-bottom:12px}.brand-mark{width:72px;height:72px}.brand-copy strong{font-size:30px}.header-actions{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;justify-content:stretch}.header-action{width:100%;min-width:0;padding:0 8px}.tabs{grid-auto-flow:row;grid-auto-columns:unset;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible}.screen{padding-left:14px;padding-right:14px}.split,.auth-grid,.verify-row,.update-banner,.flow-branches{grid-template-columns:1fr}.hero{grid-template-columns:76px minmax(0,1fr)}.logo-card{width:76px;height:68px}.hero h1{font-size:26px}.product-grid{grid-template-columns:1fr}.admin-row{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -232,11 +236,11 @@
     };
 
     const mainTabs = [
-      { key: "inicio", label: "Al Dia", icon: "N" },
-      { key: "empleos", label: "Bolsa", icon: "B" },
-      { key: "marketplace", label: "Mercado", icon: "M" },
-      { key: "mensajes", label: "Mensajes", icon: "C" },
-      { key: "cuenta", label: "Cuenta", icon: "U" },
+      { key: "inicio", label: "Link" },
+      { key: "empleos", label: "Bolsa de Empleo" },
+      { key: "marketplace", label: "Compra/Ventas" },
+      { key: "mensajes", label: "Mensajes" },
+      { key: "cuenta", label: "Cuenta" },
     ];
 
     window.addEventListener("beforeinstallprompt", (event) => {
@@ -324,7 +328,7 @@
 
     function protectedMessage(tab) {
       if (tab === "empleos") return "Para subir o descargar una hoja de vida debe registrarse o ingresar.";
-      if (tab === "marketplace") return "Para publicar ventas, subir fotos o videos en Mercado debe registrarse o ingresar.";
+      if (tab === "marketplace") return "Para publicar ventas, subir fotos o videos en Compra/Ventas debe registrarse o ingresar.";
       if (tab === "mensajes") return "Para escribir, responder o participar en la comunidad tecnica debe registrarse o ingresar.";
       return "Para usar esta opcion debe registrarse o ingresar.";
     }
@@ -351,7 +355,13 @@
     }
 
     function logoImg(className, alt = "Link") {
-      return `<div class="${className}"><img src="${esc(logoSrc())}" alt="${esc(alt)}"></div>`;
+      const src = logoSrc();
+      const isVideo = /^data:video\//i.test(src);
+      return `<div class="${className}">${
+        isVideo
+          ? `<video src="${esc(src)}" muted autoplay loop playsinline aria-label="${esc(alt)}"></video>`
+          : `<img src="${esc(src)}" alt="${esc(alt)}">`
+      }</div>`;
     }
 
     function statusText(status) {
@@ -363,6 +373,28 @@
     function statusBadge(status) {
       const clean = status || "published";
       return `<span class="status-badge ${esc(clean)}">${esc(statusText(clean))}</span>`;
+    }
+
+    function userStatusText(status) {
+      return status === "inactive" ? "Inactivo" : "Activo";
+    }
+
+    function userStatusBadge(status) {
+      const clean = status === "inactive" ? "inactive" : "active";
+      return `<span class="status-badge ${clean}">${userStatusText(clean)}</span>`;
+    }
+
+    function daysSince(value) {
+      const time = Date.parse(value || "");
+      if (!time) return null;
+      return Math.max(0, Math.floor((Date.now() - time) / 86400000));
+    }
+
+    function inactivityText(item) {
+      const days = daysSince(item.lastSeenAt || item.createdAt);
+      if (days === null) return "Sin actividad registrada";
+      if (days >= 180) return `${days} dias sin actividad. Revisar para posible baja.`;
+      return `${days} dias desde la ultima actividad`;
     }
 
     function officialItems() {
@@ -404,27 +436,40 @@
             <button class="header-action" data-auth-shortcut="register" type="button">REGISTRARSE</button>
             <button class="header-action secondary-action" data-auth-shortcut="login" type="button">INGRESAR</button>
           </div>`;
-      headerBrand.innerHTML = `<div class="brand-row">
+      headerBrand.innerHTML = `${updateNotice()}<div class="brand-row">
         ${logoImg("brand-mark")}
-        <div class="brand-copy"><p>Link</p><strong>Al Dia</strong><span>${esc(verified)}</span></div>
+        <div class="brand-copy"><p>Link</p><strong>Link</strong><span>${esc(verified)}</span></div>
         ${actions}
       </div>`;
     }
 
     function menuItems() {
       const items = [...mainTabs];
-      if (isAdmin()) items.push({ key: "admin", label: "Admin", icon: "A" });
+      if (isAdmin()) items.push({ key: "admin", label: "Admin" });
       return items;
+    }
+
+    function tabIcon(key) {
+      const icons = {
+        inicio: `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19a1 1 0 0 1 1 1v14.5A2.5 2.5 0 0 1 17.5 21H6.75A2.75 2.75 0 0 1 4 18.25V5.5Zm3 1v9h10v-9H7Zm0 11.25a.75.75 0 0 0 .75.75H17.5a1 1 0 0 0 1-1H7.75a.75.75 0 0 0-.75.75Z"/></svg>`,
+        empleos: `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9 4h6a2 2 0 0 1 2 2v2h2.5A1.5 1.5 0 0 1 21 9.5v8A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5v-8A1.5 1.5 0 0 1 4.5 8H7V6a2 2 0 0 1 2-2Zm0 4h6V6H9v2Zm3 7.5a3.5 3.5 0 0 0 3.35-2.5h3.15v4.5a.5.5 0 0 1-.5.5H6a.5.5 0 0 1-.5-.5V13h3.15A3.5 3.5 0 0 0 12 15.5Z"/></svg>`,
+        marketplace: `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 4h10l2 4v11a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V8l2-4Zm.25 6A3.25 3.25 0 0 0 12 12.87A3.25 3.25 0 0 0 16.75 10H17v8H7v-8h.25ZM8.2 6l-.75 2H11V6H8.2Zm4.8 0v2h3.55l-.75-2H13Z"/></svg>`,
+        mensajes: `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v7A2.5 2.5 0 0 1 17.5 15H10l-4.4 4.15A1 1 0 0 1 4 18.42V5.5Zm4 2.25a1 1 0 0 0 0 2h8a1 1 0 1 0 0-2H8Zm0 4a1 1 0 1 0 0 2h5.5a1 1 0 1 0 0-2H8Z"/></svg>`,
+        cuenta: `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 12a4.25 4.25 0 1 0 0-8.5 4.25 4.25 0 0 0 0 8.5Zm0 2c-4.1 0-7.5 2.05-7.5 4.6 0 .77.63 1.4 1.4 1.4h12.2c.77 0 1.4-.63 1.4-1.4 0-2.55-3.4-4.6-7.5-4.6Z"/></svg>`,
+        admin: `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2 5 5v5.4c0 4.25 2.98 8.22 7 9.6 4.02-1.38 7-5.35 7-9.6V5l-7-3Zm1 5v4.2l3.25 1.95-1 1.64L11 12.25V7h2Z"/></svg>`,
+        descargar: `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M11 4a1 1 0 0 1 2 0v8.15l2.28-2.28a1 1 0 1 1 1.41 1.41l-4 4a1 1 0 0 1-1.41 0l-4-4a1 1 0 1 1 1.41-1.41L11 12.18V4Zm-5 13a1 1 0 0 1 1 1v1h10v-1a1 1 0 1 1 2 0v2a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1Z"/></svg>`,
+      };
+      return icons[key] || icons.inicio;
     }
 
     function renderTabs() {
       if (active === "admin" && !isAdmin()) active = "inicio";
       nav.innerHTML = `${menuItems().map((tab) => `
         <button class="menu-btn ${active === tab.key ? "active" : ""}" data-tab="${tab.key}" type="button">
-          <span class="menu-icon">${esc(tab.icon)}</span><span>${esc(tab.label)}</span>
+          <span class="menu-icon">${tabIcon(tab.key)}</span><span>${esc(tab.label)}</span>
         </button>`).join("")}
         <button class="menu-btn download-menu" data-install="1" type="button">
-          <span class="menu-icon">D</span><span>Descargar</span>
+          <span class="menu-icon">${tabIcon("descargar")}</span><span>Descargar</span>
         </button>`;
       nav.querySelectorAll("[data-tab]").forEach((button) => {
         button.onclick = () => {
@@ -469,12 +514,12 @@
       return `<div class="locked">
         <strong>Cuenta requerida</strong>
         <span>${esc(label)}</span>
-        <button class="primary" type="button" data-go-account="1">Crear cuenta o ingresar</button>
+        <button class="primary" type="button" data-go-account="1">REGISTRARSE / INGRESAR</button>
       </div>`;
     }
 
     function hero(title, subtitle) {
-      return `${updateNotice()}${installNotice()}<div class="hero">${logoImg("logo-card")}<div><p class="hero-kicker">Link</p><h1>${esc(title)}</h1><p>${esc(subtitle)}</p></div></div>`;
+      return `${installNotice()}<div class="hero">${logoImg("logo-card")}<div><p class="hero-kicker">Link</p><h1>${esc(title)}</h1><p>${esc(subtitle)}</p></div></div>`;
     }
 
     function accountPanel() {
@@ -488,7 +533,7 @@
       }
       return `<div class="auth-grid">
         <details class="editor" ${authMode === "register" ? "open" : ""}>
-          <summary>Crear cuenta</summary>
+          <summary>Registrarse</summary>
           <form class="form" data-auth="register">
             <select name="accountType">
               <option value="person">Persona natural</option>
@@ -516,7 +561,7 @@
               <option value="Empresa">Empresa</option>
               <option value="Otro">Otro</option>
             </select>
-            <button class="primary" type="submit">Crear cuenta</button>
+            <button class="primary" type="submit">Registrarse</button>
           </form>
         </details>
         <details class="editor" ${authMode === "login" ? "open" : ""}>
@@ -563,9 +608,9 @@
           <p>${esc(item.body)}</p>
           <div class="meta">${statusBadge(item.status)}${item.contact ? `<span class="pill">Fuente: ${esc(item.contact)}</span>` : ""}</div>
         </article>`).join("") : empty("Aun no hay publicaciones internas aprobadas.");
-      return `<section class="screen">${hero("Noticias oficiales", "Informacion de Coljuegos, UIAF, Supersalud y DIAN filtrada para casinos y juegos localizados.")}
+      return `<section class="screen">${hero("Noticias oficiales", "Informacion reciente de Coljuegos, UIAF, Supersalud, DIAN y GAT Events filtrada desde dominios oficiales.")}
         <div class="verify-row">
-          <div><strong>Portada oficial</strong><span>${esc(state.officialNewsError || `Ultima verificacion: ${dateTimeLabel(state.officialNewsUpdatedAt)}`)}</span></div>
+          <div><strong>Filtro oficial activo</strong><span>${esc(state.officialNewsError || `Solo dominios autorizados y publicaciones recientes. Ultima verificacion: ${dateTimeLabel(state.officialNewsUpdatedAt)}`)}</span></div>
           <button class="secondary" type="button" id="refreshOfficialButton">Verificar ahora</button>
         </div>
         ${renderOfficialNews()}
@@ -705,7 +750,7 @@
         <article class="card product">
           ${productMedia(item)}
           <div class="product-body">
-            <div class="topline"><span>${esc(item.productType || "Mercado")}</span><strong>${esc(dateLabel(item.createdAt))}</strong></div>
+            <div class="topline"><span>${esc(item.productType || "Compra/Ventas")}</span><strong>${esc(dateLabel(item.createdAt))}</strong></div>
             <h3>${esc(item.name)}</h3>
             <strong class="price">${esc(item.price)}</strong>
             <p>${esc(item.description || "")}</p>
@@ -751,7 +796,7 @@
           <p class="field-note">Puede subir una foto o un video maximo de 20 segundos.</p>
           <textarea name="description" placeholder="Descripcion, estado, ubicacion y condiciones de venta"></textarea>
         `, mercadoEditorOpen);
-      return `<section class="screen">${hero("Mercado", "Clasificados de equipos, repuestos y servicios del sector.")}
+      return `<section class="screen">${hero("Compra/Ventas", "Clasificados de equipos, repuestos y servicios del sector.")}
         ${formError()}
         <div class="module-actions">
           <button class="primary" data-market-open="1" type="button">Publicar venta</button>
@@ -842,6 +887,23 @@
       </details>`;
     }
 
+    function adminUserRow(item) {
+      const inactive = item.status === "inactive";
+      return `<div class="admin-row">
+        <div>
+          <h3>${esc(item.displayName || item.email)}</h3>
+          <p>${esc(item.email)} | ${esc(item.accountType)}${item.role ? ` | ${esc(item.role)}` : ""}${item.isAdmin ? " | Admin" : ""}</p>
+          <p>${userStatusBadge(item.status)} ${esc(inactivityText(item))}</p>
+        </div>
+        <div class="admin-actions">
+          ${inactive
+            ? `<button class="secondary" data-user-action="activate" data-id="${esc(item.id)}" type="button">Activar</button>`
+            : `<button class="secondary" data-user-action="deactivate" data-id="${esc(item.id)}" type="button">Dar de baja</button>`}
+          <button class="danger-btn" data-user-action="delete" data-id="${esc(item.id)}" type="button">Eliminar</button>
+        </div>
+      </div>`;
+    }
+
     function renderAdmin() {
       if (!user()) {
         return `<section class="screen">${hero("Admin", "Control de marca, usuarios y publicaciones.")}${accountPanel()}</section>`;
@@ -855,7 +917,7 @@
           <strong>Marca Link</strong>
           <span>Cambia el logo visible en la app. El logo base del servidor queda como respaldo.</span>
           <form class="form" data-admin-settings>
-            <input name="logoFile" type="file" accept="image/png,image/jpeg,image/webp">
+            <input name="logoFile" type="file" accept="image/*,video/*,.gif,.jpg,.jpeg,.png,.webp,.svg,.mp4,.webm,.mov">
             <label class="check"><input name="clearLogo" type="checkbox"> Restaurar logo base</label>
             <button class="primary" type="submit">Guardar logo</button>
           </form>
@@ -863,11 +925,11 @@
         ${renderAdminGroup("news", "Noticias internas")}
         ${renderAdminGroup("resumes", "Hojas de vida")}
         ${renderAdminGroup("vacancies", "Vacantes")}
-        ${renderAdminGroup("products", "Mercado")}
+        ${renderAdminGroup("products", "Compra/Ventas")}
         ${renderAdminGroup("threads", "Conversaciones")}
         <details class="editor">
           <summary>Usuarios (${adminState.users?.length || 0})</summary>
-          <div class="form admin-list">${(adminState.users || []).map((item) => `<div class="admin-row"><div><h3>${esc(item.displayName || item.email)}</h3><p>${esc(item.email)} | ${esc(item.accountType)}${item.isAdmin ? " | Admin" : ""}</p></div></div>`).join("")}</div>
+          <div class="form admin-list">${(adminState.users || []).map((item) => adminUserRow(item)).join("")}</div>
         </details>
       </div>` : empty("Cargando panel de administracion.");
       return `<section class="screen">${hero("Admin", "Moderacion de publicaciones, usuarios y marca.")}
@@ -1028,6 +1090,9 @@
       document.querySelectorAll("[data-admin-action]").forEach((button) => {
         button.onclick = () => moderate(button.dataset.type, button.dataset.id, button.dataset.adminAction);
       });
+      document.querySelectorAll("[data-user-action]").forEach((button) => {
+        button.onclick = () => moderateUser(button.dataset.id, button.dataset.userAction);
+      });
       document.querySelectorAll(".thread[data-thread]").forEach((button) => {
         button.onclick = () => {
           activeThreadId = button.dataset.thread;
@@ -1122,6 +1187,19 @@
       }
     }
 
+    async function moderateUser(id, action) {
+      try {
+        const labels = { activate: "activar", deactivate: "dar de baja", delete: "eliminar" };
+        if (!window.confirm(`Desea ${labels[action] || "modificar"} este usuario?`)) return;
+        await api.post("/api/admin/users", { id, action });
+        adminState = await api.get("/api/admin/state");
+        state = await api.state();
+        render();
+      } catch (error) {
+        showError(error);
+      }
+    }
+
     async function saveAdminSettings(form) {
       try {
         const formData = new FormData(form);
@@ -1129,8 +1207,10 @@
         const clearLogo = formData.get("clearLogo") === "on";
         const payload = { clearLogo };
         if (logoFile instanceof File && logoFile.name) {
-          if (logoFile.size > 2_500_000) throw new Error("El logo debe pesar menos de 2.5 MB");
+          if (logoFile.size > 10_000_000) throw new Error("El logo debe pesar menos de 10 MB");
           payload.logoData = await fileToDataUrl(logoFile);
+          payload.logoType = logoFile.type;
+          payload.logoName = logoFile.name;
         }
         const result = await api.post("/api/admin/settings", payload);
         state = { ...state, settings: result.settings || state.settings };
