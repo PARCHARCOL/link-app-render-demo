@@ -9,9 +9,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v24">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v24">
-  <link rel="preload" href="/logolink.png?v=link-app-v24" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v25">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v25">
+  <link rel="preload" href="/logolink.png?v=link-app-v25" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -263,7 +263,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v24";
+    const appBuild = "link-app-v25";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -407,7 +407,7 @@
     }
 
     function logoSrc() {
-      return state.settings?.logoData || "/logolink.png?v=link-app-v24";
+      return state.settings?.logoData || "/logolink.png?v=link-app-v25";
     }
 
     function logoImg(className, alt = "Link") {
@@ -429,6 +429,12 @@
     function statusBadge(status) {
       const clean = status || "published";
       return `<span class="status-badge ${esc(clean)}">${esc(statusText(clean))}</span>`;
+    }
+
+    function resumeAvailability(value) {
+      const clean = String(value || "").trim();
+      if (!clean) return "";
+      return /^disponibilidad\s*:/i.test(clean) ? clean : `Disponibilidad: ${clean}`;
     }
 
     function userStatusText(status) {
@@ -754,7 +760,7 @@
             ${statusBadge(item.status)}
             ${item.phone ? `<span class="pill">${esc(item.phone)}</span>` : ""}
             ${item.email ? `<span class="pill">${esc(item.email)}</span>` : ""}
-            ${item.availability ? `<span class="pill">Disponibilidad: ${esc(item.availability)}</span>` : ""}
+            ${item.availability ? `<span class="pill">${esc(resumeAvailability(item.availability))}</span>` : ""}
           </div>
           ${item.status === "published" ? `<div class="action-row">${
             canDownload

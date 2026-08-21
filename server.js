@@ -262,6 +262,12 @@ function normalizeUserStatus(value) {
   return ["active", "inactive"].includes(value) ? value : "active";
 }
 
+function availabilityDisplay(value) {
+  const clean = text(value, 120);
+  if (!clean) return "";
+  return /^disponibilidad\s*:/i.test(normalizeText(clean)) ? clean : `Disponibilidad: ${clean}`;
+}
+
 function newContentStatus(user) {
   return isAdminUser(user) ? "published" : "pending";
 }
@@ -1394,7 +1400,7 @@ async function readData(authUser = null) {
     return {
       news: news.rows,
       jobs: [],
-      resumes: resumes.rows,
+      resumes: resumes.rows.map((item) => ({ ...item, availability: availabilityDisplay(item.availability) })),
       vacancies: vacancies.rows,
       products: products.rows,
       threads: threads.rows.map((thread) => ({ ...thread, messages: messagesByThread.get(thread.id) || [] })),
@@ -1410,7 +1416,7 @@ async function readData(authUser = null) {
   return {
     news: data.news.filter(visibleAuthor),
     jobs: data.jobs,
-    resumes: data.resumes.filter(visibleOwner),
+    resumes: data.resumes.filter(visibleOwner).map((item) => ({ ...item, availability: availabilityDisplay(item.availability) })),
     vacancies: data.vacancies.filter(visibleOwner),
     products: data.products.filter(visibleAuthor),
     threads: data.threads.filter(visibleAuthor),
@@ -1685,7 +1691,7 @@ function resumePrintHtml(resume) {
           ${resume.city ? `<span>${htmlEscape(resume.city)}</span>` : ""}
           ${resume.phone ? `<span>${htmlEscape(resume.phone)}</span>` : ""}
           ${resume.email ? `<span>${htmlEscape(resume.email)}</span>` : ""}
-          ${resume.availability ? `<span>Disponibilidad: ${htmlEscape(resume.availability)}</span>` : ""}
+          ${resume.availability ? `<span>${htmlEscape(availabilityDisplay(resume.availability))}</span>` : ""}
         </div>
       </div>
     </header>
