@@ -9,9 +9,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v22">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v22">
-  <link rel="preload" href="/logolink.png?v=link-app-v22" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v23">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v23">
+  <link rel="preload" href="/logolink.png?v=link-app-v23" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -106,6 +106,7 @@
     details.editor[open] summary{border-bottom:1px solid var(--line)}
     .form{display:grid;gap:10px;padding:12px 14px 14px}
     .split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .is-hidden{display:none!important}
     input,textarea,select{width:100%;min-width:0;color:var(--ink);background:var(--field);border:1px solid #efbea0;border-radius:13px;outline:0;padding:11px 12px}
     input[type="file"]{padding:9px 10px;color:var(--muted);font-size:12px}
     .file-field{display:grid;gap:7px;padding:10px;color:var(--ink);background:#fff;border:1px solid #efbea0;border-radius:15px}
@@ -262,7 +263,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v22";
+    const appBuild = "link-app-v23";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -406,7 +407,7 @@
     }
 
     function logoSrc() {
-      return state.settings?.logoData || "/logolink.png?v=link-app-v22";
+      return state.settings?.logoData || "/logolink.png?v=link-app-v23";
     }
 
     function logoImg(className, alt = "Link") {
@@ -620,11 +621,11 @@
         <details class="editor" ${authMode === "register" ? "open" : ""}>
           <summary>Registrarse</summary>
           <form class="form" data-auth="register">
-            <select name="accountType">
+            <select name="accountType" data-account-type>
               <option value="person">Persona natural</option>
               <option value="company">Empresa</option>
             </select>
-            <input name="displayName" placeholder="Nombre completo o empresa" required>
+            <input name="displayName" placeholder="Nombre completo" required data-display-name>
             <div class="split">
               <input name="email" type="email" placeholder="Correo" required>
               <input name="password" type="password" placeholder="Clave" required minlength="6">
@@ -633,7 +634,7 @@
               <input name="phone" placeholder="Telefono">
               <input name="city" placeholder="Ciudad">
             </div>
-            <div class="split">
+            <div class="split" data-company-fields>
               <input name="companyName" placeholder="Razon social">
               <input name="nit" placeholder="NIT">
             </div>
@@ -1207,6 +1208,22 @@
       });
     }
 
+    function syncAccountTypeFields(form) {
+      const type = form.querySelector("[data-account-type]")?.value || "person";
+      const isCompany = type === "company";
+      const companyFields = form.querySelector("[data-company-fields]");
+      const displayName = form.querySelector("[data-display-name]");
+      if (displayName) {
+        displayName.placeholder = isCompany ? "Nombre de contacto o empresa" : "Nombre completo";
+      }
+      if (!companyFields) return;
+      companyFields.classList.toggle("is-hidden", !isCompany);
+      companyFields.querySelectorAll("input,select,textarea").forEach((input) => {
+        input.disabled = !isCompany;
+        if (!isCompany) input.value = "";
+      });
+    }
+
     function bindForms() {
       const updateAppButton = document.querySelector("#updateAppButton");
       if (updateAppButton) updateAppButton.onclick = updateAppNow;
@@ -1262,6 +1279,11 @@
         syncMarketFields(form);
         const select = form.querySelector("[data-market-type]");
         if (select) select.onchange = () => syncMarketFields(form);
+      });
+      document.querySelectorAll("form[data-auth='register']").forEach((form) => {
+        syncAccountTypeFields(form);
+        const select = form.querySelector("[data-account-type]");
+        if (select) select.onchange = () => syncAccountTypeFields(form);
       });
       document.querySelectorAll(".file-field input[type='file']").forEach((input) => {
         const status = input.closest(".file-field")?.querySelector("[data-file-status]");
