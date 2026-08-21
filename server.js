@@ -1685,7 +1685,7 @@ function resumePrintHtml(resume) {
           ${resume.city ? `<span>${htmlEscape(resume.city)}</span>` : ""}
           ${resume.phone ? `<span>${htmlEscape(resume.phone)}</span>` : ""}
           ${resume.email ? `<span>${htmlEscape(resume.email)}</span>` : ""}
-          ${resume.availability ? `<span>${htmlEscape(resume.availability)}</span>` : ""}
+          ${resume.availability ? `<span>Disponibilidad: ${htmlEscape(resume.availability)}</span>` : ""}
         </div>
       </div>
     </header>
