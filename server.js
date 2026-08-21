@@ -21,6 +21,7 @@ const officialNewsTimeoutMs = Number(process.env.OFFICIAL_NEWS_TIMEOUT_MS || 12_
 const bodyLimitBytes = Number(process.env.BODY_LIMIT_BYTES || 20_000_000);
 const sessionDays = Number(process.env.SESSION_DAYS || 30);
 const configuredAdminEmails = process.env.LINK_ADMIN_EMAILS || process.env.ADMIN_EMAILS || "jhonsilvadiaz@gmail.com";
+const adminRecoveryCode = process.env.LINK_ADMIN_RECOVERY_CODE || process.env.ADMIN_RECOVERY_CODE || "";
 
 const emptyData = {
   users: [],
@@ -1210,6 +1211,73 @@ async function requestPasswordRecovery(body) {
   return { ok: true, message: "Solicitud enviada. El administrador debe aprobar el cambio de clave." };
 }
 
+async function recoverAdminPassword(body) {
+  const email = normalizeEmail(body.email);
+  const password = String(body.password || "");
+  const recoveryCode = text(body.recoveryCode, 160);
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) fail(400, "Correo invalido");
+  if (password.length < 6) fail(400, "La nueva clave debe tener minimo 6 caracteres");
+  if (!isAdminEmail(email)) fail(403, "Correo no autorizado como administrador");
+  if (!adminRecoveryCode) fail(400, "Codigo admin no configurado");
+  if (recoveryCode !== adminRecoveryCode) fail(403, "Codigo admin incorrecto");
+
+  const passwordHash = await hashPassword(password);
+  const displayName = email.split("@")[0] || "Admin Link";
+
+  if (dbReady) {
+    const result = await pool.query(
+      `INSERT INTO link_users
+       (id, email, password_hash, account_type, display_name, phone, city, company_name, nit, role, is_admin, status, last_seen_at)
+       VALUES ($1, $2, $3, 'person', $4, '', '', '', '', 'Administrador', true, 'active', now())
+       ON CONFLICT (email) DO UPDATE SET
+         password_hash = EXCLUDED.password_hash,
+         is_admin = true,
+         status = 'active',
+         deactivated_at = NULL,
+         last_seen_at = now(),
+         updated_at = now()
+       RETURNING id, email, account_type, display_name, phone, city, company_name, nit, role,
+                 is_admin, status, last_seen_at, deactivated_at, created_at`,
+      [randomUUID(), email, passwordHash, displayName],
+    );
+    const user = rowUser(result.rows[0]);
+    const token = await createSession(user.id);
+    return { token, user, message: "Clave admin actualizada. Ya puedes ingresar." };
+  }
+
+  const data = await readJsonData();
+  let user = data.users.find((item) => normalizeEmail(item.email) === email);
+  if (user) {
+    user.passwordHash = passwordHash;
+    user.isAdmin = true;
+    user.status = "active";
+    user.deactivatedAt = null;
+    user.lastSeenAt = nowStamp();
+  } else {
+    user = {
+      id: randomUUID(),
+      email,
+      passwordHash,
+      accountType: "person",
+      displayName,
+      phone: "",
+      city: "",
+      companyName: "",
+      nit: "",
+      role: "Administrador",
+      isAdmin: true,
+      status: "active",
+      createdAt: nowStamp(),
+      lastSeenAt: nowStamp(),
+      deactivatedAt: null,
+    };
+    data.users.push(user);
+  }
+  await writeJsonData(data);
+  const token = await createSession(user.id);
+  return { token, user: sanitizeUser(user), message: "Clave admin actualizada. Ya puedes ingresar." };
+}
+
 async function logoutUser(req) {
   const token = authToken(req);
   if (!token) return;
@@ -1962,6 +2030,11 @@ async function handleApi(req, res, url) {
 
   if (req.method === "POST" && url.pathname === "/api/auth/recover") {
     json(res, 200, await requestPasswordRecovery(await readBody(req)));
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/auth/admin-recover") {
+    json(res, 200, await recoverAdminPassword(await readBody(req)));
     return;
   }
 

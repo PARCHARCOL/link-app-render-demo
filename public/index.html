@@ -248,7 +248,7 @@
       },
     };
 
-    const appBuild = "link-app-v14";
+    const appBuild = "link-app-v15";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -639,6 +639,7 @@
           <form class="form" data-auth="recover">
             <input name="email" type="email" placeholder="Correo registrado" required>
             <input name="password" type="password" placeholder="Nueva clave" required minlength="6">
+            <input name="recoveryCode" placeholder="Codigo admin (solo administrador)">
             <button class="primary" type="submit">Solicitar recuperacion</button>
             <button class="secondary" type="button" data-auth-mode="login">Volver a ingresar</button>
           </form>
@@ -1217,8 +1218,21 @@
           login: "/api/auth/login",
           recover: "/api/auth/recover",
         };
-        const data = await api.post(authPaths[kind] || "/api/auth/login", payload);
+        const endpoint = kind === "recover" && payload.recoveryCode
+          ? "/api/auth/admin-recover"
+          : authPaths[kind] || "/api/auth/login";
+        const data = await api.post(endpoint, payload);
         if (kind === "recover") {
+          if (data.token) {
+            sessionToken = data.token;
+            localStorage.setItem(authKey, sessionToken);
+            accountMessage = data.message || "Clave actualizada.";
+            applyState(await api.state());
+            adminState = null;
+            active = "admin";
+            render();
+            return;
+          }
           accountMessage = data.message || "Solicitud enviada. El administrador debe aprobar el cambio de clave.";
           authMode = "login";
           render();
