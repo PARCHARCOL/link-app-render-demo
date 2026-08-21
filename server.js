@@ -18,7 +18,7 @@ const port = Number(process.env.PORT || 3000);
 const databaseUrl = process.env.DATABASE_URL || "";
 const officialNewsTtlMs = Number(process.env.OFFICIAL_NEWS_TTL_MS || 10 * 60 * 1000);
 const officialNewsTimeoutMs = Number(process.env.OFFICIAL_NEWS_TIMEOUT_MS || 12_000);
-const bodyLimitBytes = Number(process.env.BODY_LIMIT_BYTES || 20_000_000);
+const bodyLimitBytes = Number(process.env.BODY_LIMIT_BYTES || 30_000_000);
 const sessionDays = Number(process.env.SESSION_DAYS || 30);
 const configuredAdminEmails = process.env.LINK_ADMIN_EMAILS || process.env.ADMIN_EMAILS || "jhonsilvadiaz@gmail.com";
 const adminRecoveryCode = process.env.LINK_ADMIN_RECOVERY_CODE || process.env.ADMIN_RECOVERY_CODE || "";
@@ -1428,7 +1428,7 @@ async function saveProduct(body, user) {
     game: text(body.game, 120),
     description: text(body.description, 500),
     contact: text(body.contact, 160) || user.phone || user.email,
-    mediaData: mediaDataText(body.mediaData, 16_000_000),
+    mediaData: mediaDataText(body.mediaData, 24_000_000),
     mediaType: text(body.mediaType, 80),
     mediaName: text(body.mediaName, 160),
     status: newContentStatus(user),

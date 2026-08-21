@@ -9,9 +9,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v19">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v19">
-  <link rel="preload" href="/logolink.png?v=link-app-v19" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v20">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v20">
+  <link rel="preload" href="/logolink.png?v=link-app-v20" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -257,7 +257,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v19";
+    const appBuild = "link-app-v20";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -401,7 +401,7 @@
     }
 
     function logoSrc() {
-      return state.settings?.logoData || "/logolink.png?v=link-app-v19";
+      return state.settings?.logoData || "/logolink.png?v=link-app-v20";
     }
 
     function logoImg(className, alt = "Link") {
@@ -1211,19 +1211,25 @@
       document.querySelectorAll("form[data-auth]").forEach((form) => {
         form.onsubmit = async (event) => {
           event.preventDefault();
-          await auth(form.dataset.auth, await payloadFromForm(form));
+          await submitWithPayload(form, "Procesando...", "Validando datos...", (payload) => auth(form.dataset.auth, payload));
         };
       });
       document.querySelectorAll("form[data-action]").forEach((form) => {
         form.onsubmit = async (event) => {
           event.preventDefault();
-          await save(form.dataset.action, await payloadFromForm(form));
+          const isProduct = form.dataset.action === "/api/products";
+          await submitWithPayload(
+            form,
+            isProduct ? "Preparando foto o video..." : "Procesando...",
+            "Guardando...",
+            (payload) => save(form.dataset.action, payload, { keepNotice: isProduct }),
+          );
         };
       });
       document.querySelectorAll("form[data-message]").forEach((form) => {
         form.onsubmit = async (event) => {
           event.preventDefault();
-          await save(`/api/threads/${form.dataset.message}/messages`, await payloadFromForm(form));
+          await submitWithPayload(form, "Procesando...", "Guardando...", (payload) => save(`/api/threads/${form.dataset.message}/messages`, payload));
         };
       });
       document.querySelectorAll("form[data-admin-settings]").forEach((form) => {
@@ -1297,6 +1303,30 @@
       }
     }
 
+    async function submitWithPayload(form, preparingText, savingText, handler) {
+      const button = form.querySelector('button[type="submit"]');
+      const originalText = button?.textContent || "";
+      try {
+        clearError();
+        if (button) {
+          button.disabled = true;
+          button.textContent = preparingText;
+        }
+        showNotice(preparingText);
+        const payload = await payloadFromForm(form);
+        if (button) button.textContent = savingText;
+        showNotice(savingText);
+        await handler(payload);
+      } catch (error) {
+        showError(error);
+      } finally {
+        if (button) {
+          button.disabled = false;
+          button.textContent = originalText;
+        }
+      }
+    }
+
     async function auth(kind, payload) {
       try {
         clearError();
@@ -1348,9 +1378,9 @@
       render();
     }
 
-    async function save(path, payload) {
+    async function save(path, payload, options = {}) {
       try {
-        clearError();
+        if (!options.keepNotice) clearError();
         const result = await api.post(path, payload);
         applyState(await api.state());
         adminState = null;
