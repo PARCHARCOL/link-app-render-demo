@@ -18,7 +18,7 @@ const port = Number(process.env.PORT || 3000);
 const databaseUrl = process.env.DATABASE_URL || "";
 const officialNewsTtlMs = Number(process.env.OFFICIAL_NEWS_TTL_MS || 10 * 60 * 1000);
 const officialNewsTimeoutMs = Number(process.env.OFFICIAL_NEWS_TIMEOUT_MS || 12_000);
-const bodyLimitBytes = Number(process.env.BODY_LIMIT_BYTES || 6_000_000);
+const bodyLimitBytes = Number(process.env.BODY_LIMIT_BYTES || 20_000_000);
 const sessionDays = Number(process.env.SESSION_DAYS || 30);
 const configuredAdminEmails = process.env.LINK_ADMIN_EMAILS || process.env.ADMIN_EMAILS || "jhonsilvadiaz@gmail.com";
 
@@ -174,6 +174,15 @@ function imageDataText(value, max) {
   const output = dataText(value, max);
   if (!output) return "";
   if (!/^data:image\/(?:png|jpe?g|webp);base64,/i.test(output)) fail(400, "El logo debe ser una imagen PNG, JPG o WebP");
+  return output;
+}
+
+function mediaDataText(value, max) {
+  const output = dataText(value, max);
+  if (!output) return "";
+  if (!/^data:(?:image\/(?:png|jpe?g|webp|gif)|video\/(?:mp4|webm|quicktime));base64,/i.test(output)) {
+    fail(400, "Solo se permiten fotos o videos compatibles");
+  }
   return output;
 }
 
@@ -731,11 +740,18 @@ async function initDb() {
     CREATE TABLE IF NOT EXISTS link_products (
       id uuid PRIMARY KEY,
       author_id uuid REFERENCES link_users(id) ON DELETE SET NULL,
+      product_type text DEFAULT '',
       name text NOT NULL,
       price text NOT NULL,
       condition text NOT NULL DEFAULT 'Disponible',
+      brand text DEFAULT '',
+      bill_acceptor_type text DEFAULT '',
+      game text DEFAULT '',
       description text DEFAULT '',
       contact text DEFAULT '',
+      media_data text DEFAULT '',
+      media_type text DEFAULT '',
+      media_name text DEFAULT '',
       status text NOT NULL DEFAULT 'published',
       created_at timestamptz NOT NULL DEFAULT now()
     );
@@ -800,6 +816,13 @@ async function initDb() {
     ALTER TABLE link_users ADD COLUMN IF NOT EXISTS is_admin boolean NOT NULL DEFAULT false;
     ALTER TABLE link_news ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'published';
     ALTER TABLE link_products ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'published';
+    ALTER TABLE link_products ADD COLUMN IF NOT EXISTS product_type text DEFAULT '';
+    ALTER TABLE link_products ADD COLUMN IF NOT EXISTS brand text DEFAULT '';
+    ALTER TABLE link_products ADD COLUMN IF NOT EXISTS bill_acceptor_type text DEFAULT '';
+    ALTER TABLE link_products ADD COLUMN IF NOT EXISTS game text DEFAULT '';
+    ALTER TABLE link_products ADD COLUMN IF NOT EXISTS media_data text DEFAULT '';
+    ALTER TABLE link_products ADD COLUMN IF NOT EXISTS media_type text DEFAULT '';
+    ALTER TABLE link_products ADD COLUMN IF NOT EXISTS media_name text DEFAULT '';
     ALTER TABLE link_threads ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'published';
     ALTER TABLE link_resumes ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'published';
     ALTER TABLE link_vacancies ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'published';
@@ -1045,7 +1068,9 @@ async function readData(authUser = null) {
         [authUserId],
       ),
       pool.query(
-        `SELECT id, name, price, condition, description, contact, status, created_at AS "createdAt"
+        `SELECT id, product_type AS "productType", name, price, condition, brand, bill_acceptor_type AS "billAcceptorType",
+                game, description, contact, media_data AS "mediaData", media_type AS "mediaType", media_name AS "mediaName",
+                status, created_at AS "createdAt"
          FROM link_products
          WHERE status = 'published' OR ($1::uuid IS NOT NULL AND author_id = $1::uuid)
          ORDER BY created_at DESC LIMIT 100`,
@@ -1146,19 +1171,43 @@ async function saveProduct(body, user) {
   if (!name || !price) fail(400, "Producto y precio son requeridos");
   const item = {
     id: randomUUID(),
+    productType: text(body.productType, 80) || "Otro",
     name,
     price,
     condition: text(body.condition, 80) || "Disponible",
+    brand: text(body.brand, 120),
+    billAcceptorType: text(body.billAcceptorType, 120),
+    game: text(body.game, 120),
     description: text(body.description, 500),
     contact: text(body.contact, 160) || user.phone || user.email,
+    mediaData: mediaDataText(body.mediaData, 16_000_000),
+    mediaType: text(body.mediaType, 80),
+    mediaName: text(body.mediaName, 160),
     status: newContentStatus(user),
     createdAt: nowStamp(),
   };
   if (dbReady) {
     await pool.query(
-      `INSERT INTO link_products (id, author_id, name, price, condition, description, contact, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [item.id, user.id, item.name, item.price, item.condition, item.description, item.contact, item.status],
+      `INSERT INTO link_products
+         (id, author_id, product_type, name, price, condition, brand, bill_acceptor_type, game, description, contact, media_data, media_type, media_name, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+      [
+        item.id,
+        user.id,
+        item.productType,
+        item.name,
+        item.price,
+        item.condition,
+        item.brand,
+        item.billAcceptorType,
+        item.game,
+        item.description,
+        item.contact,
+        item.mediaData,
+        item.mediaType,
+        item.mediaName,
+        item.status,
+      ],
     );
   } else {
     const data = await readJsonData();

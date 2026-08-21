@@ -18,19 +18,23 @@
     html,body{min-height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
     button,input,textarea,select{font:inherit}
     button{cursor:pointer}
-    .stage{min-height:100vh;display:grid;place-items:center;padding:20px;background:linear-gradient(135deg,#fffdf8 0%,#fff2e7 46%,#ffd5c2 100%)}
-    .app{width:min(100%,460px);height:min(900px,calc(100vh - 40px));min-height:700px;overflow:hidden;display:grid;grid-template-rows:auto 1fr;background:var(--paper);border:1px solid rgba(215,25,32,.22);border-radius:34px;box-shadow:var(--shadow)}
-    .app-header{padding:10px 14px 12px;background:linear-gradient(180deg,#ffffff 0%,#fff5ed 100%);border-bottom:1px solid var(--line)}
+    .stage{min-height:100vh;display:grid;place-items:center;padding:12px;background:linear-gradient(135deg,#fffdf8 0%,#fff2e7 46%,#ffd5c2 100%)}
+    .app{width:min(100%,760px);height:min(980px,calc(100vh - 24px));min-height:640px;overflow:hidden;display:grid;grid-template-rows:auto 1fr;background:var(--paper);border:1px solid rgba(215,25,32,.22);border-radius:26px;box-shadow:var(--shadow)}
+    .app-header{padding:12px 24px 14px;background:linear-gradient(180deg,#ffffff 0%,#fff5ed 100%);border-bottom:1px solid var(--line)}
     .phone-status{display:flex;align-items:center;justify-content:space-between;padding:0 4px 8px;color:#2a211b;font-size:12px;font-weight:900}
     .phone-status small{color:var(--red);font-weight:900}
-    .brand-row{display:grid;grid-template-columns:58px 1fr;gap:12px;align-items:center;margin-bottom:12px}
+    .brand-row{width:100%;min-width:0;display:grid;grid-template-columns:58px minmax(0,1fr) auto;gap:12px;align-items:center;margin-bottom:16px}
     .brand-mark,.logo-card,.logo-hero{display:grid;place-items:center;overflow:hidden;background:#130d09;border:2px solid #fff;border-radius:18px;box-shadow:0 12px 24px rgba(255,106,0,.24)}
     .brand-mark{width:58px;height:58px}
     .brand-mark img,.logo-card img,.logo-hero img,.product-logo img{width:100%;height:100%;object-fit:contain}
+    .brand-copy{min-width:0}
     .brand-copy p{margin:0 0 2px;color:var(--red);font-size:11px;font-weight:900;text-transform:uppercase}
     .brand-copy strong{display:block;margin:0;color:var(--ink);font-size:25px;line-height:1;font-weight:950}
     .brand-copy span{display:block;margin-top:4px;color:var(--muted);font-size:12px;line-height:1.28}
-    .tabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(70px,1fr);gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+    .header-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:12px;min-width:0;max-width:100%}
+    .header-action{min-height:44px;min-width:152px;padding:0 18px;color:#fff;background:linear-gradient(180deg,#ff9148,#ef5f00);border:0;border-radius:8px;box-shadow:0 7px 13px rgba(137,57,0,.28);font-weight:850;letter-spacing:.2px}
+    .header-action.secondary-action{background:linear-gradient(180deg,#ff9148,#ef5f00)}
+    .tabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(86px,1fr);gap:10px;overflow-x:auto;padding:0 2px 2px;scrollbar-width:none}
     .tabs::-webkit-scrollbar{display:none}
     .menu-btn{min-width:0;display:grid;justify-items:center;gap:5px;padding:7px 5px;color:#6f5b4c;background:transparent;border:0;border-radius:16px}
     .menu-icon{width:38px;height:38px;display:grid;place-items:center;color:#ffffff;background:linear-gradient(180deg,#ff9b2a,#d71920);border-radius:12px;box-shadow:0 9px 18px rgba(215,25,32,.26);font-size:16px;font-weight:950}
@@ -39,7 +43,7 @@
     .menu-btn.active .menu-icon{background:linear-gradient(180deg,#1476ff,#0042b8)}
     .download-menu .menu-icon{background:linear-gradient(180deg,#ffd76a,#ff6a00);color:#241407}
     #content{min-height:0;overflow:hidden}
-    .screen{height:100%;overflow-y:auto;padding:16px 16px 24px;scrollbar-width:none}
+    .screen{height:100%;min-width:0;overflow-y:auto;padding:18px 24px 28px;scrollbar-width:none}
     .screen::-webkit-scrollbar{display:none}
     .splash{height:100%;display:grid;align-content:center;justify-items:center;padding:34px;text-align:center;background:linear-gradient(180deg,#fffaf4,#fff1e6)}
     .logo-hero{width:168px;height:126px;margin-bottom:18px;border-radius:24px}
@@ -70,7 +74,7 @@
     .danger-btn{color:#ffffff;background:#9b1118}
     .mini-btn{display:inline-flex;align-items:center;justify-content:center;min-height:32px;padding:0 10px;font-size:12px;text-decoration:none}
     .newspaper{display:grid;gap:10px;margin-bottom:15px}
-    .lead-story,.story-card,.source-card,.card{display:block;color:inherit;text-decoration:none;background:#ffffff;border:1px solid var(--line);border-radius:18px;box-shadow:0 12px 26px rgba(146,70,18,.08)}
+    .lead-story,.story-card,.source-card,.card{display:block;min-width:0;color:inherit;text-decoration:none;background:#ffffff;border:1px solid var(--line);border-radius:18px;box-shadow:0 12px 26px rgba(146,70,18,.08);overflow-wrap:anywhere}
     .lead-story{padding:16px;border-left:6px solid var(--red)}
     .story-list{display:grid;gap:9px}
     .story-card{padding:13px;border-left:4px solid var(--orange)}
@@ -115,9 +119,17 @@
     .profile-photo img{width:100%;height:100%;object-fit:cover}
     .resume-card{display:grid;gap:12px}
     .action-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+    .module-actions{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 14px}
+    .module-actions .primary,.module-actions .secondary{min-width:180px}
+    .flow-panel{display:grid;gap:16px;justify-items:center;margin:4px 0 16px;padding:10px 0}
+    .flow-main,.flow-btn{min-height:78px;color:#fff;background:linear-gradient(180deg,#ff9448,#f06a00);border:0;border-radius:14px;box-shadow:0 10px 18px rgba(141,63,0,.22);font-size:22px;font-weight:800;letter-spacing:.3px;text-transform:uppercase}
+    .flow-main{width:min(230px,100%);font-size:24px}
+    .flow-branches{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:center}
+    .flow-btn{width:100%;padding:12px 16px;line-height:1.22}
     .product-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
     .product{overflow:hidden;padding:0}
-    .product-logo{height:104px;display:grid;place-items:center;overflow:hidden;background:#160e08;border-bottom:1px solid var(--line)}
+    .product-logo,.product-media{height:118px;display:grid;place-items:center;overflow:hidden;background:#160e08;border-bottom:1px solid var(--line)}
+    .product-logo img,.product-media img,.product-media video{width:100%;height:100%;object-fit:cover}
     .product-logo img{max-width:92%;max-height:86%;object-fit:contain}
     .product-body{padding:12px}
     .product h3{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
@@ -135,6 +147,18 @@
     .bubble strong{display:block;margin-bottom:3px;color:inherit;opacity:.75;font-size:10px}
     .bubble p{margin:0;font-size:13px;line-height:1.32}
     .inline-form{display:grid;grid-template-columns:1fr auto;gap:8px}
+    .field-note{margin:-4px 0 2px;color:var(--muted);font-size:11px;line-height:1.35}
+    .blog-feed{display:grid;gap:12px;margin-bottom:14px}
+    .blog-post{padding:15px;background:#ffffff;border:1px solid var(--line);border-radius:18px;box-shadow:0 12px 26px rgba(146,70,18,.08)}
+    .blog-post.active{border-color:var(--red);box-shadow:0 16px 34px rgba(215,25,32,.12)}
+    .blog-post h3{margin:4px 0 0;font-size:18px;line-height:1.2}
+    .blog-post p{margin:8px 0 0;color:var(--muted);font-size:13px;line-height:1.42;white-space:pre-line}
+    .comments{display:grid;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+    .comment{padding:9px 10px;background:#fff4ea;border:1px solid #f3d1bb;border-radius:13px}
+    .comment strong{display:block;font-size:11px;color:var(--red)}
+    .comment p{margin:3px 0 0;font-size:12px;color:var(--ink)}
+    .technical-card{margin-top:14px;padding:14px;background:#f8fbff;border:1px solid #a9c9ff;border-radius:18px}
+    .technical-card h2{margin:0 0 8px;color:#0b56bd;font-size:17px}
     .admin-grid{display:grid;gap:12px}
     .admin-list{display:grid;gap:8px}
     .admin-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:11px;background:#ffffff;border:1px solid var(--line);border-radius:15px}
@@ -142,7 +166,7 @@
     .admin-row p{margin:4px 0 0;color:var(--muted);font-size:12px;line-height:1.28}
     .admin-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}
     .admin-actions button{min-height:31px;padding:0 9px;border-radius:10px;font-size:11px}
-    @media (max-width:520px){.stage{padding:0;background:#fff6ef}.app{width:100%;height:100vh;min-height:100vh;border:0;border-radius:0}.screen{padding-left:14px;padding-right:14px}.split,.auth-grid,.verify-row,.update-banner{grid-template-columns:1fr}.hero{grid-template-columns:76px 1fr}.logo-card{width:76px;height:68px}.hero h1{font-size:26px}.product-grid{grid-template-columns:1fr}.admin-row{grid-template-columns:1fr}}
+    @media (max-width:620px){.stage{padding:0;background:#fff6ef}.app{width:100%;height:100vh;min-height:100vh;border:0;border-radius:0}.app-header{padding:10px 10px 12px;overflow:hidden}.brand-row{grid-template-columns:58px minmax(0,1fr);margin-bottom:12px}.header-actions{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;justify-content:stretch}.header-action{width:100%;min-width:0;padding:0 8px}.tabs{grid-auto-flow:row;grid-auto-columns:unset;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible}.screen{padding-left:14px;padding-right:14px}.split,.auth-grid,.verify-row,.update-banner,.flow-branches{grid-template-columns:1fr}.hero{grid-template-columns:76px minmax(0,1fr)}.logo-card{width:76px;height:68px}.hero h1{font-size:26px}.product-grid{grid-template-columns:1fr}.admin-row{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -161,6 +185,9 @@
     let sessionToken = localStorage.getItem(authKey) || "";
     let active = "inicio";
     let activeThreadId = "";
+    let authMode = "register";
+    let bolsaAction = "";
+    let mercadoEditorOpen = false;
     let installPromptEvent = null;
     let installMessage = "";
     let pendingUpdateWorker = null;
@@ -284,6 +311,41 @@
       return Boolean(user()?.isAdmin);
     }
 
+    function isTechnician() {
+      const role = String(user()?.role || "").toLowerCase();
+      return role.includes("tecnico") || role.includes("técnico");
+    }
+
+    function goAccount(mode = "register") {
+      authMode = mode;
+      active = "cuenta";
+      render();
+    }
+
+    function protectedMessage(tab) {
+      if (tab === "empleos") return "Para subir o descargar una hoja de vida debe registrarse o ingresar.";
+      if (tab === "marketplace") return "Para publicar ventas, subir fotos o videos en Mercado debe registrarse o ingresar.";
+      if (tab === "mensajes") return "Para escribir, responder o participar en la comunidad tecnica debe registrarse o ingresar.";
+      return "Para usar esta opcion debe registrarse o ingresar.";
+    }
+
+    function confirmRegistration(tab, mode = "register") {
+      if (user()) return true;
+      const wantsAccount = window.confirm(`${protectedMessage(tab)}\n\nDesea registrarse o ingresar ahora?`);
+      if (wantsAccount) {
+        goAccount(mode);
+        return false;
+      }
+      return true;
+    }
+
+    function navigateTab(tab) {
+      const protectedTabs = new Set(["empleos", "marketplace", "mensajes"]);
+      if (protectedTabs.has(tab) && !confirmRegistration(tab)) return;
+      active = tab;
+      render();
+    }
+
     function logoSrc() {
       return state.settings?.logoData || "/logolink.png";
     }
@@ -335,9 +397,17 @@
 
     function renderHeader() {
       const verified = state.officialNewsUpdatedAt ? `Fuentes verificadas ${dateTimeLabel(state.officialNewsUpdatedAt)}` : "Consultando fuentes oficiales";
+      const current = user();
+      const actions = current
+        ? `<div class="header-actions"><button class="header-action" data-auth-shortcut="account" type="button">${esc(current.displayName || "Cuenta")}</button></div>`
+        : `<div class="header-actions">
+            <button class="header-action" data-auth-shortcut="register" type="button">REGISTRARSE</button>
+            <button class="header-action secondary-action" data-auth-shortcut="login" type="button">INGRESAR</button>
+          </div>`;
       headerBrand.innerHTML = `<div class="brand-row">
         ${logoImg("brand-mark")}
         <div class="brand-copy"><p>Link</p><strong>Al Dia</strong><span>${esc(verified)}</span></div>
+        ${actions}
       </div>`;
     }
 
@@ -358,8 +428,7 @@
         </button>`;
       nav.querySelectorAll("[data-tab]").forEach((button) => {
         button.onclick = () => {
-          active = button.dataset.tab;
-          render();
+          navigateTab(button.dataset.tab);
         };
       });
       nav.querySelector("[data-install]").onclick = installApp;
@@ -418,7 +487,7 @@
         </div>`;
       }
       return `<div class="auth-grid">
-        <details class="editor" open>
+        <details class="editor" ${authMode === "register" ? "open" : ""}>
           <summary>Crear cuenta</summary>
           <form class="form" data-auth="register">
             <select name="accountType">
@@ -438,11 +507,19 @@
               <input name="companyName" placeholder="Razon social">
               <input name="nit" placeholder="NIT">
             </div>
-            <input name="role" placeholder="Cargo u oficio">
+            <select name="role">
+              <option value="">Cargo u oficio</option>
+              <option value="Tecnico">Tecnico</option>
+              <option value="Administrador">Administrador</option>
+              <option value="Cajero">Cajero</option>
+              <option value="Operador">Operador</option>
+              <option value="Empresa">Empresa</option>
+              <option value="Otro">Otro</option>
+            </select>
             <button class="primary" type="submit">Crear cuenta</button>
           </form>
         </details>
-        <details class="editor">
+        <details class="editor" ${authMode === "login" ? "open" : ""}>
           <summary>Ingresar</summary>
           <form class="form" data-auth="login">
             <input name="email" type="email" placeholder="Correo" required>
@@ -506,7 +583,7 @@
             <input name="contact" placeholder="Fuente o enlace oficial">
           </div>
           <textarea name="body" placeholder="Resumen o contenido" required></textarea>
-        `) : accountCta("Inicia sesion para publicar informacion interna. El admin debe aprobar lo que no sea oficial.")}
+        `) : `<div class="module-actions"><button class="secondary" data-protected-tab="inicio" type="button">Publicar informacion interna</button></div>`}
         <div class="section-title"><h2>Publicaciones internas</h2><small>${state.news.length}</small></div>
         <div class="stack">${list}</div>
       </section>`;
@@ -518,6 +595,7 @@
 
     function renderBolsa() {
       const current = user();
+      const canDownload = Boolean(current);
       const resumes = state.resumes.length ? state.resumes.map((item) => `
         <article class="card resume-card">
           <div class="profile-row">
@@ -535,7 +613,11 @@
             ${item.email ? `<span class="pill">${esc(item.email)}</span>` : ""}
             ${item.availability ? `<span class="pill">${esc(item.availability)}</span>` : ""}
           </div>
-          ${item.status === "published" ? `<div class="action-row"><a class="mini-btn" href="/cv/${esc(item.id)}" target="_blank" rel="noopener noreferrer">Imprimir CV</a></div>` : ""}
+          ${item.status === "published" ? `<div class="action-row">${
+            canDownload
+              ? `<a class="mini-btn" href="/cv/${esc(item.id)}" target="_blank" rel="noopener noreferrer">Descargar CV</a>`
+              : `<button class="mini-btn" data-protected-tab="empleos" data-protected-mode="login" type="button">Descargar CV</button>`
+          }</div>` : ""}
         </article>`).join("") : empty("Aun no hay hojas de vida aprobadas.");
       const vacancies = state.vacancies.length ? state.vacancies.map((item) => `
         <article class="card">
@@ -550,7 +632,7 @@
             ${item.contact ? `<span class="pill">${esc(item.contact)}</span>` : ""}
           </div>
         </article>`).join("") : empty("Aun no hay vacantes aprobadas.");
-      const personForm = editor("Crear hoja de vida", "/api/resumes", `
+      const personForm = editor("Subir hoja de vida", "/api/resumes", `
         <input name="photoFile" type="file" accept="image/*">
         <input name="fullName" placeholder="Nombre completo" required>
         <input name="headline" placeholder="Perfil: tecnico, administrador, cajero, compliance..." required>
@@ -572,8 +654,8 @@
         <textarea name="skills" placeholder="Competencias tecnicas"></textarea>
         <textarea name="referencesText" placeholder="Referencias"></textarea>
         <input name="attachmentFile" type="file" accept="application/pdf,.pdf">
-      `);
-      const companyForm = editor("Publicar vacante", "/api/vacancies", `
+      `, true);
+      const companyForm = editor("Subir vacante empresa", "/api/vacancies", `
         <input name="company" placeholder="Empresa" required>
         <input name="title" placeholder="Cargo requerido" required>
         <div class="split">
@@ -583,12 +665,23 @@
         <input name="contact" placeholder="Contacto">
         <textarea name="description" placeholder="Descripcion del cargo"></textarea>
         <textarea name="requirements" placeholder="Requisitos"></textarea>
-      `);
-      const publishBlock = current
-        ? `${current.accountType === "company" ? companyForm : personForm}`
-        : accountCta("Crea una cuenta para subir hoja de vida o publicar vacantes.");
+      `, true);
+      let publishBlock = "";
+      if (current && bolsaAction === "resume") {
+        publishBlock = current.accountType === "person" ? personForm : `<p class="notice">Para subir hoja de vida ingrese con cuenta de persona natural.</p>`;
+      }
+      if (current && bolsaAction === "vacancy") {
+        publishBlock = current.accountType === "company" ? companyForm : `<p class="notice">Para subir vacantes ingrese con cuenta de empresa.</p>`;
+      }
       return `<section class="screen">${hero("Bolsa de Empleo", "Hojas de vida, vacantes y contactos profesionales del sector.")}
         ${formError()}
+        <div class="flow-panel">
+          <button class="flow-main" data-bolsa-action="browse" type="button">Bolsa de Empleo</button>
+          <div class="flow-branches">
+            <button class="flow-btn" data-bolsa-action="resume" type="button">Subir hoja de vida</button>
+            <button class="flow-btn" data-bolsa-action="vacancy" type="button">Subir vacantes empresas</button>
+          </div>
+        </div>
         ${publishBlock}
         <div class="section-title"><h2>Hojas de vida</h2><small>${state.resumes.length}</small></div>
         <div class="stack">${resumes}</div>
@@ -597,21 +690,45 @@
       </section>`;
     }
 
+    function productMedia(item) {
+      if (!item.mediaData) {
+        return `<div class="product-logo" aria-hidden="true"><img src="${esc(logoSrc())}" alt=""></div>`;
+      }
+      if (String(item.mediaType || "").startsWith("video/")) {
+        return `<div class="product-media"><video src="${esc(item.mediaData)}" controls preload="metadata"></video></div>`;
+      }
+      return `<div class="product-media"><img src="${esc(item.mediaData)}" alt="${esc(item.name || "Producto")}"></div>`;
+    }
+
     function renderMarketplace() {
       const list = state.products.length ? state.products.map((item) => `
         <article class="card product">
-          <div class="product-logo" aria-hidden="true"><img src="${esc(logoSrc())}" alt=""></div>
+          ${productMedia(item)}
           <div class="product-body">
+            <div class="topline"><span>${esc(item.productType || "Mercado")}</span><strong>${esc(dateLabel(item.createdAt))}</strong></div>
             <h3>${esc(item.name)}</h3>
             <strong class="price">${esc(item.price)}</strong>
             <p>${esc(item.description || "")}</p>
-            <div class="meta">${statusBadge(item.status)}<span class="pill">${esc(item.condition)}</span>${item.contact ? `<span class="pill">${esc(item.contact)}</span>` : ""}</div>
+            <div class="meta">
+              ${statusBadge(item.status)}
+              <span class="pill">${esc(item.condition)}</span>
+              ${item.brand ? `<span class="pill">Marca: ${esc(item.brand)}</span>` : ""}
+              ${item.billAcceptorType ? `<span class="pill">Billetero: ${esc(item.billAcceptorType)}</span>` : ""}
+              ${item.game ? `<span class="pill">Juego: ${esc(item.game)}</span>` : ""}
+              ${item.contact ? `<span class="pill">${esc(item.contact)}</span>` : ""}
+            </div>
           </div>
         </article>`).join("") : empty("Aun no hay productos aprobados.");
-      return `<section class="screen">${hero("Mercado", "Clasificados de equipos, repuestos y servicios del sector.")}
-        ${formError()}
-        ${user() ? editor("Publicar producto o servicio", "/api/products", `
-          <input name="name" placeholder="Producto o servicio" required>
+      const marketForm = editor("Publicar venta", "/api/products", `
+          <select name="productType" data-market-type>
+            <option value="Maquina">Maquina</option>
+            <option value="Billetero">Billetero</option>
+            <option value="Repuesto">Repuesto</option>
+            <option value="Juego">Juego</option>
+            <option value="Servicio">Servicio</option>
+            <option value="Otro">Otro</option>
+          </select>
+          <input name="name" placeholder="Nombre del producto o servicio" required>
           <div class="split">
             <input name="price" placeholder="Precio" required>
             <select name="condition">
@@ -622,38 +739,77 @@
               <option>Servicio</option>
             </select>
           </div>
-          <input name="contact" placeholder="Contacto">
-          <textarea name="description" placeholder="Descripcion"></textarea>
-        `) : accountCta("Inicia sesion para publicar en el mercado.")}
+          <div class="split" data-market-field="Maquina|Billetero|Repuesto|Juego|Otro">
+            <input name="brand" placeholder="Marca">
+            <input name="contact" placeholder="Contacto">
+          </div>
+          <div class="split" data-market-field="Maquina">
+            <input name="billAcceptorType" placeholder="Tipo de billetero">
+            <input name="game" placeholder="Juego">
+          </div>
+          <input name="mediaFile" type="file" accept="image/*,video/*">
+          <p class="field-note">Puede subir una foto o un video maximo de 20 segundos.</p>
+          <textarea name="description" placeholder="Descripcion, estado, ubicacion y condiciones de venta"></textarea>
+        `, mercadoEditorOpen);
+      return `<section class="screen">${hero("Mercado", "Clasificados de equipos, repuestos y servicios del sector.")}
+        ${formError()}
+        <div class="module-actions">
+          <button class="primary" data-market-open="1" type="button">Publicar venta</button>
+        </div>
+        ${user() && mercadoEditorOpen ? marketForm : ""}
         <div class="section-title"><h2>Publicaciones</h2><small>${state.products.length}</small></div>
         <div class="product-grid">${list}</div>
       </section>`;
     }
 
+    function threadCard(thread, compact = false) {
+      const messages = Array.isArray(thread.messages) ? thread.messages : [];
+      const first = messages[0] || { author: thread.name, text: "" };
+      const replies = messages.slice(1);
+      return `<article class="blog-post ${thread.id === activeThreadId ? "active" : ""}">
+        <div class="topline"><span>${esc(thread.name || "Link")}</span><strong>${esc(dateLabel(thread.createdAt))}</strong></div>
+        <h3>${esc(thread.topic || "Conversacion")}</h3>
+        ${first.text ? `<p>${esc(first.text)}</p>` : ""}
+        <div class="meta">${statusBadge(thread.status)}<span class="pill">${replies.length} respuesta(s)</span></div>
+        ${!compact ? `<div class="comments">
+          ${replies.length ? replies.map((message) => `<div class="comment"><strong>${esc(message.author)}</strong><p>${esc(message.text)}</p></div>`).join("") : `<div class="comment"><strong>Link</strong><p>Aun no hay respuestas.</p></div>`}
+          ${user()
+            ? `<form class="inline-form" data-message="${esc(thread.id)}"><input name="message" placeholder="Responder al tema" required><button class="primary" type="submit">Enviar</button></form>`
+            : `<button class="secondary" data-protected-tab="mensajes" data-protected-mode="login" type="button">Responder</button>`}
+        </div>` : ""}
+      </article>`;
+    }
+
     function renderMensajes() {
-      const activeThread = state.threads.find((thread) => thread.id === activeThreadId) || state.threads[0];
-      if (activeThread && activeThread.id !== activeThreadId) activeThreadId = activeThread.id;
-      const threads = state.threads.length ? state.threads.map((thread) => `
-        <button class="thread ${thread.id === activeThreadId ? "active" : ""}" data-thread="${esc(thread.id)}" type="button">
-          <div class="avatar">${esc(thread.name[0] || "L")}</div>
-          <div><strong>${esc(thread.name)}</strong><small>${esc(thread.topic)} | ${esc(statusText(thread.status))}</small></div>
-        </button>`).join("") : empty("Aun no hay conversaciones aprobadas.");
-      const chat = activeThread ? `
-        <div class="chat">
-          <div class="bubble-stack">
-            ${(activeThread.messages || []).map((message) => `<div class="bubble ${user() && message.author === user().displayName ? "mine" : ""}"><strong>${esc(message.author)}</strong><p>${esc(message.text)}</p></div>`).join("")}
-          </div>
-          ${user() ? `<form class="inline-form" data-message="${esc(activeThread.id)}"><input name="message" placeholder="Mensaje" required><button class="primary" type="submit">Enviar</button></form>` : accountCta("Inicia sesion para responder.")}
-        </div>` : "";
-      return `<section class="screen">${hero("Mensajes", "Conversaciones internas y contactos de la red Link.")}
+      const normalThreads = state.threads.filter((thread) => !/^tecnico|^técnico|\[tecnico\]|\[técnico\]/i.test(thread.topic || ""));
+      const technicalThreads = state.threads.filter((thread) => /^tecnico|^técnico|\[tecnico\]|\[técnico\]/i.test(thread.topic || ""));
+      const blog = normalThreads.length ? normalThreads.map((thread) => threadCard(thread)).join("") : empty("Aun no hay publicaciones tipo blog.");
+      const createBlog = user()
+        ? editor("Nuevo tema del blog", "/api/threads", `
+          <input name="topic" placeholder="Titulo del tema">
+          <textarea name="message" placeholder="Escriba la publicacion inicial" required></textarea>
+        `)
+        : `<div class="module-actions"><button class="secondary" data-protected-tab="mensajes" type="button">Crear tema</button></div>`;
+      let technical = "";
+      if (!user()) {
+        technical = `<div class="technical-card"><h2>Chat tecnico</h2><p>Solo usuarios registrados como tecnicos pueden participar en esta comunidad.</p><button class="secondary" data-protected-tab="mensajes" type="button">Registrarse como tecnico</button></div>`;
+      } else if (!isTechnician()) {
+        technical = `<div class="technical-card"><h2>Chat tecnico</h2><p>Su cuenta esta registrada como ${esc(user().role || "usuario")}. Para participar en la comunidad tecnica registre o actualice la cuenta con oficio Tecnico.</p></div>`;
+      } else {
+        technical = `<div class="technical-card"><h2>Chat tecnico</h2>
+          ${editor("Nuevo aporte tecnico", "/api/threads", `
+            <input name="topic" value="Tecnico - " placeholder="Tema tecnico, manual o falla">
+            <textarea name="message" placeholder="Comparta conocimiento, manuales, fallas o procedimientos" required></textarea>
+          `)}
+          <div class="blog-feed">${technicalThreads.length ? technicalThreads.map((thread) => threadCard(thread)).join("") : empty("Aun no hay aportes tecnicos.")}</div>
+        </div>`;
+      }
+      return `<section class="screen">${hero("Mensajes", "Blog de la comunidad Link para publicar temas, responder y compartir conocimiento.")}
         ${formError()}
-        ${user() ? editor("Nueva conversacion", "/api/threads", `
-          <input name="topic" placeholder="Tema">
-          <textarea name="message" placeholder="Mensaje inicial" required></textarea>
-        `) : accountCta("Inicia sesion para crear conversaciones.")}
-        <div class="section-title"><h2>Conversaciones</h2><small>${state.threads.length}</small></div>
-        <div class="threads">${threads}</div>
-        ${chat}
+        ${createBlog}
+        <div class="section-title"><h2>Blog de usuarios</h2><small>${normalThreads.length}</small></div>
+        <div class="blog-feed">${blog}</div>
+        ${technical}
       </section>`;
     }
 
@@ -730,6 +886,23 @@
       });
     }
 
+    function videoDuration(file) {
+      return new Promise((resolve, reject) => {
+        const video = document.createElement("video");
+        const url = URL.createObjectURL(file);
+        video.preload = "metadata";
+        video.onloadedmetadata = () => {
+          URL.revokeObjectURL(url);
+          resolve(video.duration || 0);
+        };
+        video.onerror = () => {
+          URL.revokeObjectURL(url);
+          reject(new Error("No se pudo validar la duracion del video"));
+        };
+        video.src = url;
+      });
+    }
+
     async function payloadFromForm(form) {
       const payload = {};
       const formData = new FormData(form);
@@ -743,6 +916,19 @@
             if (value.size > 3_500_000) throw new Error("El PDF debe pesar menos de 3.5 MB");
             payload.attachmentName = value.name;
             payload.attachmentData = await fileToDataUrl(value);
+          } else if (key === "mediaFile") {
+            if (value.type.startsWith("video/")) {
+              if (value.size > 12_000_000) throw new Error("El video debe pesar menos de 12 MB");
+              const duration = await videoDuration(value);
+              if (duration > 20.25) throw new Error("El video no puede superar 20 segundos");
+            } else if (value.type.startsWith("image/")) {
+              if (value.size > 2_500_000) throw new Error("La foto debe pesar menos de 2.5 MB");
+            } else {
+              throw new Error("Solo se permiten fotos o videos");
+            }
+            payload.mediaName = value.name;
+            payload.mediaType = value.type;
+            payload.mediaData = await fileToDataUrl(value);
           }
         } else {
           payload[key] = value;
@@ -751,14 +937,65 @@
       return payload;
     }
 
+    function syncMarketFields(form) {
+      const type = form.querySelector("[data-market-type]")?.value || "";
+      form.querySelectorAll("[data-market-field]").forEach((field) => {
+        const allowed = field.dataset.marketField.split("|");
+        const visible = allowed.includes(type);
+        field.hidden = !visible;
+        field.querySelectorAll("input,select,textarea").forEach((input) => {
+          input.disabled = !visible;
+        });
+      });
+    }
+
     function bindForms() {
       const updateAppButton = document.querySelector("#updateAppButton");
       if (updateAppButton) updateAppButton.onclick = updateAppNow;
+      document.querySelectorAll("[data-auth-shortcut]").forEach((button) => {
+        button.onclick = () => goAccount(button.dataset.authShortcut === "login" ? "login" : "register");
+      });
       document.querySelectorAll("[data-go-account]").forEach((button) => {
         button.onclick = () => {
-          active = "cuenta";
+          goAccount("register");
+        };
+      });
+      document.querySelectorAll("[data-protected-tab]").forEach((button) => {
+        button.onclick = () => {
+          const mode = button.dataset.protectedMode || "register";
+          confirmRegistration(button.dataset.protectedTab || active, mode);
+        };
+      });
+      document.querySelectorAll("[data-bolsa-action]").forEach((button) => {
+        button.onclick = () => {
+          const action = button.dataset.bolsaAction;
+          if (action === "browse") {
+            bolsaAction = "";
+            render();
+            return;
+          }
+          if (!user()) {
+            confirmRegistration("empleos");
+            return;
+          }
+          bolsaAction = action;
           render();
         };
+      });
+      document.querySelectorAll("[data-market-open]").forEach((button) => {
+        button.onclick = () => {
+          if (!user()) {
+            confirmRegistration("marketplace");
+            return;
+          }
+          mercadoEditorOpen = true;
+          render();
+        };
+      });
+      document.querySelectorAll("form[data-action='/api/products']").forEach((form) => {
+        syncMarketFields(form);
+        const select = form.querySelector("[data-market-type]");
+        if (select) select.onchange = () => syncMarketFields(form);
       });
       const refreshButton = document.querySelector("#refreshOfficialButton");
       if (refreshButton) refreshButton.onclick = refreshOfficialNews;
