@@ -267,6 +267,35 @@ function publicAdCampaign(item) {
   };
 }
 
+function productMediaUrl(item) {
+  if (!(item?.hasMedia || item?.mediaData || item?.media_data)) return "";
+  const id = text(item.id, 80);
+  if (!id) return "";
+  const version = item.updatedAt || item.updated_at || item.createdAt || item.created_at || id;
+  return `/api/products/${encodeURIComponent(id)}/media?v=${encodeURIComponent(String(version))}`;
+}
+
+function publicProduct(item) {
+  if (!item) return null;
+  return {
+    id: text(item.id, 80),
+    productType: text(item.productType || item.product_type, 80) || "Otro",
+    name: text(item.name, 120),
+    price: text(item.price, 80),
+    condition: text(item.condition, 80),
+    brand: text(item.brand, 120),
+    billAcceptorType: text(item.billAcceptorType || item.bill_acceptor_type, 120),
+    game: text(item.game, 120),
+    description: text(item.description, 500),
+    contact: text(item.contact, 160),
+    mediaType: text(item.mediaType || item.media_type, 80),
+    mediaName: text(item.mediaName || item.media_name, 160),
+    mediaUrl: productMediaUrl(item),
+    status: normalizeStatus(item.status),
+    createdAt: item.createdAt || item.created_at || null,
+  };
+}
+
 function logoDataText(value, max) {
   const output = dataText(value, max);
   if (!output) return "";
@@ -295,6 +324,22 @@ function normalizeSettings(settings = {}) {
     tokenPackageTokens: intSetting(settings.tokenPackageTokens ?? settings.token_package_tokens, 500, 0, 1000000),
     paymentInfo: text(settings.paymentInfo || settings.payment_info, 300) || "Configure en Admin el Nequi o cuenta para recargar tokens.",
     updatedAt: settings.updatedAt || settings.updated_at || null,
+  };
+}
+
+function settingsLogoUrl(settings) {
+  const normalized = normalizeSettings(settings);
+  if (!normalized.logoData) return "";
+  const version = normalized.updatedAt || normalized.logoName || "custom";
+  return `/api/settings/logo?v=${encodeURIComponent(String(version))}`;
+}
+
+function publicSettings(settings = {}) {
+  const normalized = normalizeSettings(settings);
+  return {
+    ...normalized,
+    logoData: "",
+    logoUrl: settingsLogoUrl(normalized),
   };
 }
 
@@ -1517,7 +1562,7 @@ async function readData(authUser = null) {
       ),
       pool.query(
         `SELECT id, product_type AS "productType", name, price, condition, brand, bill_acceptor_type AS "billAcceptorType",
-                game, description, contact, media_data AS "mediaData", media_type AS "mediaType", media_name AS "mediaName",
+                game, description, contact, COALESCE(media_data, '') <> '' AS "hasMedia", media_type AS "mediaType", media_name AS "mediaName",
                 status, created_at AS "createdAt"
          FROM link_products
          WHERE status = 'published' OR ($1::uuid IS NOT NULL AND author_id = $1::uuid)
@@ -1564,11 +1609,11 @@ async function readData(authUser = null) {
       jobs: [],
       resumes: resumes.rows.map((item) => ({ ...item, availability: availabilityDisplay(item.availability) })),
       vacancies: vacancies.rows,
-      products: products.rows,
+      products: products.rows.map(publicProduct),
       threads: threads.rows.map((thread) => ({ ...thread, messages: messagesByThread.get(thread.id) || [] })),
       currentUser: authUser,
       storage: storageInfo(),
-      settings,
+      settings: publicSettings(settings),
       activeAd,
     };
   }
@@ -1581,11 +1626,11 @@ async function readData(authUser = null) {
     jobs: data.jobs,
     resumes: data.resumes.filter(visibleOwner).map((item) => ({ ...item, availability: availabilityDisplay(item.availability) })),
     vacancies: data.vacancies.filter(visibleOwner),
-    products: data.products.filter(visibleAuthor),
+    products: data.products.filter(visibleAuthor).map(publicProduct),
     threads: data.threads.filter(visibleAuthor),
     currentUser: authUser,
     storage: storageInfo(),
-    settings: data.settings,
+    settings: publicSettings(data.settings),
     activeAd: await readActiveAdCampaign(),
   };
 }
@@ -2110,6 +2155,34 @@ async function readAdCampaignMedia(id) {
   return payload ? { ...payload, type: payload.type || item?.mediaType || "application/octet-stream" } : null;
 }
 
+async function readSettingsLogoMedia() {
+  const settings = await readSettings();
+  const payload = mediaDataPayload(settings.logoData);
+  return payload ? { ...payload, type: payload.type || settings.logoType || "application/octet-stream" } : null;
+}
+
+async function readProductMedia(id) {
+  const cleanId = text(id, 80);
+  if (!cleanId) return null;
+  if (dbReady) {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanId)) return null;
+    const result = await pool.query(
+      `SELECT media_data AS "mediaData", media_type AS "mediaType"
+       FROM link_products
+       WHERE id = $1 AND status = 'published'
+       LIMIT 1`,
+      [cleanId],
+    );
+    const row = result.rows[0];
+    const payload = mediaDataPayload(row?.mediaData);
+    return payload ? { ...payload, type: payload.type || row?.mediaType || "application/octet-stream" } : null;
+  }
+  const data = await readJsonData();
+  const item = data.products.find((product) => product.id === cleanId && normalizeStatus(product.status) === "published");
+  const payload = mediaDataPayload(item?.mediaData);
+  return payload ? { ...payload, type: payload.type || item?.mediaType || "application/octet-stream" } : null;
+}
+
 async function moderateAdRequest(body) {
   const id = text(body.id, 80);
   const action = text(body.action, 40);
@@ -2222,7 +2295,7 @@ async function readAdminState() {
       ),
     ]);
     return {
-      settings,
+      settings: publicSettings(settings),
       users: users.rows,
       passwordRecoveryRequests: recovery.rows,
       content: {
@@ -2261,7 +2334,7 @@ async function readAdminState() {
     createdAt: item.updatedAt || item.createdAt || null,
   }));
   return {
-    settings: data.settings,
+    settings: publicSettings(data.settings),
     users,
     passwordRecoveryRequests: recoveryRequests,
     content: {
@@ -2570,6 +2643,27 @@ function sendMedia(res, req, media) {
 }
 
 async function handleApi(req, res, url) {
+  if (req.method === "GET" && url.pathname === "/api/settings/logo") {
+    const media = await readSettingsLogoMedia();
+    if (!media) {
+      notFound(res);
+      return;
+    }
+    sendMedia(res, req, media);
+    return;
+  }
+
+  const productMediaMatch = url.pathname.match(/^\/api\/products\/([^/]+)\/media$/);
+  if (req.method === "GET" && productMediaMatch) {
+    const media = await readProductMedia(decodeURIComponent(productMediaMatch[1]));
+    if (!media) {
+      notFound(res);
+      return;
+    }
+    sendMedia(res, req, media);
+    return;
+  }
+
   const adMediaMatch = url.pathname.match(/^\/api\/ad-campaigns\/([^/]+)\/media$/);
   if (req.method === "GET" && adMediaMatch) {
     const media = await readAdCampaignMedia(decodeURIComponent(adMediaMatch[1]));
@@ -2641,13 +2735,13 @@ async function handleApi(req, res, url) {
 
   if (req.method === "POST" && url.pathname === "/api/admin/settings") {
     await requireAdmin(req);
-    json(res, 200, { settings: await updateAdminSettings(await readBody(req)) });
+    json(res, 200, { settings: publicSettings(await updateAdminSettings(await readBody(req))) });
     return;
   }
 
   if (req.method === "POST" && url.pathname === "/api/admin/token-settings") {
     await requireAdmin(req);
-    json(res, 200, { settings: await updateTokenSettings(await readBody(req)) });
+    json(res, 200, { settings: publicSettings(await updateTokenSettings(await readBody(req))) });
     return;
   }
 
@@ -2766,7 +2860,7 @@ function safePublicPath(urlPathname) {
 async function serveIndex(res) {
   const filePath = path.join(publicDir, "index.html");
   const settings = await readSettings();
-  const bootstrap = JSON.stringify({ settings }).replace(/</g, "\\u003c");
+  const bootstrap = JSON.stringify({ settings: publicSettings(settings) }).replace(/</g, "\\u003c");
   const html = (await readFile(filePath, "utf8")).replace(
     "window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;",
     `window.__LINK_BOOTSTRAP_SETTINGS__ = ${bootstrap};`,

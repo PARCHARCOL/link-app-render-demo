@@ -9,9 +9,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v32">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v32">
-  <link rel="preload" href="/logolink.png?v=link-app-v32" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v33">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v33">
+  <link rel="preload" href="/logolink.png?v=link-app-v33" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -290,7 +290,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v32";
+    const appBuild = "link-app-v33";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -346,6 +346,7 @@
         storage: { mode: "json", dbConfigured: false, dbReady: false },
         settings: {
           logoData: "",
+          logoUrl: "",
           tokenCvDownloadCost: 10,
           tokenVacancyCost: 25,
           tokenTrialCompanyTokens: 30,
@@ -444,7 +445,7 @@
     }
 
     function logoSrc() {
-      return state.settings?.logoData || "/logolink.png?v=link-app-v32";
+      return state.settings?.logoUrl || state.settings?.logoData || "/logolink.png?v=link-app-v33";
     }
 
     function logoImg(className, alt = "Link") {
@@ -1026,13 +1027,14 @@
     }
 
     function productMedia(item) {
-      if (!item.mediaData) {
+      const src = item.mediaUrl || item.mediaData || "";
+      if (!src) {
         return `<div class="product-logo" aria-hidden="true"><img src="${esc(logoSrc())}" alt=""></div>`;
       }
       if (String(item.mediaType || "").startsWith("video/")) {
-        return `<div class="product-media"><video src="${esc(item.mediaData)}" controls preload="metadata"></video></div>`;
+        return `<div class="product-media"><video src="${esc(src)}" controls preload="metadata"></video></div>`;
       }
-      return `<div class="product-media"><img src="${esc(item.mediaData)}" alt="${esc(item.name || "Producto")}"></div>`;
+      return `<div class="product-media"><img src="${esc(src)}" alt="${esc(item.name || "Producto")}"></div>`;
     }
 
     function renderMarketplace() {
@@ -1331,7 +1333,7 @@
           <form class="form" data-admin-settings>
             <div class="logo-admin-preview">
               ${logoImg("brand-mark")}
-              <p data-logo-status>${state.settings?.logoData ? `Logo actual: ${esc(state.settings.logoName || "personalizado")}` : "Logo actual: base del servidor"}</p>
+              <p data-logo-status>${state.settings?.logoUrl || state.settings?.logoData ? `Logo actual: ${esc(state.settings.logoName || "personalizado")}` : "Logo actual: base del servidor"}</p>
             </div>
             <input name="logoFile" type="file" accept="image/*,video/*,.gif,.jpg,.jpeg,.png,.webp,.svg,.mp4,.webm,.mov">
             <label class="check"><input name="clearLogo" type="checkbox"> Restaurar logo base</label>
@@ -2036,7 +2038,7 @@
         const result = await api.post("/api/admin/settings", payload);
         applyState({ ...state, settings: result.settings || state.settings });
         adminState = await api.get("/api/admin/state");
-        accountMessage = result.settings?.logoData
+        accountMessage = result.settings?.logoUrl || result.settings?.logoData
           ? `Logo actualizado: ${result.settings.logoName || "archivo guardado"}`
           : "Logo base restaurado.";
         render();
