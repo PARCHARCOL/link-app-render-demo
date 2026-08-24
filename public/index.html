@@ -9,9 +9,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v29">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v29">
-  <link rel="preload" href="/logolink.png?v=link-app-v29" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v30">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v30">
+  <link rel="preload" href="/logolink.png?v=link-app-v30" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -70,7 +70,7 @@
     .global-error.show{display:block}
     .global-notice{position:fixed;left:50%;bottom:18px;z-index:49;display:none;width:min(92vw,520px);transform:translateX(-50%);padding:13px 14px;color:#063a1d;background:#e9f9ef;border:1px solid #9cdfb5;border-radius:14px;box-shadow:0 18px 40px rgba(10,80,35,.18);font-size:13px;font-weight:850;line-height:1.35}
     .global-notice.show{display:block}
-    .ad-banner{position:relative;isolation:isolate;min-height:126px;display:grid;grid-template-columns:116px minmax(0,1fr) auto;gap:12px;align-items:center;margin:9px 16px max(9px,env(safe-area-inset-bottom));padding:0 12px;overflow:hidden;color:#fff;background:#090403;border:1px solid rgba(255,106,0,.58);border-radius:14px;box-shadow:0 -10px 24px rgba(146,70,18,.08),0 12px 28px rgba(35,8,0,.18)}
+    .ad-banner{position:relative;isolation:isolate;min-height:170px;display:grid;grid-template-columns:134px minmax(0,1fr) auto;gap:14px;align-items:center;margin:10px 16px max(10px,env(safe-area-inset-bottom));padding:0 14px;overflow:hidden;color:#fff;background:#090403;border:1px solid rgba(255,106,0,.58);border-radius:14px;box-shadow:0 -10px 24px rgba(146,70,18,.08),0 12px 28px rgba(35,8,0,.18)}
     .ad-banner::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(0,0,0,.94) 0%,rgba(0,0,0,.52) 36%,rgba(0,0,0,.18) 66%,rgba(0,0,0,.66) 100%)}
     .ad-media{position:absolute;inset:0;z-index:-2;display:block;width:100%;height:100%;overflow:hidden;background:linear-gradient(135deg,#210600 0%,#681a05 46%,#d71920 100%)}
     .ad-media img,.ad-media video{width:100%;height:100%;object-fit:cover;filter:saturate(1.08) brightness(.82)}
@@ -209,7 +209,7 @@
     .admin-row p{margin:4px 0 0;color:var(--muted);font-size:12px;line-height:1.28}
     .admin-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}
     .admin-actions button{min-height:31px;padding:0 9px;border-radius:10px;font-size:11px}
-    @media (max-width:820px){.stage{min-height:100dvh;padding:0;place-items:stretch;background:#fff6ef}.app{width:100dvw;max-width:100dvw;height:100dvh;min-height:100dvh;border-left:0;border-right:0;border-radius:0}.app-header{padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) 12px max(10px,env(safe-area-inset-left));overflow:hidden}.phone-status{min-width:0}.phone-status small{max-width:44%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.brand-row{grid-template-columns:72px minmax(0,1fr);margin-bottom:12px}.brand-mark{width:72px;height:72px}.brand-copy strong{font-size:30px}.header-actions{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;justify-content:stretch}.header-action{width:100%;min-width:0;padding:0 8px}.tabs{display:flex;grid-auto-flow:unset;grid-auto-columns:unset;grid-template-columns:none;gap:8px;max-width:100%;overflow-x:auto;overflow-y:hidden;padding:0 0 4px;-webkit-overflow-scrolling:touch}.menu-btn{flex:0 0 74px}.download-menu{flex-basis:88px}.menu-icon{width:52px;height:52px}.screen{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right));padding-bottom:18px}.split,.auth-grid,.verify-row,.update-banner,.flow-branches{grid-template-columns:1fr}.hero{grid-template-columns:76px minmax(0,1fr)}.logo-card{width:76px;height:68px}.hero h1{font-size:26px}.product-grid{grid-template-columns:1fr}.admin-row{grid-template-columns:1fr}.login-brand{grid-template-columns:68px minmax(0,1fr)}.login-logo{width:68px;height:68px}.ad-banner{min-height:116px;grid-template-columns:104px minmax(0,1fr) auto;margin:8px max(10px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));padding:0 10px}.ad-actions{flex-direction:column;gap:6px}.ad-actions .mini-btn,.ad-actions .secondary{min-height:34px;padding:0 10px;font-size:11px}.ad-copy{padding:24px 0 15px}.ad-copy strong{font-size:12px}.ad-copy span{font-size:8px}}
+    @media (max-width:820px){.stage{min-height:100dvh;padding:0;place-items:stretch;background:#fff6ef}.app{width:100dvw;max-width:100dvw;height:100dvh;min-height:100dvh;border-left:0;border-right:0;border-radius:0}.app-header{padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) 12px max(10px,env(safe-area-inset-left));overflow:hidden}.phone-status{min-width:0}.phone-status small{max-width:44%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.brand-row{grid-template-columns:72px minmax(0,1fr);margin-bottom:12px}.brand-mark{width:72px;height:72px}.brand-copy strong{font-size:30px}.header-actions{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;justify-content:stretch}.header-action{width:100%;min-width:0;padding:0 8px}.tabs{display:flex;grid-auto-flow:unset;grid-auto-columns:unset;grid-template-columns:none;gap:8px;max-width:100%;overflow-x:auto;overflow-y:hidden;padding:0 0 4px;-webkit-overflow-scrolling:touch}.menu-btn{flex:0 0 74px}.download-menu{flex-basis:88px}.menu-icon{width:52px;height:52px}.screen{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right));padding-bottom:18px}.split,.auth-grid,.verify-row,.update-banner,.flow-branches{grid-template-columns:1fr}.hero{grid-template-columns:76px minmax(0,1fr)}.logo-card{width:76px;height:68px}.hero h1{font-size:26px}.product-grid{grid-template-columns:1fr}.admin-row{grid-template-columns:1fr}.login-brand{grid-template-columns:68px minmax(0,1fr)}.login-logo{width:68px;height:68px}.ad-banner{min-height:148px;grid-template-columns:112px minmax(0,1fr) auto;margin:8px max(10px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));padding:0 10px}.ad-actions{flex-direction:column;gap:6px}.ad-actions .mini-btn,.ad-actions .secondary{min-height:36px;padding:0 10px;font-size:11px}.ad-copy{padding:28px 0 18px}.ad-copy strong{font-size:13px}.ad-copy span{font-size:8px}}
     @media (max-width:380px){.brand-row{grid-template-columns:64px minmax(0,1fr)}.brand-mark{width:64px;height:64px}.brand-copy strong{font-size:27px}.menu-btn{flex-basis:68px}.menu-icon{width:48px;height:48px}.menu-btn span:last-child{font-size:10px}.screen{padding-left:10px;padding-right:10px}.hero{grid-template-columns:66px minmax(0,1fr)}.logo-card{width:66px;height:60px}.hero h1{font-size:24px}}
   </style>
 </head>
@@ -290,7 +290,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v29";
+    const appBuild = "link-app-v30";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -444,7 +444,7 @@
     }
 
     function logoSrc() {
-      return state.settings?.logoData || "/logolink.png?v=link-app-v29";
+      return state.settings?.logoData || "/logolink.png?v=link-app-v30";
     }
 
     function logoImg(className, alt = "Link") {
@@ -817,7 +817,7 @@
         <label class="file-field">
           <span>Arte de pauta, foto o video corto (opcional)</span>
           <input name="adMediaFile" type="file" accept="image/*,video/*,.jpg,.jpeg,.png,.webp,.gif,.mp4,.mov,.webm">
-          <small data-file-status="adMediaFile">Puedes anexar el arte o dejarlo para contacto por WhatsApp.</small>
+          <small data-file-status="adMediaFile">Video recomendado: horizontal 16:9, MP4 H.264, 1920x1080 o 1280x720, maximo 20 segundos y sin textos pegados a los bordes.</small>
         </label>
         <textarea name="message" placeholder="Mensaje, fechas deseadas, ciudad o modulo donde quieres pautar"></textarea>
       `, adRequestOpen);
@@ -1295,7 +1295,7 @@
           <label class="file-field">
             <span>Imagen o video del banner</span>
             <input name="adMediaFile" type="file" accept="image/*,video/*,.jpg,.jpeg,.png,.webp,.gif,.mp4,.mov,.webm">
-            <small data-file-status="adMediaFile">Opcional. Si no se sube, el banner muestra texto.</small>
+            <small data-file-status="adMediaFile">Formato optimo: video horizontal 16:9, MP4 H.264, 1920x1080 o 1280x720, maximo 20 segundos. Mantener texto/logo dentro del centro seguro.</small>
           </label>
           <textarea name="body" placeholder="Texto corto del anuncio"></textarea>
         `)}
