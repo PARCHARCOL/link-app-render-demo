@@ -9,9 +9,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v27">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v27">
-  <link rel="preload" href="/logolink.png?v=link-app-v27" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v28">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v28">
+  <link rel="preload" href="/logolink.png?v=link-app-v28" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -19,7 +19,7 @@
     button,input,textarea,select{font:inherit}
     button{cursor:pointer}
     .stage{width:100%;max-width:100vw;min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:12px;overflow:hidden;background:linear-gradient(135deg,#fffdf8 0%,#fff2e7 46%,#ffd5c2 100%)}
-    .app{width:min(100%,760px);max-width:calc(100vw - 24px);height:min(980px,calc(100vh - 24px));height:min(980px,calc(100dvh - 24px));min-height:640px;overflow:hidden;display:grid;grid-template-rows:auto 1fr;background:var(--paper);border:1px solid rgba(215,25,32,.22);border-radius:26px;box-shadow:var(--shadow)}
+    .app{width:min(100%,760px);max-width:calc(100vw - 24px);height:min(980px,calc(100vh - 24px));height:min(980px,calc(100dvh - 24px));min-height:640px;overflow:hidden;display:grid;grid-template-rows:auto 1fr auto;background:var(--paper);border:1px solid rgba(215,25,32,.22);border-radius:26px;box-shadow:var(--shadow)}
     .app-header{padding:12px 24px 14px;background:linear-gradient(180deg,#ffffff 0%,#fff5ed 100%);border-bottom:1px solid var(--line)}
     .phone-status{display:flex;align-items:center;justify-content:space-between;padding:0 4px 8px;color:#2a211b;font-size:12px;font-weight:900}
     .phone-status small{color:var(--red);font-weight:900}
@@ -70,6 +70,15 @@
     .global-error.show{display:block}
     .global-notice{position:fixed;left:50%;bottom:18px;z-index:49;display:none;width:min(92vw,520px);transform:translateX(-50%);padding:13px 14px;color:#063a1d;background:#e9f9ef;border:1px solid #9cdfb5;border-radius:14px;box-shadow:0 18px 40px rgba(10,80,35,.18);font-size:13px;font-weight:850;line-height:1.35}
     .global-notice.show{display:block}
+    .ad-banner{display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 16px max(9px,env(safe-area-inset-bottom));background:#fff7ea;border-top:1px solid var(--line);box-shadow:0 -10px 24px rgba(146,70,18,.08)}
+    .ad-media{width:56px;height:42px;display:grid;place-items:center;overflow:hidden;background:#fff;border:1px solid #ffd28a;border-radius:12px;color:var(--red);font-size:10px;font-weight:950;text-align:center}
+    .ad-media img,.ad-media video{width:100%;height:100%;object-fit:contain}
+    .ad-copy{min-width:0}
+    .ad-copy strong,.ad-copy span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .ad-copy strong{color:var(--ink);font-size:13px;font-weight:950}
+    .ad-copy span{margin-top:2px;color:var(--muted);font-size:11px;font-weight:800}
+    .ad-actions{display:flex;gap:7px;align-items:center}
+    .ad-actions .mini-btn,.ad-actions .secondary{min-height:32px;white-space:nowrap}
     .verify-row,.account-card,.locked,.settings-card{display:grid;gap:10px;margin-bottom:13px;padding:13px;background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:0 12px 28px rgba(146,70,18,.08)}
     .verify-row{grid-template-columns:1fr auto;align-items:center}
     .verify-row strong,.account-card strong,.locked strong,.settings-card strong{display:block;font-size:13px}
@@ -195,7 +204,7 @@
     .admin-row p{margin:4px 0 0;color:var(--muted);font-size:12px;line-height:1.28}
     .admin-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}
     .admin-actions button{min-height:31px;padding:0 9px;border-radius:10px;font-size:11px}
-    @media (max-width:820px){.stage{min-height:100dvh;padding:0;place-items:stretch;background:#fff6ef}.app{width:100dvw;max-width:100dvw;height:100dvh;min-height:100dvh;border-left:0;border-right:0;border-radius:0}.app-header{padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) 12px max(10px,env(safe-area-inset-left));overflow:hidden}.phone-status{min-width:0}.phone-status small{max-width:44%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.brand-row{grid-template-columns:72px minmax(0,1fr);margin-bottom:12px}.brand-mark{width:72px;height:72px}.brand-copy strong{font-size:30px}.header-actions{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;justify-content:stretch}.header-action{width:100%;min-width:0;padding:0 8px}.tabs{display:flex;grid-auto-flow:unset;grid-auto-columns:unset;grid-template-columns:none;gap:8px;max-width:100%;overflow-x:auto;overflow-y:hidden;padding:0 0 4px;-webkit-overflow-scrolling:touch}.menu-btn{flex:0 0 74px}.download-menu{flex-basis:88px}.menu-icon{width:52px;height:52px}.screen{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right));padding-bottom:max(28px,env(safe-area-inset-bottom))}.split,.auth-grid,.verify-row,.update-banner,.flow-branches{grid-template-columns:1fr}.hero{grid-template-columns:76px minmax(0,1fr)}.logo-card{width:76px;height:68px}.hero h1{font-size:26px}.product-grid{grid-template-columns:1fr}.admin-row{grid-template-columns:1fr}.login-brand{grid-template-columns:68px minmax(0,1fr)}.login-logo{width:68px;height:68px}}
+    @media (max-width:820px){.stage{min-height:100dvh;padding:0;place-items:stretch;background:#fff6ef}.app{width:100dvw;max-width:100dvw;height:100dvh;min-height:100dvh;border-left:0;border-right:0;border-radius:0}.app-header{padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) 12px max(10px,env(safe-area-inset-left));overflow:hidden}.phone-status{min-width:0}.phone-status small{max-width:44%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.brand-row{grid-template-columns:72px minmax(0,1fr);margin-bottom:12px}.brand-mark{width:72px;height:72px}.brand-copy strong{font-size:30px}.header-actions{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;justify-content:stretch}.header-action{width:100%;min-width:0;padding:0 8px}.tabs{display:flex;grid-auto-flow:unset;grid-auto-columns:unset;grid-template-columns:none;gap:8px;max-width:100%;overflow-x:auto;overflow-y:hidden;padding:0 0 4px;-webkit-overflow-scrolling:touch}.menu-btn{flex:0 0 74px}.download-menu{flex-basis:88px}.menu-icon{width:52px;height:52px}.screen{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right));padding-bottom:18px}.split,.auth-grid,.verify-row,.update-banner,.flow-branches{grid-template-columns:1fr}.hero{grid-template-columns:76px minmax(0,1fr)}.logo-card{width:76px;height:68px}.hero h1{font-size:26px}.product-grid{grid-template-columns:1fr}.admin-row{grid-template-columns:1fr}.login-brand{grid-template-columns:68px minmax(0,1fr)}.login-logo{width:68px;height:68px}.ad-banner{grid-template-columns:44px minmax(0,1fr);padding-left:max(10px,env(safe-area-inset-left));padding-right:max(10px,env(safe-area-inset-right))}.ad-media{width:44px;height:36px}.ad-actions{grid-column:1/-1;justify-content:stretch}.ad-actions .mini-btn,.ad-actions .secondary{flex:1}}
     @media (max-width:380px){.brand-row{grid-template-columns:64px minmax(0,1fr)}.brand-mark{width:64px;height:64px}.brand-copy strong{font-size:27px}.menu-btn{flex-basis:68px}.menu-icon{width:48px;height:48px}.menu-btn span:last-child{font-size:10px}.screen{padding-left:10px;padding-right:10px}.hero{grid-template-columns:66px minmax(0,1fr)}.logo-card{width:66px;height:60px}.hero h1{font-size:24px}}
   </style>
 </head>
@@ -208,6 +217,7 @@
         <nav class="tabs" aria-label="Navegacion principal"></nav>
       </header>
       <div id="content"></div>
+      <div id="adBanner" class="ad-banner"></div>
     </section>
     <div id="globalError" class="global-error" role="alert"></div>
     <div id="globalNotice" class="global-notice" role="status"></div>
@@ -229,6 +239,7 @@
     let expandedResumeId = "";
     let activeProductCategory = "Todos";
     let mercadoEditorOpen = false;
+    let adRequestOpen = false;
     let installPromptEvent = null;
     let installMessage = "";
     let pendingUpdateWorker = null;
@@ -240,6 +251,7 @@
     const content = document.querySelector("#content");
     const nav = document.querySelector(".tabs");
     const headerBrand = document.querySelector("#headerBrand");
+    const adBanner = document.querySelector("#adBanner");
 
     const api = {
       headers() {
@@ -273,7 +285,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v27";
+    const appBuild = "link-app-v28";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -324,9 +336,19 @@
         officialNewsUpdatedAt: null,
         officialNewsError: null,
         officialSources: [],
+        activeAd: null,
         currentUser: null,
         storage: { mode: "json", dbConfigured: false, dbReady: false },
-        settings: { logoData: "", updatedAt: null },
+        settings: {
+          logoData: "",
+          tokenCvDownloadCost: 10,
+          tokenVacancyCost: 25,
+          tokenTrialCompanyTokens: 30,
+          tokenPackageValue: 50000,
+          tokenPackageTokens: 500,
+          paymentInfo: "Configure en Admin el Nequi o cuenta para recargar tokens.",
+          updatedAt: null,
+        },
       };
     }
 
@@ -417,7 +439,7 @@
     }
 
     function logoSrc() {
-      return state.settings?.logoData || "/logolink.png?v=link-app-v27";
+      return state.settings?.logoData || "/logolink.png?v=link-app-v28";
     }
 
     function logoImg(className, alt = "Link") {
@@ -543,6 +565,14 @@
       return installMessage ? `<p class="notice">${esc(installMessage)}</p>` : "";
     }
 
+    function money(value) {
+      return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(Number(value || 0));
+    }
+
+    function tokensLabel(value) {
+      return `${Number(value || 0).toLocaleString("es-CO")} tokens`;
+    }
+
     function updateNotice() {
       if (!updateAvailable) return "";
       return `<div class="update-banner">
@@ -563,6 +593,27 @@
         return;
       }
       pendingUpdateWorker.postMessage({ type: "SKIP_WAITING" });
+    }
+
+    function adMedia(ad) {
+      if (!ad?.mediaData) return `<div class="ad-media">PAUTA</div>`;
+      if (String(ad.mediaType || "").startsWith("video/")) {
+        return `<div class="ad-media"><video src="${esc(ad.mediaData)}" muted autoplay loop playsinline></video></div>`;
+      }
+      return `<div class="ad-media"><img src="${esc(ad.mediaData)}" alt="${esc(ad.title || "Pauta")}"></div>`;
+    }
+
+    function renderAdBanner() {
+      const ad = state.activeAd || null;
+      const title = ad?.title || "Tu publicidad aqui";
+      const subtitle = ad?.body || ad?.advertiser || "Pauta visible en todas las ventanas de Link.";
+      adBanner.innerHTML = `
+        ${adMedia(ad)}
+        <div class="ad-copy"><strong>${esc(title)}</strong><span>${esc(subtitle)}</span></div>
+        <div class="ad-actions">
+          ${ad?.targetUrl ? `<a class="mini-btn" href="${esc(ad.targetUrl)}" target="_blank" rel="noopener noreferrer">Abrir</a>` : ""}
+          <button class="secondary" data-open-ad-request="1" type="button">Pautar aqui</button>
+        </div>`;
     }
 
     function renderHeader() {
@@ -667,11 +718,13 @@
         : `<p class="notice"><strong>Base de datos no conectada.</strong> Render esta guardando en archivo temporal. Las claves, usuarios y publicaciones pueden perderse si Render reinicia. Conecta la base link-db en Environment con DATABASE_URL.</p>`;
       if (current) {
         const type = current.accountType === "company" ? "Empresa" : "Persona natural";
+        const companyTokens = current.accountType === "company" ? `<p class="notice"><strong>Saldo empresa: ${esc(tokensLabel(current.tokenBalance))}</strong><br>Descargar HV cuesta ${esc(tokensLabel(state.settings.tokenCvDownloadCost))}. Publicar vacante cuesta ${esc(tokensLabel(state.settings.tokenVacancyCost))}. Recargas: ${esc(state.settings.paymentInfo)}</p>` : "";
         return `<div class="account-card">
             <div><strong>${esc(current.displayName)}</strong><span>${esc(type)} | ${esc(current.email)} | ${esc(state.storage?.mode === "postgres" ? "PostgreSQL" : "JSON local")}${current.isAdmin ? " | Admin" : ""}</span></div>
             <button class="secondary" type="button" id="logoutButton">Cerrar sesion</button>
           </div>
           ${storageWarning}
+          ${companyTokens}
           ${accountMessage ? `<p class="notice">${esc(accountMessage)}</p>` : ""}
           <details class="editor">
             <summary>Cambiar clave</summary>
@@ -744,6 +797,27 @@
       </div>`;
     }
 
+    function adRequestForm() {
+      return editor("Contratar pauta publicitaria", "/api/ad-requests", `
+        <input name="requesterName" placeholder="Nombre de contacto" required>
+        <input name="company" placeholder="Empresa o marca">
+        <div class="split">
+          <input name="phone" placeholder="WhatsApp o telefono" required>
+          <input name="email" type="email" placeholder="Correo">
+        </div>
+        <div class="split">
+          <input name="city" placeholder="Ciudad">
+          <input name="targetUrl" type="url" placeholder="Link de destino opcional">
+        </div>
+        <label class="file-field">
+          <span>Arte de pauta, foto o video corto (opcional)</span>
+          <input name="adMediaFile" type="file" accept="image/*,video/*,.jpg,.jpeg,.png,.webp,.gif,.mp4,.mov,.webm">
+          <small data-file-status="adMediaFile">Puedes anexar el arte o dejarlo para contacto por WhatsApp.</small>
+        </label>
+        <textarea name="message" placeholder="Mensaje, fechas deseadas, ciudad o modulo donde quieres pautar"></textarea>
+      `, adRequestOpen);
+    }
+
     function renderOfficialNews() {
       const official = officialItems();
       if (!official.length) {
@@ -807,6 +881,11 @@
       return item.photoData ? `<div class="profile-photo"><img src="${esc(item.photoData)}" alt=""></div>` : `<div class="profile-photo">${esc((item.fullName || "L").slice(0, 1))}</div>`;
     }
 
+    function canSeeResumeContact(item) {
+      const current = user();
+      return Boolean(current?.isAdmin || (current?.id && item.userId === current.id));
+    }
+
     function renderBolsa() {
       const current = user();
       const canDownload = Boolean(current);
@@ -814,6 +893,7 @@
       const filteredResumes = activeResumeCategory === "Todos" ? allResumes : allResumes.filter((item) => resumeCategory(item) === activeResumeCategory);
       const resumes = filteredResumes.length ? filteredResumes.map((item) => {
         const expanded = expandedResumeId === item.id;
+        const showContact = canSeeResumeContact(item);
         const details = [
           ["Perfil", item.summary],
           ["Experiencia", item.experience],
@@ -834,8 +914,9 @@
           <div class="meta">
             ${statusBadge(item.status)}
             <span class="pill">${esc(resumeCategory(item))}</span>
-            ${item.phone ? `<span class="pill">${esc(item.phone)}</span>` : ""}
-            ${item.email ? `<span class="pill">${esc(item.email)}</span>` : ""}
+            ${showContact && item.phone ? `<span class="pill">${esc(item.phone)}</span>` : ""}
+            ${showContact && item.email ? `<span class="pill">${esc(item.email)}</span>` : ""}
+            ${!showContact ? `<span class="pill">Contacto protegido</span>` : ""}
             ${item.availability ? `<span class="pill">${esc(resumeAvailability(item.availability))}</span>` : ""}
           </div>
           ${expanded && details.length ? `<div class="detail-panel">${details.map(([title, value]) => `<div><h4>${esc(title)}</h4><p>${esc(value)}</p></div>`).join("")}</div>` : ""}
@@ -843,7 +924,7 @@
             <button class="secondary" data-resume-detail="${esc(item.id)}" type="button">${expanded ? "Ocultar detalle" : "Ver detalle"}</button>
             ${
             canDownload
-              ? `<a class="mini-btn" href="/cv/${esc(item.id)}" target="_blank" rel="noopener noreferrer">Descargar CV</a>`
+              ? `<button class="mini-btn" data-cv-download="${esc(item.id)}" type="button">Descargar CV (${esc(tokensLabel(state.settings.tokenCvDownloadCost))})</button>`
               : `<button class="mini-btn" data-protected-tab="empleos" data-protected-mode="login" type="button">Descargar CV</button>`
           }</div>` : ""}
         </article>`;
@@ -902,6 +983,7 @@
         </label>
       `, true);
       const companyForm = editor("Subir vacante empresa", "/api/vacancies", `
+        <p class="field-note">Costo por publicar: ${esc(tokensLabel(state.settings.tokenVacancyCost))}. Saldo actual: ${esc(tokensLabel(current?.tokenBalance))}.</p>
         <input name="company" placeholder="Empresa" required>
         <input name="title" placeholder="Cargo requerido" required>
         <div class="split">
@@ -1072,6 +1154,7 @@
     function renderCuenta() {
       return `<section class="screen">${hero("Cuenta", "Registro, ingreso y datos de contacto para publicar en Link.")}
         ${formError()}
+        ${adRequestForm()}
         ${accountPanel()}
       </section>`;
     }
@@ -1103,7 +1186,7 @@
       return `<div class="admin-row">
         <div>
           <h3>${esc(item.displayName || item.email)}</h3>
-          <p>${esc(item.email)} | ${esc(item.accountType)}${item.role ? ` | ${esc(item.role)}` : ""}${item.isAdmin ? " | Admin" : ""}</p>
+          <p>${esc(item.email)} | ${esc(item.accountType)}${item.role ? ` | ${esc(item.role)}` : ""}${item.accountType === "company" ? ` | ${esc(tokensLabel(item.tokenBalance))}` : ""}${item.isAdmin ? " | Admin" : ""}</p>
           <p>${userStatusBadge(item.status)} ${esc(inactivityText(item))}</p>
         </div>
         <div class="admin-actions">
@@ -1130,6 +1213,99 @@
       </div>`;
     }
 
+    function adminAdRequestRow(item) {
+      const pending = (item.status || "pending") === "pending";
+      return `<div class="admin-row">
+        <div>
+          <h3>${esc(item.company || item.requesterName || "Solicitud de pauta")}</h3>
+          <p>${esc(item.requesterName || "")} | ${esc(item.phone || "")} | ${esc(item.email || "")} | ${esc(item.city || "")}</p>
+          <p>${esc(item.message || "Sin mensaje")} ${statusBadge(item.status)}</p>
+        </div>
+        <div class="admin-actions">
+          ${pending ? `<button class="secondary" data-ad-request-action="approve" data-id="${esc(item.id)}" type="button">Marcar contactada</button>
+          <button class="secondary" data-ad-request-action="reject" data-id="${esc(item.id)}" type="button">Rechazar</button>` : ""}
+          <button class="danger-btn" data-ad-request-action="delete" data-id="${esc(item.id)}" type="button">Eliminar</button>
+        </div>
+      </div>`;
+    }
+
+    function adminTokenRow(item) {
+      const amount = Number(item.amount || 0);
+      return `<div class="admin-row">
+        <div>
+          <h3>${amount > 0 ? "+" : ""}${esc(tokensLabel(amount))} | ${esc(item.userName || item.userEmail || item.userId || "Empresa")}</h3>
+          <p>${esc(item.kind || "movimiento")} | saldo: ${esc(tokensLabel(item.balanceAfter))} | ${esc(dateTimeLabel(item.createdAt))}</p>
+          ${item.note ? `<p>${esc(item.note)}</p>` : ""}
+        </div>
+      </div>`;
+    }
+
+    function renderTokenAdminPanel() {
+      const settings = state.settings || {};
+      const companies = (adminState?.users || []).filter((item) => item.accountType === "company");
+      return `<details class="editor" open>
+        <summary>Monetizacion y tokens</summary>
+        <form class="form" data-admin-token-settings>
+          <div class="split">
+            <input name="tokenCvDownloadCost" type="number" min="0" placeholder="Tokens por descarga HV" value="${esc(settings.tokenCvDownloadCost)}">
+            <input name="tokenVacancyCost" type="number" min="0" placeholder="Tokens por vacante" value="${esc(settings.tokenVacancyCost)}">
+          </div>
+          <div class="split">
+            <input name="tokenTrialCompanyTokens" type="number" min="0" placeholder="Tokens gratis empresa nueva" value="${esc(settings.tokenTrialCompanyTokens)}">
+            <input name="tokenPackageTokens" type="number" min="0" placeholder="Tokens del paquete" value="${esc(settings.tokenPackageTokens)}">
+          </div>
+          <input name="tokenPackageValue" type="number" min="0" placeholder="Valor paquete en pesos" value="${esc(settings.tokenPackageValue)}">
+          <textarea name="paymentInfo" placeholder="Nequi, cuenta o instrucciones para recargar">${esc(settings.paymentInfo)}</textarea>
+          <button class="primary" type="submit">Guardar parametros</button>
+        </form>
+        <form class="form" data-admin-token-load>
+          <select name="userId" required>
+            <option value="">Empresa para cargar tokens</option>
+            ${companies.map((item) => `<option value="${esc(item.id)}">${esc(item.displayName || item.email)} | ${esc(tokensLabel(item.tokenBalance))}</option>`).join("")}
+          </select>
+          <div class="split">
+            <input name="amount" type="number" min="1" placeholder="Tokens a cargar" required>
+            <input name="note" placeholder="Referencia de pago o nota">
+          </div>
+          <button class="primary" type="submit">Cargar tokens</button>
+        </form>
+      </details>`;
+    }
+
+    function renderAdvertisingAdminPanel() {
+      const requests = adminState?.adRequests || [];
+      return `<details class="editor" open>
+        <summary>Pauta publicitaria (${requests.length})</summary>
+        <div class="form">
+          <p class="field-note">Crea una campana para mostrarla en el banner inferior. Las solicitudes solo quedan como contacto hasta que Admin publique una campana.</p>
+        </div>
+        ${editor("Crear campana publicitaria", "/api/admin/ad-campaigns", `
+          <input name="title" placeholder="Titulo del banner" required>
+          <input name="advertiser" placeholder="Anunciante o empresa">
+          <input name="targetUrl" type="url" placeholder="Link de destino">
+          <div class="split">
+            <input name="startsAt" type="datetime-local">
+            <input name="endsAt" type="datetime-local">
+          </div>
+          <label class="file-field">
+            <span>Imagen o video del banner</span>
+            <input name="adMediaFile" type="file" accept="image/*,video/*,.jpg,.jpeg,.png,.webp,.gif,.mp4,.mov,.webm">
+            <small data-file-status="adMediaFile">Opcional. Si no se sube, el banner muestra texto.</small>
+          </label>
+          <textarea name="body" placeholder="Texto corto del anuncio"></textarea>
+        `)}
+        <div class="form admin-list">${requests.length ? requests.map((item) => adminAdRequestRow(item)).join("") : empty("No hay solicitudes de pauta.")}</div>
+      </details>`;
+    }
+
+    function renderTokenTransactions() {
+      const items = adminState?.tokenTransactions || [];
+      return `<details class="editor">
+        <summary>Movimientos de tokens (${items.length})</summary>
+        <div class="form admin-list">${items.length ? items.map((item) => adminTokenRow(item)).join("") : empty("No hay movimientos de tokens.")}</div>
+      </details>`;
+    }
+
     function renderAdmin() {
       if (!user()) {
         return `<section class="screen">${hero("Admin", "Control de marca, usuarios y publicaciones.")}${accountPanel()}</section>`;
@@ -1139,6 +1315,10 @@
       }
       if (!adminState && !adminLoading) loadAdminState();
       const body = adminState ? `<div class="admin-grid">
+        ${renderTokenAdminPanel()}
+        ${renderAdvertisingAdminPanel()}
+        ${renderAdminGroup("adCampaigns", "Campanas publicitarias")}
+        ${renderTokenTransactions()}
         <div class="settings-card">
           <strong>Marca Link</strong>
           <span>Cambia el logo visible en la app. El logo base del servidor queda como respaldo.</span>
@@ -1289,6 +1469,24 @@
             } else {
               throw new Error("Solo se permiten fotos o videos");
             }
+          } else if (key === "adMediaFile") {
+            if (isVideoFile(value)) {
+              if (value.size > 8_000_000) throw new Error("El video de pauta debe pesar menos de 8 MB");
+              const duration = await videoDuration(value);
+              if (duration > 20.25) throw new Error("El video de pauta no puede superar 20 segundos");
+              payload.mediaName = value.name;
+              payload.mediaType = fileMime(value, /\.(mov)$/i.test(fileName(value)) ? "video/quicktime" : "video/mp4");
+              payload.mediaData = await fileToDataUrl(value);
+            } else if (isImageFile(value)) {
+              if (value.size > 10_000_000) throw new Error("La imagen de pauta debe pesar menos de 10 MB");
+              const imageFile = /image\/(?:gif|svg\+xml)/i.test(fileMime(value, "")) ? value : await optimizeImageFile(value, 1200, 0.82);
+              if (imageFile.size > 2_800_000) throw new Error("La imagen de pauta sigue muy pesada. Use una mas liviana");
+              payload.mediaName = imageFile.name;
+              payload.mediaType = fileMime(imageFile, "image/jpeg");
+              payload.mediaData = await fileToDataUrl(imageFile);
+            } else {
+              throw new Error("Solo se permiten imagenes o videos de pauta");
+            }
           }
         } else {
           payload[key] = value;
@@ -1328,6 +1526,16 @@
     function bindForms() {
       const updateAppButton = document.querySelector("#updateAppButton");
       if (updateAppButton) updateAppButton.onclick = updateAppNow;
+      document.querySelectorAll("[data-open-ad-request]").forEach((button) => {
+        button.onclick = () => {
+          adRequestOpen = true;
+          active = "cuenta";
+          render();
+        };
+      });
+      document.querySelectorAll("[data-cv-download]").forEach((button) => {
+        button.onclick = () => downloadResumeCv(button.dataset.cvDownload);
+      });
       document.querySelectorAll("[data-auth-shortcut]").forEach((button) => {
         button.onclick = () => goAccount(button.dataset.authShortcut === "login" ? "login" : "register");
       });
@@ -1429,11 +1637,12 @@
         form.onsubmit = async (event) => {
           event.preventDefault();
           const isProduct = form.dataset.action === "/api/products";
+          const hasAdMedia = form.dataset.action === "/api/ad-requests" || form.dataset.action === "/api/admin/ad-campaigns";
           await submitWithPayload(
             form,
-            isProduct ? "Preparando foto o video..." : "Procesando...",
+            isProduct || hasAdMedia ? "Preparando foto o video..." : "Procesando...",
             "Guardando...",
-            (payload) => save(form.dataset.action, payload, { keepNotice: isProduct }),
+            (payload) => save(form.dataset.action, payload, { keepNotice: isProduct || hasAdMedia }),
           );
         };
       });
@@ -1457,8 +1666,23 @@
           await saveAdminSettings(form);
         };
       });
+      document.querySelectorAll("form[data-admin-token-settings]").forEach((form) => {
+        form.onsubmit = async (event) => {
+          event.preventDefault();
+          await saveAdminTokenSettings(form);
+        };
+      });
+      document.querySelectorAll("form[data-admin-token-load]").forEach((form) => {
+        form.onsubmit = async (event) => {
+          event.preventDefault();
+          await loadCompanyTokens(form);
+        };
+      });
       document.querySelectorAll("[data-admin-action]").forEach((button) => {
         button.onclick = () => moderate(button.dataset.type, button.dataset.id, button.dataset.adminAction);
+      });
+      document.querySelectorAll("[data-ad-request-action]").forEach((button) => {
+        button.onclick = () => moderateAdRequest(button.dataset.id, button.dataset.adRequestAction);
       });
       document.querySelectorAll("[data-user-action]").forEach((button) => {
         button.onclick = () => moderateUser(button.dataset.id, button.dataset.userAction);
@@ -1628,6 +1852,8 @@
       if (path === "/api/resumes") return pending ? "Hoja de vida guardada. Queda pendiente de aprobacion por Admin." : "Hoja de vida guardada y visible.";
       if (path === "/api/vacancies") return pending ? "Vacante guardada. Queda pendiente de aprobacion por Admin." : "Vacante publicada correctamente.";
       if (path === "/api/news") return pending ? "Informacion guardada. Queda pendiente de aprobacion por Admin." : "Informacion publicada correctamente.";
+      if (path === "/api/ad-requests") return "Solicitud de pauta enviada. Admin la revisara para contactarte.";
+      if (path === "/api/admin/ad-campaigns") return pending ? "Campana publicitaria guardada pendiente." : "Campana publicitaria publicada.";
       if (path === "/api/threads") return pending ? "Tema guardado. Queda pendiente de aprobacion por Admin." : "Tema publicado correctamente.";
       if (/^\/api\/threads\/[^/]+\/messages$/.test(path)) return "Respuesta guardada correctamente.";
       return pending ? "Guardado. Queda pendiente de aprobacion por Admin." : "Guardado correctamente.";
@@ -1642,10 +1868,39 @@
         if (path === "/api/products") {
           mercadoEditorOpen = false;
         }
+        if (path === "/api/ad-requests") {
+          adRequestOpen = false;
+        }
         if (path === "/api/resumes" || path === "/api/vacancies") bolsaAction = "";
         render();
         showNotice(saveSuccessMessage(path, result));
       } catch (error) {
+        showError(error);
+      }
+    }
+
+    async function downloadResumeCv(id) {
+      if (!user()) {
+        confirmRegistration("empleos", "login");
+        return;
+      }
+      const popup = window.open("", "_blank");
+      if (popup) {
+        popup.document.write("<!doctype html><html lang=\"es\"><meta charset=\"utf-8\"><title>Link</title><body><p>Cargando hoja de vida...</p></body></html>");
+        popup.document.close();
+      }
+      try {
+        clearError();
+        const data = await api.post(`/api/resumes/${encodeURIComponent(id)}/download`, {});
+        if (!popup) throw new Error("El navegador bloqueo la ventana. Permite ventanas emergentes e intenta de nuevo.");
+        popup.document.open();
+        popup.document.write(data.html || "");
+        popup.document.close();
+        applyState(await api.state());
+        render();
+        showNotice(`Descarga autorizada. Saldo actual: ${tokensLabel(data.tokenBalance ?? user()?.tokenBalance)}`);
+      } catch (error) {
+        if (popup) popup.close();
         showError(error);
       }
     }
@@ -1744,9 +1999,48 @@
       }
     }
 
+    async function saveAdminTokenSettings(form) {
+      try {
+        clearError();
+        const payload = Object.fromEntries(new FormData(form).entries());
+        const result = await api.post("/api/admin/token-settings", payload);
+        applyState({ ...state, settings: result.settings || state.settings });
+        adminState = await api.get("/api/admin/state");
+        render();
+        showNotice("Parametros de tokens guardados.");
+      } catch (error) {
+        showError(error);
+      }
+    }
+
+    async function loadCompanyTokens(form) {
+      try {
+        clearError();
+        const payload = Object.fromEntries(new FormData(form).entries());
+        await api.post("/api/admin/tokens/load", payload);
+        adminState = await api.get("/api/admin/state");
+        applyState(await api.state());
+        render();
+        showNotice("Tokens cargados a la empresa.");
+      } catch (error) {
+        showError(error);
+      }
+    }
+
+    async function moderateAdRequest(id, action) {
+      try {
+        await api.post("/api/admin/ad-requests", { id, action });
+        adminState = await api.get("/api/admin/state");
+        render();
+      } catch (error) {
+        showError(error);
+      }
+    }
+
     function render() {
       renderHeader();
       renderTabs();
+      renderAdBanner();
       if (active === "inicio") content.innerHTML = renderInicio();
       if (active === "empleos") content.innerHTML = renderBolsa();
       if (active === "marketplace") content.innerHTML = renderMarketplace();

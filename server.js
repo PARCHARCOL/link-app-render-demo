@@ -34,8 +34,17 @@ const emptyData = {
   products: [],
   threads: [],
   passwordRecoveryRequests: [],
+  adRequests: [],
+  adCampaigns: [],
+  tokenTransactions: [],
   settings: {
     logoData: "",
+    tokenCvDownloadCost: 10,
+    tokenVacancyCost: 25,
+    tokenTrialCompanyTokens: 30,
+    tokenPackageValue: 50000,
+    tokenPackageTokens: 500,
+    paymentInfo: "Configure en Admin el Nequi o cuenta para recargar tokens.",
     updatedAt: null,
   },
 };
@@ -218,12 +227,24 @@ function logoDataText(value, max) {
   return output;
 }
 
+function intSetting(value, fallback, min = 0, max = 1_000_000) {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(max, Math.max(min, parsed));
+}
+
 function normalizeSettings(settings = {}) {
   const logoData = String(settings.logoData || "").trim();
   return {
     logoData: /^data:(?:image\/[a-z0-9.+-]+|video\/[a-z0-9.+-]+);base64,/i.test(logoData) && logoData.length <= 16_000_000 ? logoData : "",
     logoType: text(settings.logoType || settings.logo_type, 120),
     logoName: text(settings.logoName || settings.logo_name, 160),
+    tokenCvDownloadCost: intSetting(settings.tokenCvDownloadCost ?? settings.token_cv_download_cost, 10, 0, 10000),
+    tokenVacancyCost: intSetting(settings.tokenVacancyCost ?? settings.token_vacancy_cost, 25, 0, 10000),
+    tokenTrialCompanyTokens: intSetting(settings.tokenTrialCompanyTokens ?? settings.token_trial_company_tokens, 30, 0, 100000),
+    tokenPackageValue: intSetting(settings.tokenPackageValue ?? settings.token_package_value, 50000, 0, 100000000),
+    tokenPackageTokens: intSetting(settings.tokenPackageTokens ?? settings.token_package_tokens, 500, 0, 1000000),
+    paymentInfo: text(settings.paymentInfo || settings.payment_info, 300) || "Configure en Admin el Nequi o cuenta para recargar tokens.",
     updatedAt: settings.updatedAt || settings.updated_at || null,
   };
 }
@@ -723,6 +744,7 @@ function normalizeData(parsed = {}) {
       ? parsed.users.map((item) => ({
         ...item,
         status: normalizeUserStatus(item.status),
+        tokenBalance: intSetting(item.tokenBalance ?? item.token_balance, 0, 0, 1_000_000),
         lastSeenAt: item.lastSeenAt || item.createdAt || null,
         deactivatedAt: item.deactivatedAt || null,
       }))
@@ -740,6 +762,9 @@ function normalizeData(parsed = {}) {
     vacancies: Array.isArray(parsed.vacancies) ? parsed.vacancies.map((item) => ({ ...item, status: normalizeStatus(item.status) })) : [],
     products: Array.isArray(parsed.products) ? parsed.products.map((item) => ({ ...item, status: normalizeStatus(item.status) })) : [],
     threads: Array.isArray(parsed.threads) ? parsed.threads.map((item) => ({ ...item, status: normalizeStatus(item.status) })) : [],
+    adRequests: Array.isArray(parsed.adRequests) ? parsed.adRequests.map((item) => ({ ...item, status: normalizeStatus(item.status) })) : [],
+    adCampaigns: Array.isArray(parsed.adCampaigns) ? parsed.adCampaigns.map((item) => ({ ...item, status: normalizeStatus(item.status) })) : [],
+    tokenTransactions: Array.isArray(parsed.tokenTransactions) ? parsed.tokenTransactions : [],
     settings: normalizeSettings(parsed.settings || emptyData.settings),
   };
 }
@@ -812,6 +837,7 @@ async function initDb() {
       nit text DEFAULT '',
       role text DEFAULT '',
       is_admin boolean NOT NULL DEFAULT false,
+      token_balance integer NOT NULL DEFAULT 0,
       status text NOT NULL DEFAULT 'active',
       last_seen_at timestamptz,
       deactivated_at timestamptz,
@@ -930,7 +956,53 @@ async function initDb() {
       created_at timestamptz NOT NULL DEFAULT now()
     );
 
+    CREATE TABLE IF NOT EXISTS link_ad_requests (
+      id uuid PRIMARY KEY,
+      requester_name text NOT NULL,
+      company text DEFAULT '',
+      phone text DEFAULT '',
+      email text DEFAULT '',
+      city text DEFAULT '',
+      target_url text DEFAULT '',
+      message text DEFAULT '',
+      media_data text DEFAULT '',
+      media_type text DEFAULT '',
+      media_name text DEFAULT '',
+      status text NOT NULL DEFAULT 'pending',
+      created_at timestamptz NOT NULL DEFAULT now(),
+      resolved_at timestamptz
+    );
+
+    CREATE TABLE IF NOT EXISTS link_ad_campaigns (
+      id uuid PRIMARY KEY,
+      title text NOT NULL,
+      advertiser text DEFAULT '',
+      body text DEFAULT '',
+      target_url text DEFAULT '',
+      media_data text DEFAULT '',
+      media_type text DEFAULT '',
+      media_name text DEFAULT '',
+      starts_at timestamptz,
+      ends_at timestamptz,
+      status text NOT NULL DEFAULT 'published',
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS link_token_transactions (
+      id uuid PRIMARY KEY,
+      user_id uuid REFERENCES link_users(id) ON DELETE CASCADE,
+      admin_id uuid REFERENCES link_users(id) ON DELETE SET NULL,
+      kind text NOT NULL,
+      amount integer NOT NULL,
+      balance_after integer NOT NULL,
+      reference_id text DEFAULT '',
+      note text DEFAULT '',
+      created_at timestamptz NOT NULL DEFAULT now()
+    );
+
     ALTER TABLE link_users ADD COLUMN IF NOT EXISTS is_admin boolean NOT NULL DEFAULT false;
+    ALTER TABLE link_users ADD COLUMN IF NOT EXISTS token_balance integer NOT NULL DEFAULT 0;
     ALTER TABLE link_users ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'active';
     ALTER TABLE link_users ADD COLUMN IF NOT EXISTS last_seen_at timestamptz;
     ALTER TABLE link_users ADD COLUMN IF NOT EXISTS deactivated_at timestamptz;
@@ -947,6 +1019,8 @@ async function initDb() {
     ALTER TABLE link_resumes ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'published';
     ALTER TABLE link_resumes ADD COLUMN IF NOT EXISTS category text DEFAULT '';
     ALTER TABLE link_vacancies ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'published';
+    ALTER TABLE link_ad_requests ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'pending';
+    ALTER TABLE link_ad_campaigns ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'published';
   `);
 
   if (adminEmails.size) {
@@ -1006,6 +1080,7 @@ function sanitizeUser(user) {
     nit: user.nit || "",
     role: user.role || "",
     isAdmin: isAdminUser(user),
+    tokenBalance: intSetting(user.tokenBalance ?? user.token_balance, 0, 0, 1_000_000),
     status: normalizeUserStatus(user.status),
     createdAt,
     lastSeenAt: user.lastSeenAt || user.last_seen_at || createdAt,
@@ -1027,6 +1102,7 @@ function rowUser(row) {
     nit: row.nit || "",
     role: row.role || "",
     isAdmin: isAdminUser(row),
+    tokenBalance: intSetting(row.token_balance, 0, 0, 1_000_000),
     status: normalizeUserStatus(row.status),
     createdAt,
     lastSeenAt: row.lastSeenAt || row.last_seen_at || createdAt,
@@ -1063,7 +1139,7 @@ async function getAuthUser(req) {
   if (dbReady) {
     const result = await pool.query(
       `SELECT u.id, u.email, u.account_type, u.display_name, u.phone, u.city, u.company_name, u.nit, u.role,
-              u.is_admin, u.status, u.last_seen_at, u.deactivated_at, u.created_at
+              u.is_admin, u.token_balance, u.status, u.last_seen_at, u.deactivated_at, u.created_at
        FROM link_sessions s
        JOIN link_users u ON u.id = s.user_id
        WHERE s.token_hash = $1 AND s.expires_at > now()`,
@@ -1105,6 +1181,8 @@ async function registerUser(body) {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) fail(400, "Correo invalido");
   if (password.length < 6) fail(400, "La clave debe tener minimo 6 caracteres");
   if (!displayName) fail(400, "Nombre requerido");
+  const settings = await readSettings();
+  const initialTokens = accountType === "company" ? settings.tokenTrialCompanyTokens : 0;
 
   const user = {
     id: randomUUID(),
@@ -1118,6 +1196,7 @@ async function registerUser(body) {
     nit: accountType === "company" ? text(body.nit, 40) : "",
     role: text(body.role, 120),
     isAdmin: isAdminEmail(email),
+    tokenBalance: initialTokens,
     status: "active",
     createdAt: nowStamp(),
     lastSeenAt: nowStamp(),
@@ -1128,10 +1207,17 @@ async function registerUser(body) {
     try {
       await pool.query(
         `INSERT INTO link_users
-         (id, email, password_hash, account_type, display_name, phone, city, company_name, nit, role, is_admin, status, last_seen_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now())`,
-        [user.id, user.email, user.passwordHash, user.accountType, user.displayName, user.phone, user.city, user.companyName, user.nit, user.role, user.isAdmin, user.status],
+         (id, email, password_hash, account_type, display_name, phone, city, company_name, nit, role, is_admin, token_balance, status, last_seen_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, now())`,
+        [user.id, user.email, user.passwordHash, user.accountType, user.displayName, user.phone, user.city, user.companyName, user.nit, user.role, user.isAdmin, user.tokenBalance, user.status],
       );
+      if (initialTokens > 0) {
+        await pool.query(
+          `INSERT INTO link_token_transactions (id, user_id, kind, amount, balance_after, note)
+           VALUES ($1, $2, 'trial', $3, $3, 'Tokens iniciales de empresa')`,
+          [randomUUID(), user.id, initialTokens],
+        );
+      }
     } catch (error) {
       if (error.code === "23505") fail(409, "Ese correo ya esta registrado");
       throw error;
@@ -1140,6 +1226,17 @@ async function registerUser(body) {
     const data = await readJsonData();
     if (data.users.some((item) => normalizeEmail(item.email) === email)) fail(409, "Ese correo ya esta registrado");
     data.users.push(user);
+    if (initialTokens > 0) {
+      data.tokenTransactions.unshift({
+        id: randomUUID(),
+        userId: user.id,
+        kind: "trial",
+        amount: initialTokens,
+        balanceAfter: initialTokens,
+        note: "Tokens iniciales de empresa",
+        createdAt: nowStamp(),
+      });
+    }
     await writeJsonData(data);
   }
 
@@ -1154,7 +1251,7 @@ async function loginUser(body) {
   let passwordHash;
   if (dbReady) {
     const result = await pool.query(
-      `SELECT id, email, password_hash, account_type, display_name, phone, city, company_name, nit, role, is_admin,
+      `SELECT id, email, password_hash, account_type, display_name, phone, city, company_name, nit, role, is_admin, token_balance,
               status, last_seen_at, deactivated_at, created_at
        FROM link_users WHERE email = $1`,
       [email],
@@ -1295,7 +1392,7 @@ async function recoverAdminPassword(body) {
          last_seen_at = now(),
          updated_at = now()
        RETURNING id, email, account_type, display_name, phone, city, company_name, nit, role,
-                 is_admin, status, last_seen_at, deactivated_at, created_at`,
+                 is_admin, token_balance, status, last_seen_at, deactivated_at, created_at`,
       [randomUUID(), email, passwordHash, displayName],
     );
     const user = rowUser(result.rows[0]);
@@ -1360,6 +1457,7 @@ async function readData(authUser = null) {
       resumes,
       vacancies,
       settings,
+      activeAd,
     ] = await Promise.all([
       pool.query(
         `SELECT id, title, body, category, contact, status, created_at AS "createdAt"
@@ -1386,7 +1484,7 @@ async function readData(authUser = null) {
       ),
       pool.query(`SELECT id, thread_id AS "threadId", author, text, created_at AS "createdAt" FROM link_messages ORDER BY created_at ASC LIMIT 500`),
       pool.query(
-        `SELECT id, full_name AS "fullName", headline, category, document_id AS "documentId", city, phone, email, availability, salary,
+        `SELECT id, user_id AS "userId", full_name AS "fullName", headline, category, document_id AS "documentId", city, phone, email, availability, salary,
                 summary, experience, education, skills, references_text AS "referencesText", photo_data AS "photoData",
                 attachment_name AS "attachmentName", status, created_at AS "createdAt", updated_at AS "updatedAt"
          FROM link_resumes
@@ -1402,6 +1500,7 @@ async function readData(authUser = null) {
         [authUserId],
       ),
       readSettings(),
+      readActiveAdCampaign(),
     ]);
 
     const messagesByThread = new Map();
@@ -1421,6 +1520,7 @@ async function readData(authUser = null) {
       currentUser: authUser,
       storage: storageInfo(),
       settings,
+      activeAd,
     };
   }
 
@@ -1437,6 +1537,7 @@ async function readData(authUser = null) {
     currentUser: authUser,
     storage: storageInfo(),
     settings: data.settings,
+    activeAd: await readActiveAdCampaign(),
   };
 }
 
@@ -1628,11 +1729,57 @@ async function saveResume(body, user) {
   return item;
 }
 
+async function chargeTokensWithClient(client, user, amount, kind, referenceId, note) {
+  if (amount <= 0 || isAdminUser(user)) return { charged: false, balance: user.tokenBalance || 0 };
+  if (user.accountType !== "company") fail(403, "Esta accion es exclusiva para empresas con saldo de tokens");
+  const current = await client.query("SELECT token_balance FROM link_users WHERE id = $1 FOR UPDATE", [user.id]);
+  const balance = Number(current.rows[0]?.token_balance || 0);
+  if (balance < amount) {
+    fail(402, `Saldo insuficiente. Necesitas ${amount} tokens y tienes ${balance}. Solicita recarga por Nequi o cuenta.`);
+  }
+  const nextBalance = balance - amount;
+  await client.query("UPDATE link_users SET token_balance = $1, updated_at = now() WHERE id = $2", [nextBalance, user.id]);
+  await client.query(
+    `INSERT INTO link_token_transactions (id, user_id, kind, amount, balance_after, reference_id, note)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    [randomUUID(), user.id, kind, -amount, nextBalance, referenceId || "", note || ""],
+  );
+  user.tokenBalance = nextBalance;
+  return { charged: true, balance: nextBalance };
+}
+
+function chargeTokensInData(data, user, amount, kind, referenceId, note) {
+  if (amount <= 0 || isAdminUser(user)) return { charged: false, balance: user.tokenBalance || 0 };
+  if (user.accountType !== "company") fail(403, "Esta accion es exclusiva para empresas con saldo de tokens");
+  const found = data.users.find((item) => item.id === user.id);
+  if (!found) fail(404, "Empresa no encontrada");
+  const balance = intSetting(found.tokenBalance, 0, 0, 1_000_000);
+  if (balance < amount) {
+    fail(402, `Saldo insuficiente. Necesitas ${amount} tokens y tienes ${balance}. Solicita recarga por Nequi o cuenta.`);
+  }
+  const nextBalance = balance - amount;
+  found.tokenBalance = nextBalance;
+  data.tokenTransactions.unshift({
+    id: randomUUID(),
+    userId: user.id,
+    kind,
+    amount: -amount,
+    balanceAfter: nextBalance,
+    referenceId: referenceId || "",
+    note: note || "",
+    createdAt: nowStamp(),
+  });
+  user.tokenBalance = nextBalance;
+  return { charged: true, balance: nextBalance };
+}
+
 async function saveVacancy(body, user) {
   if (user.accountType !== "company") fail(403, "Solo empresa puede publicar vacantes");
   const company = text(body.company, 140) || user.companyName || user.displayName;
   const title = text(body.title, 140);
   if (!company || !title) fail(400, "Empresa y cargo son requeridos");
+  const settings = await readSettings();
+  const cost = settings.tokenVacancyCost;
   const item = {
     id: randomUUID(),
     userId: user.id,
@@ -1647,23 +1794,35 @@ async function saveVacancy(body, user) {
     createdAt: nowStamp(),
   };
   if (dbReady) {
-    await pool.query(
-      `INSERT INTO link_vacancies (id, user_id, company, title, city, salary, contact, description, requirements, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-      [item.id, item.userId, item.company, item.title, item.city, item.salary, item.contact, item.description, item.requirements, item.status],
-    );
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await chargeTokensWithClient(client, user, cost, "vacancy", item.id, `Publicacion de vacante: ${item.title}`);
+      await client.query(
+        `INSERT INTO link_vacancies (id, user_id, company, title, city, salary, contact, description, requirements, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        [item.id, item.userId, item.company, item.title, item.city, item.salary, item.contact, item.description, item.requirements, item.status],
+      );
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
   } else {
     const data = await readJsonData();
+    chargeTokensInData(data, user, cost, "vacancy", item.id, `Publicacion de vacante: ${item.title}`);
     data.vacancies.unshift(item);
     await writeJsonData(data);
   }
-  return item;
+  return { ...item, tokenBalance: user.tokenBalance };
 }
 
 async function getResume(id) {
   if (dbReady) {
     const result = await pool.query(
-      `SELECT id, full_name AS "fullName", headline, document_id AS "documentId", city, phone, email, availability, salary,
+      `SELECT id, user_id AS "userId", full_name AS "fullName", headline, document_id AS "documentId", city, phone, email, availability, salary,
               summary, experience, education, skills, references_text AS "referencesText", photo_data AS "photoData",
               attachment_name AS "attachmentName", attachment_data AS "attachmentData", created_at AS "createdAt", updated_at AS "updatedAt"
        FROM link_resumes WHERE id = $1 AND is_public = true AND status = 'published'`,
@@ -1673,6 +1832,52 @@ async function getResume(id) {
   }
   const data = await readJsonData();
   return data.resumes.find((item) => item.id === id && normalizeStatus(item.status) === "published") || null;
+}
+
+function resumeDownloadRequiresCharge(resume, user) {
+  if (isAdminUser(user)) return false;
+  if (user.accountType === "person" && resume.userId === user.id) return false;
+  if (user.accountType !== "company") fail(403, "Solo empresas registradas pueden descargar hojas de vida de candidatos");
+  return true;
+}
+
+async function downloadResume(id, user) {
+  const settings = await readSettings();
+  const cost = settings.tokenCvDownloadCost;
+  let resume;
+  if (dbReady) {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const result = await client.query(
+        `SELECT id, user_id AS "userId", full_name AS "fullName", headline, document_id AS "documentId", city, phone, email, availability, salary,
+                summary, experience, education, skills, references_text AS "referencesText", photo_data AS "photoData",
+                attachment_name AS "attachmentName", attachment_data AS "attachmentData", created_at AS "createdAt", updated_at AS "updatedAt"
+         FROM link_resumes WHERE id = $1 AND is_public = true AND status = 'published'`,
+        [id],
+      );
+      resume = result.rows[0];
+      if (!resume) fail(404, "Hoja de vida no encontrada");
+      if (resumeDownloadRequiresCharge(resume, user)) {
+        await chargeTokensWithClient(client, user, cost, "cv_download", id, `Descarga HV: ${resume.fullName}`);
+      }
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
+  } else {
+    const data = await readJsonData();
+    resume = data.resumes.find((item) => item.id === id && normalizeStatus(item.status) === "published");
+    if (!resume) fail(404, "Hoja de vida no encontrada");
+    if (resumeDownloadRequiresCharge(resume, user)) {
+      chargeTokensInData(data, user, cost, "cv_download", id, `Descarga HV: ${resume.fullName}`);
+      await writeJsonData(data);
+    }
+  }
+  return { html: resumePrintHtml(resume), tokenBalance: user.tokenBalance };
 }
 
 function resumePrintHtml(resume) {
@@ -1721,12 +1926,144 @@ function resumePrintHtml(resume) {
 </html>`;
 }
 
+function normalizeUrl(value) {
+  const clean = text(value, 300);
+  if (!clean) return "";
+  try {
+    const parsed = new URL(clean);
+    return ["http:", "https:"].includes(parsed.protocol) ? parsed.toString() : "";
+  } catch {
+    return "";
+  }
+}
+
+async function saveAdRequest(body) {
+  const requesterName = text(body.requesterName || body.name, 120);
+  const phone = text(body.phone, 80);
+  const email = normalizeEmail(body.email);
+  if (!requesterName || !phone) fail(400, "Nombre y telefono son requeridos para solicitar pauta");
+  const item = {
+    id: randomUUID(),
+    requesterName,
+    company: text(body.company, 140),
+    phone,
+    email,
+    city: text(body.city, 80),
+    targetUrl: normalizeUrl(body.targetUrl),
+    message: text(body.message, 1200),
+    mediaData: mediaDataText(body.mediaData, 12_000_000),
+    mediaType: text(body.mediaType, 80),
+    mediaName: text(body.mediaName, 160),
+    status: "pending",
+    createdAt: nowStamp(),
+  };
+  if (dbReady) {
+    await pool.query(
+      `INSERT INTO link_ad_requests
+       (id, requester_name, company, phone, email, city, target_url, message, media_data, media_type, media_name, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+      [item.id, item.requesterName, item.company, item.phone, item.email, item.city, item.targetUrl, item.message, item.mediaData, item.mediaType, item.mediaName, item.status],
+    );
+  } else {
+    const data = await readJsonData();
+    data.adRequests.unshift(item);
+    await writeJsonData(data);
+  }
+  return item;
+}
+
+async function saveAdCampaign(body, admin) {
+  const title = text(body.title, 120);
+  if (!title) fail(400, "Titulo de campana requerido");
+  const item = {
+    id: randomUUID(),
+    title,
+    advertiser: text(body.advertiser, 140),
+    body: text(body.body, 300),
+    targetUrl: normalizeUrl(body.targetUrl),
+    mediaData: mediaDataText(body.mediaData, 12_000_000),
+    mediaType: text(body.mediaType, 80),
+    mediaName: text(body.mediaName, 160),
+    startsAt: text(body.startsAt, 40) || null,
+    endsAt: text(body.endsAt, 40) || null,
+    status: text(body.status, 40) === "pending" ? "pending" : "published",
+    createdAt: nowStamp(),
+    updatedAt: nowStamp(),
+    author: admin.displayName || admin.email,
+  };
+  if (dbReady) {
+    await pool.query(
+      `INSERT INTO link_ad_campaigns
+       (id, title, advertiser, body, target_url, media_data, media_type, media_name, starts_at, ends_at, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULLIF($9, '')::timestamptz, NULLIF($10, '')::timestamptz, $11)`,
+      [item.id, item.title, item.advertiser, item.body, item.targetUrl, item.mediaData, item.mediaType, item.mediaName, item.startsAt || "", item.endsAt || "", item.status],
+    );
+  } else {
+    const data = await readJsonData();
+    data.adCampaigns.unshift(item);
+    await writeJsonData(data);
+  }
+  return item;
+}
+
+async function readActiveAdCampaign() {
+  if (dbReady) {
+    const result = await pool.query(
+      `SELECT id, title, advertiser, body, target_url AS "targetUrl", media_data AS "mediaData",
+              media_type AS "mediaType", media_name AS "mediaName", starts_at AS "startsAt", ends_at AS "endsAt",
+              status, created_at AS "createdAt"
+       FROM link_ad_campaigns
+       WHERE status = 'published'
+         AND (starts_at IS NULL OR starts_at <= now())
+         AND (ends_at IS NULL OR ends_at >= now())
+       ORDER BY created_at DESC LIMIT 1`,
+    );
+    return result.rows[0] || null;
+  }
+  const now = Date.now();
+  const data = await readJsonData();
+  return data.adCampaigns.find((item) => {
+    const status = normalizeStatus(item.status);
+    const starts = item.startsAt ? Date.parse(item.startsAt) : 0;
+    const ends = item.endsAt ? Date.parse(item.endsAt) : 0;
+    return status === "published" && (!starts || starts <= now) && (!ends || ends >= now);
+  }) || null;
+}
+
+async function moderateAdRequest(body) {
+  const id = text(body.id, 80);
+  const action = text(body.action, 40);
+  if (!id || !["approve", "reject", "delete"].includes(action)) fail(400, "Solicitud de pauta no valida");
+  if (dbReady) {
+    if (action === "delete") {
+      await pool.query("DELETE FROM link_ad_requests WHERE id = $1", [id]);
+      return { ok: true, status: "deleted" };
+    }
+    const status = action === "approve" ? "published" : "hidden";
+    const result = await pool.query("UPDATE link_ad_requests SET status = $1, resolved_at = now() WHERE id = $2", [status, id]);
+    if (!result.rowCount) fail(404, "Solicitud de pauta no encontrada");
+    return { ok: true, status };
+  }
+  const data = await readJsonData();
+  const index = data.adRequests.findIndex((item) => item.id === id);
+  if (index < 0) fail(404, "Solicitud de pauta no encontrada");
+  if (action === "delete") {
+    data.adRequests.splice(index, 1);
+  } else {
+    data.adRequests[index].status = action === "approve" ? "published" : "hidden";
+    data.adRequests[index].resolvedAt = nowStamp();
+  }
+  await writeJsonData(data);
+  return { ok: true, status: data.adRequests[index]?.status || "deleted" };
+}
+
 const moderationTargets = {
   news: { table: "link_news", collection: "news" },
   products: { table: "link_products", collection: "products" },
   threads: { table: "link_threads", collection: "threads" },
   resumes: { table: "link_resumes", collection: "resumes" },
   vacancies: { table: "link_vacancies", collection: "vacancies" },
+  adCampaigns: { table: "link_ad_campaigns", collection: "adCampaigns" },
 };
 
 function adminLabelUser(users, id) {
@@ -1744,10 +2081,10 @@ function statusFromAction(action) {
 async function readAdminState() {
   const settings = await readSettings();
   if (dbReady) {
-    const [users, recovery, news, products, threads, resumes, vacancies] = await Promise.all([
+    const [users, recovery, news, products, threads, resumes, vacancies, adRequests, adCampaigns, tokenTransactions] = await Promise.all([
       pool.query(
         `SELECT id, email, account_type AS "accountType", display_name AS "displayName", city, company_name AS "companyName",
-                role, is_admin AS "isAdmin", status, last_seen_at AS "lastSeenAt", deactivated_at AS "deactivatedAt",
+                role, is_admin AS "isAdmin", token_balance AS "tokenBalance", status, last_seen_at AS "lastSeenAt", deactivated_at AS "deactivatedAt",
                 created_at AS "createdAt"
          FROM link_users ORDER BY display_name ASC, email ASC LIMIT 300`,
       ),
@@ -1784,6 +2121,25 @@ async function readAdminState() {
          FROM link_vacancies v LEFT JOIN link_users u ON u.id = v.user_id
          ORDER BY v.created_at DESC LIMIT 200`,
       ),
+      pool.query(
+        `SELECT id, requester_name AS "requesterName", company, phone, email, city, target_url AS "targetUrl",
+                message, media_name AS "mediaName", status, created_at AS "createdAt", resolved_at AS "resolvedAt"
+         FROM link_ad_requests
+         ORDER BY CASE WHEN status = 'pending' THEN 0 ELSE 1 END, created_at DESC LIMIT 200`,
+      ),
+      pool.query(
+        `SELECT id, title, advertiser, body, target_url AS "targetUrl", media_name AS "mediaName",
+                starts_at AS "startsAt", ends_at AS "endsAt", status, created_at AS "createdAt", updated_at AS "updatedAt"
+         FROM link_ad_campaigns
+         ORDER BY created_at DESC LIMIT 200`,
+      ),
+      pool.query(
+        `SELECT t.id, t.user_id AS "userId", t.admin_id AS "adminId", t.kind, t.amount, t.balance_after AS "balanceAfter",
+                t.reference_id AS "referenceId", t.note, t.created_at AS "createdAt", u.display_name AS "userName", u.email AS "userEmail"
+         FROM link_token_transactions t
+         LEFT JOIN link_users u ON u.id = t.user_id
+         ORDER BY t.created_at DESC LIMIT 200`,
+      ),
     ]);
     return {
       settings,
@@ -1795,7 +2151,10 @@ async function readAdminState() {
         threads: threads.rows,
         resumes: resumes.rows,
         vacancies: vacancies.rows,
+        adCampaigns: adCampaigns.rows.map((item) => ({ ...item, category: item.advertiser || "Pauta" })),
       },
+      adRequests: adRequests.rows,
+      tokenTransactions: tokenTransactions.rows,
       storage: storageInfo(),
     };
   }
@@ -1831,7 +2190,10 @@ async function readAdminState() {
       threads: summarize(data.threads, "topic", "name"),
       resumes: summarize(data.resumes, "fullName", "headline"),
       vacancies: summarize(data.vacancies, "title", "company"),
+      adCampaigns: summarize(data.adCampaigns, "title", "advertiser"),
     },
+    adRequests: data.adRequests,
+    tokenTransactions: data.tokenTransactions,
     storage: storageInfo(),
   };
 }
@@ -2000,6 +2362,74 @@ async function updateAdminSettings(body) {
   return writeSettings(next);
 }
 
+async function updateTokenSettings(body) {
+  const current = await readSettings();
+  const next = {
+    ...current,
+    tokenCvDownloadCost: intSetting(body.tokenCvDownloadCost, current.tokenCvDownloadCost, 0, 10000),
+    tokenVacancyCost: intSetting(body.tokenVacancyCost, current.tokenVacancyCost, 0, 10000),
+    tokenTrialCompanyTokens: intSetting(body.tokenTrialCompanyTokens, current.tokenTrialCompanyTokens, 0, 100000),
+    tokenPackageValue: intSetting(body.tokenPackageValue, current.tokenPackageValue, 0, 100000000),
+    tokenPackageTokens: intSetting(body.tokenPackageTokens, current.tokenPackageTokens, 0, 1000000),
+    paymentInfo: text(body.paymentInfo, 300) || current.paymentInfo,
+    updatedAt: nowStamp(),
+  };
+  return writeSettings(next);
+}
+
+async function adminLoadTokens(body, admin) {
+  const userId = text(body.userId, 80);
+  const amount = intSetting(body.amount, 0, 0, 1_000_000);
+  const note = text(body.note || body.paymentRef, 240) || "Recarga manual de tokens";
+  if (!userId || amount <= 0) fail(400, "Empresa y cantidad de tokens son requeridos");
+  if (dbReady) {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const found = await client.query(
+        "SELECT id, account_type, token_balance FROM link_users WHERE id = $1 FOR UPDATE",
+        [userId],
+      );
+      const company = found.rows[0];
+      if (!company) fail(404, "Empresa no encontrada");
+      if (company.account_type !== "company") fail(400, "Solo se cargan tokens a cuentas de empresa");
+      const nextBalance = Number(company.token_balance || 0) + amount;
+      await client.query("UPDATE link_users SET token_balance = $1, updated_at = now() WHERE id = $2", [nextBalance, userId]);
+      await client.query(
+        `INSERT INTO link_token_transactions (id, user_id, admin_id, kind, amount, balance_after, note)
+         VALUES ($1, $2, $3, 'admin_load', $4, $5, $6)`,
+        [randomUUID(), userId, admin.id, amount, nextBalance, note],
+      );
+      await client.query("COMMIT");
+      return { ok: true, tokenBalance: nextBalance };
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  const data = await readJsonData();
+  const company = data.users.find((item) => item.id === userId);
+  if (!company) fail(404, "Empresa no encontrada");
+  if (normalizeAccountType(company.accountType) !== "company") fail(400, "Solo se cargan tokens a cuentas de empresa");
+  const nextBalance = intSetting(company.tokenBalance, 0, 0, 1_000_000) + amount;
+  company.tokenBalance = nextBalance;
+  data.tokenTransactions.unshift({
+    id: randomUUID(),
+    userId,
+    adminId: admin.id,
+    kind: "admin_load",
+    amount,
+    balanceAfter: nextBalance,
+    note,
+    createdAt: nowStamp(),
+  });
+  await writeJsonData(data);
+  return { ok: true, tokenBalance: nextBalance };
+}
+
 async function readBody(req) {
   const chunks = [];
   let size = 0;
@@ -2079,6 +2509,30 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (req.method === "POST" && url.pathname === "/api/admin/token-settings") {
+    await requireAdmin(req);
+    json(res, 200, { settings: await updateTokenSettings(await readBody(req)) });
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/admin/tokens/load") {
+    const admin = await requireAdmin(req);
+    json(res, 200, await adminLoadTokens(await readBody(req), admin));
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/admin/ad-campaigns") {
+    const admin = await requireAdmin(req);
+    json(res, 201, await saveAdCampaign(await readBody(req), admin));
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/admin/ad-requests") {
+    await requireAdmin(req);
+    json(res, 200, await moderateAdRequest(await readBody(req)));
+    return;
+  }
+
   if (req.method === "POST" && url.pathname === "/api/auth/register") {
     json(res, 201, await registerUser(await readBody(req)));
     return;
@@ -2115,6 +2569,11 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (req.method === "POST" && url.pathname === "/api/ad-requests") {
+    json(res, 201, await saveAdRequest(await readBody(req)));
+    return;
+  }
+
   if (req.method === "POST" && url.pathname === "/api/resumes") {
     json(res, 201, await saveResume(await readBody(req), await requireUser(req)));
     return;
@@ -2137,6 +2596,12 @@ async function handleApi(req, res, url) {
 
   if (req.method === "POST" && url.pathname === "/api/products") {
     json(res, 201, await saveProduct(await readBody(req), await requireUser(req)));
+    return;
+  }
+
+  const resumeDownloadMatch = url.pathname.match(/^\/api\/resumes\/([^/]+)\/download$/);
+  if (req.method === "POST" && resumeDownloadMatch) {
+    json(res, 200, await downloadResume(resumeDownloadMatch[1], await requireUser(req)));
     return;
   }
 
@@ -2211,10 +2676,8 @@ const server = createServer(async (req, res) => {
     }
     const cvMatch = url.pathname.match(/^\/cv\/([0-9a-f-]+)$/i);
     if (req.method === "GET" && cvMatch) {
-      const resume = await getResume(cvMatch[1]);
-      if (!resume) return notFound(res);
-      res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
-      res.end(resumePrintHtml(resume));
+      res.writeHead(403, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+      res.end("<!doctype html><html lang=\"es\"><meta charset=\"utf-8\"><title>Descarga protegida</title><body><h1>Descarga protegida</h1><p>Ingresa a Link y usa el boton Descargar CV. Las empresas necesitan saldo de tokens.</p></body></html>");
       return;
     }
     if (url.pathname.startsWith("/api/")) {
