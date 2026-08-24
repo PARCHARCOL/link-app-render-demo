@@ -20,7 +20,8 @@ const officialNewsTtlMs = Number(process.env.OFFICIAL_NEWS_TTL_MS || 10 * 60 * 1
 const officialNewsTimeoutMs = Number(process.env.OFFICIAL_NEWS_TIMEOUT_MS || 12_000);
 const bodyLimitBytes = Number(process.env.BODY_LIMIT_BYTES || 30_000_000);
 const sessionDays = Number(process.env.SESSION_DAYS || 30);
-const configuredAdminEmails = process.env.LINK_ADMIN_EMAILS || process.env.ADMIN_EMAILS || "jhonsilvadiaz@gmail.com";
+const defaultAdminEmails = "jhonsilvadiaz@gmail.com";
+const configuredAdminEmails = [process.env.LINK_ADMIN_EMAILS, process.env.ADMIN_EMAILS, defaultAdminEmails].filter(Boolean).join(",");
 const adminRecoveryCode = process.env.LINK_ADMIN_RECOVERY_CODE || process.env.ADMIN_RECOVERY_CODE || "";
 
 const emptyData = {
@@ -232,7 +233,7 @@ function nowStamp() {
 }
 
 function normalizeEmail(value) {
-  return text(value, 160).toLowerCase();
+  return text(value, 180).toLowerCase().replace(/\s+/g, "").slice(0, 160);
 }
 
 const adminEmails = new Set(
@@ -252,6 +253,17 @@ function isAdminEmail(value) {
 
 function isAdminUser(user) {
   return Boolean(user?.isAdmin || user?.is_admin || isAdminEmail(user?.email));
+}
+
+async function canRecoverAdminEmail(email) {
+  if (isAdminEmail(email)) return true;
+  if (dbReady) {
+    const result = await pool.query("SELECT is_admin FROM link_users WHERE lower(email) = $1 LIMIT 1", [email]);
+    return Boolean(result.rows[0]?.is_admin);
+  }
+  const data = await readJsonData();
+  const found = data.users.find((item) => normalizeEmail(item.email) === email);
+  return Boolean(found && isAdminUser(found));
 }
 
 function normalizeStatus(value) {
@@ -1261,7 +1273,7 @@ async function recoverAdminPassword(body) {
   const recoveryCode = text(body.recoveryCode, 160);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) fail(400, "Correo invalido");
   if (password.length < 6) fail(400, "La nueva clave debe tener minimo 6 caracteres");
-  if (!isAdminEmail(email)) fail(403, "Correo no autorizado como administrador");
+  if (!await canRecoverAdminEmail(email)) fail(403, "Correo no autorizado como administrador");
   if (!adminRecoveryCode) fail(400, "Codigo admin no configurado");
   if (recoveryCode !== adminRecoveryCode) fail(403, "Codigo admin incorrecto");
 
