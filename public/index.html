@@ -9,9 +9,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v26">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v26">
-  <link rel="preload" href="/logolink.png?v=link-app-v26" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v27">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v27">
+  <link rel="preload" href="/logolink.png?v=link-app-v27" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -140,6 +140,13 @@
     .profile-photo{width:56px;height:64px;display:grid;place-items:center;overflow:hidden;background:#fff1e6;border:1px solid var(--line);border-radius:13px;color:var(--red);font-weight:950}
     .profile-photo img{width:100%;height:100%;object-fit:cover}
     .resume-card{display:grid;gap:12px}
+    .detail-panel{display:grid;gap:8px;margin-top:2px;padding:11px;background:#fff9f2;border:1px solid var(--line);border-radius:14px}
+    .detail-panel h4{margin:0;color:var(--red);font-size:12px;text-transform:uppercase}
+    .detail-panel p{margin:0;color:var(--ink);font-size:12px;line-height:1.42}
+    .filter-row{display:flex;gap:8px;margin:0 0 12px;padding-bottom:2px;overflow-x:auto;scrollbar-width:none}
+    .filter-row::-webkit-scrollbar{display:none}
+    .filter-chip{flex:0 0 auto;min-height:34px;padding:0 11px;color:#7a3a00;background:#fff7ea;border:1px solid #ffd28a;border-radius:999px;font-size:12px;font-weight:950}
+    .filter-chip.active{color:#fff;background:linear-gradient(180deg,var(--orange),var(--red));border-color:transparent}
     .action-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
     .module-actions{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 14px}
     .module-actions .primary,.module-actions .secondary{min-width:180px}
@@ -150,8 +157,8 @@
     .flow-btn{width:100%;padding:12px 16px;line-height:1.22}
     .product-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
     .product{overflow:hidden;padding:0}
-    .product-logo,.product-media{height:118px;display:grid;place-items:center;overflow:hidden;background:#160e08;border-bottom:1px solid var(--line)}
-    .product-logo img,.product-media img,.product-media video{width:100%;height:100%;object-fit:cover}
+    .product-logo,.product-media{height:158px;display:grid;place-items:center;overflow:hidden;background:#fff8ef;border-bottom:1px solid var(--line)}
+    .product-logo img,.product-media img,.product-media video{width:100%;height:100%;object-fit:contain}
     .product-logo img{max-width:92%;max-height:86%;object-fit:contain}
     .product-body{padding:12px}
     .product h3{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
@@ -218,6 +225,9 @@
     let authMode = ["register", "login", "recover"].includes(initialAuth) ? initialAuth : "register";
     let accountMessage = "";
     let bolsaAction = "";
+    let activeResumeCategory = "Todos";
+    let expandedResumeId = "";
+    let activeProductCategory = "Todos";
     let mercadoEditorOpen = false;
     let installPromptEvent = null;
     let installMessage = "";
@@ -263,7 +273,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v26";
+    const appBuild = "link-app-v27";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -407,7 +417,7 @@
     }
 
     function logoSrc() {
-      return state.settings?.logoData || "/logolink.png?v=link-app-v26";
+      return state.settings?.logoData || "/logolink.png?v=link-app-v27";
     }
 
     function logoImg(className, alt = "Link") {
@@ -435,6 +445,61 @@
       const clean = String(value || "").trim();
       if (!clean) return "";
       return /^disponibilidad\s*:/i.test(clean) ? clean : `Disponibilidad: ${clean}`;
+    }
+
+    const resumeCategories = [
+      { key: "Todos", label: "Todos" },
+      { key: "Administradores", label: "Administradores", words: ["administrador", "admin", "director", "directivo", "gerente", "operaciones", "analista"] },
+      { key: "Maquinas", label: "Maquinas", words: ["maquina", "maquinas", "tragamonedas", "slot", "tecnico", "electronico", "billetero", "met"] },
+      { key: "Dealers", label: "Dealers", words: ["dealer", "crupier", "mesa", "ruleta", "blackjack", "poker"] },
+      { key: "Seguridad", label: "Seguridad", words: ["seguridad", "vigilante", "control", "riesgo"] },
+      { key: "Bar y coctel", label: "Bar y coctel", words: ["bar", "bartender", "coctel", "mesero", "mesera", "bebidas"] },
+      { key: "Promotores", label: "Promotores", words: ["promotor", "promotora", "mercadeo", "comercial", "servicio al cliente"] },
+      { key: "Otros", label: "Otros" },
+    ];
+
+    const productCategories = [
+      { key: "Todos", label: "Todos" },
+      { key: "Maquina", label: "Maquinas", words: ["maquina", "maquinas", "tragamonedas", "slot"] },
+      { key: "Billetero", label: "Billeteros", words: ["billetero", "bill", "mei", "ict", "jcm"] },
+      { key: "Tarjeta", label: "Tarjetas", words: ["tarjeta", "board", "placa", "cpu", "main"] },
+      { key: "Juego", label: "Juegos", words: ["juego", "game", "software"] },
+      { key: "Peana/Cajon", label: "Peanas/Cajones", words: ["peana", "cajon", "cajones", "base", "mueble"] },
+      { key: "Repuesto", label: "Repuestos", words: ["repuesto", "sensor", "pantalla", "boton", "fuente"] },
+      { key: "Servicio", label: "Servicios", words: ["servicio", "mantenimiento", "reparacion", "instalacion"] },
+      { key: "Otros", label: "Otros" },
+    ];
+
+    function normalizedText(value) {
+      return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    }
+
+    function textMatches(words, value) {
+      const clean = normalizedText(value);
+      return words.some((word) => clean.includes(normalizedText(word)));
+    }
+
+    function resumeCategory(item) {
+      const stored = String(item.category || "").trim();
+      if (stored && resumeCategories.some((category) => category.key === stored)) return stored;
+      const haystack = [item.headline, item.summary, item.experience, item.skills].filter(Boolean).join(" ");
+      return resumeCategories.find((category) => category.key !== "Todos" && textMatches(category.words || [], haystack))?.key || "Otros";
+    }
+
+    function productCategory(item) {
+      const stored = String(item.productType || "").trim();
+      if (stored === "Peana" || stored === "Cajon") return "Peana/Cajon";
+      if (stored === "Otro") return "Otros";
+      if (productCategories.some((category) => category.key === stored)) return stored;
+      const haystack = [item.productType, item.name, item.brand, item.description, item.game].filter(Boolean).join(" ");
+      return productCategories.find((category) => category.key !== "Todos" && textMatches(category.words || [], haystack))?.key || "Otros";
+    }
+
+    function filterButtons(items, activeKey, attr, categoryFn, categories) {
+      return `<div class="filter-row" role="list">${categories.map((category) => {
+        const count = category.key === "Todos" ? items.length : items.filter((item) => categoryFn(item) === category.key).length;
+        return `<button class="filter-chip ${activeKey === category.key ? "active" : ""}" ${attr}="${esc(category.key)}" type="button">${esc(category.label)} ${count}</button>`;
+      }).join("")}</div>`;
     }
 
     function userStatusText(status) {
@@ -745,7 +810,18 @@
     function renderBolsa() {
       const current = user();
       const canDownload = Boolean(current);
-      const resumes = state.resumes.length ? state.resumes.map((item) => `
+      const allResumes = Array.isArray(state.resumes) ? state.resumes : [];
+      const filteredResumes = activeResumeCategory === "Todos" ? allResumes : allResumes.filter((item) => resumeCategory(item) === activeResumeCategory);
+      const resumes = filteredResumes.length ? filteredResumes.map((item) => {
+        const expanded = expandedResumeId === item.id;
+        const details = [
+          ["Perfil", item.summary],
+          ["Experiencia", item.experience],
+          ["Formacion", item.education],
+          ["Competencias", item.skills],
+          ["Referencias", item.referencesText],
+        ].filter(([, value]) => value);
+        return `
         <article class="card resume-card">
           <div class="profile-row">
             ${resumePhoto(item)}
@@ -755,19 +831,23 @@
               <p><strong>${esc(item.headline)}</strong></p>
             </div>
           </div>
-          ${item.summary ? `<p>${esc(item.summary)}</p>` : ""}
           <div class="meta">
             ${statusBadge(item.status)}
+            <span class="pill">${esc(resumeCategory(item))}</span>
             ${item.phone ? `<span class="pill">${esc(item.phone)}</span>` : ""}
             ${item.email ? `<span class="pill">${esc(item.email)}</span>` : ""}
             ${item.availability ? `<span class="pill">${esc(resumeAvailability(item.availability))}</span>` : ""}
           </div>
-          ${item.status === "published" ? `<div class="action-row">${
+          ${expanded && details.length ? `<div class="detail-panel">${details.map(([title, value]) => `<div><h4>${esc(title)}</h4><p>${esc(value)}</p></div>`).join("")}</div>` : ""}
+          ${item.status === "published" ? `<div class="action-row">
+            <button class="secondary" data-resume-detail="${esc(item.id)}" type="button">${expanded ? "Ocultar detalle" : "Ver detalle"}</button>
+            ${
             canDownload
               ? `<a class="mini-btn" href="/cv/${esc(item.id)}" target="_blank" rel="noopener noreferrer">Descargar CV</a>`
               : `<button class="mini-btn" data-protected-tab="empleos" data-protected-mode="login" type="button">Descargar CV</button>`
           }</div>` : ""}
-        </article>`).join("") : empty("Aun no hay hojas de vida aprobadas.");
+        </article>`;
+      }).join("") : empty(activeResumeCategory === "Todos" ? "Aun no hay hojas de vida aprobadas." : "No hay hojas de vida en esta categoria.");
       const vacancies = state.vacancies.length ? state.vacancies.map((item) => `
         <article class="card">
           <div class="topline"><span>${esc(item.city || "Sin ciudad")}</span><strong>${esc(dateLabel(item.createdAt))}</strong></div>
@@ -788,6 +868,15 @@
           <small data-file-status="photoFile">Toca aqui solo si quieres subir una foto.</small>
         </label>
         <input name="fullName" placeholder="Nombre completo" required>
+        <select name="category">
+          <option value="Administradores">Administrador / Directivo</option>
+          <option value="Maquinas">Maquinas</option>
+          <option value="Dealers">Dealer</option>
+          <option value="Seguridad">Seguridad</option>
+          <option value="Bar y coctel">Bar y coctel</option>
+          <option value="Promotores">Promotor</option>
+          <option value="Otros">Otro</option>
+        </select>
         <input name="headline" placeholder="Perfil: tecnico, administrador, cajero, compliance..." required>
         <div class="split">
           <input name="documentId" placeholder="Documento">
@@ -840,7 +929,8 @@
           </div>
         </div>
         ${publishBlock}
-        <div class="section-title"><h2>Hojas de vida</h2><small>${state.resumes.length}</small></div>
+        <div class="section-title"><h2>Hojas de vida</h2><small>${filteredResumes.length}/${allResumes.length}</small></div>
+        ${filterButtons(allResumes, activeResumeCategory, "data-resume-filter", resumeCategory, resumeCategories)}
         <div class="stack">${resumes}</div>
         <div class="section-title"><h2>Vacantes</h2><small>${state.vacancies.length}</small></div>
         <div class="stack">${vacancies}</div>
@@ -858,7 +948,9 @@
     }
 
     function renderMarketplace() {
-      const list = state.products.length ? state.products.map((item) => `
+      const allProducts = Array.isArray(state.products) ? state.products : [];
+      const filteredProducts = activeProductCategory === "Todos" ? allProducts : allProducts.filter((item) => productCategory(item) === activeProductCategory);
+      const list = filteredProducts.length ? filteredProducts.map((item) => `
         <article class="card product">
           ${productMedia(item)}
           <div class="product-body">
@@ -875,15 +967,17 @@
               ${item.contact ? `<span class="pill">${esc(item.contact)}</span>` : ""}
             </div>
           </div>
-        </article>`).join("") : empty("Aun no hay productos aprobados.");
+        </article>`).join("") : empty(activeProductCategory === "Todos" ? "Aun no hay productos aprobados." : "No hay productos en esta categoria.");
       const marketForm = editor("Publicar venta", "/api/products", `
           <select name="productType" data-market-type>
             <option value="Maquina">Maquina</option>
             <option value="Billetero">Billetero</option>
+            <option value="Tarjeta">Tarjeta</option>
             <option value="Repuesto">Repuesto</option>
             <option value="Juego">Juego</option>
+            <option value="Peana/Cajon">Peana o cajon</option>
             <option value="Servicio">Servicio</option>
-            <option value="Otro">Otro</option>
+            <option value="Otros">Otro</option>
           </select>
           <input name="name" placeholder="Nombre del producto o servicio" required>
           <div class="split">
@@ -896,7 +990,7 @@
               <option>Servicio</option>
             </select>
           </div>
-          <div class="split" data-market-field="Maquina|Billetero|Repuesto|Juego|Otro">
+          <div class="split" data-market-field="Maquina|Billetero|Tarjeta|Repuesto|Juego|Peana/Cajon|Servicio|Otro|Otros">
             <input name="brand" placeholder="Marca">
             <input name="contact" placeholder="Contacto">
           </div>
@@ -918,7 +1012,8 @@
           <button class="primary" data-market-open="1" type="button">Publicar venta</button>
         </div>
         ${user() && mercadoEditorOpen ? marketForm : ""}
-        <div class="section-title"><h2>Publicaciones</h2><small>${state.products.length}</small></div>
+        <div class="section-title"><h2>Publicaciones</h2><small>${filteredProducts.length}/${allProducts.length}</small></div>
+        ${filterButtons(allProducts, activeProductCategory, "data-product-filter", productCategory, productCategories)}
         <div class="product-grid">${list}</div>
       </section>`;
     }
@@ -1268,6 +1363,26 @@
             return;
           }
           bolsaAction = action;
+          render();
+        };
+      });
+      document.querySelectorAll("[data-resume-filter]").forEach((button) => {
+        button.onclick = () => {
+          activeResumeCategory = button.dataset.resumeFilter || "Todos";
+          expandedResumeId = "";
+          render();
+        };
+      });
+      document.querySelectorAll("[data-resume-detail]").forEach((button) => {
+        button.onclick = () => {
+          const id = button.dataset.resumeDetail || "";
+          expandedResumeId = expandedResumeId === id ? "" : id;
+          render();
+        };
+      });
+      document.querySelectorAll("[data-product-filter]").forEach((button) => {
+        button.onclick = () => {
+          activeProductCategory = button.dataset.productFilter || "Todos";
           render();
         };
       });

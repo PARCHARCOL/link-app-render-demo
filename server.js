@@ -895,6 +895,7 @@ async function initDb() {
       user_id uuid NOT NULL REFERENCES link_users(id) ON DELETE CASCADE,
       full_name text NOT NULL,
       headline text NOT NULL,
+      category text DEFAULT '',
       document_id text DEFAULT '',
       city text DEFAULT '',
       phone text DEFAULT '',
@@ -944,6 +945,7 @@ async function initDb() {
     ALTER TABLE link_products ADD COLUMN IF NOT EXISTS media_name text DEFAULT '';
     ALTER TABLE link_threads ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'published';
     ALTER TABLE link_resumes ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'published';
+    ALTER TABLE link_resumes ADD COLUMN IF NOT EXISTS category text DEFAULT '';
     ALTER TABLE link_vacancies ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'published';
   `);
 
@@ -1384,7 +1386,7 @@ async function readData(authUser = null) {
       ),
       pool.query(`SELECT id, thread_id AS "threadId", author, text, created_at AS "createdAt" FROM link_messages ORDER BY created_at ASC LIMIT 500`),
       pool.query(
-        `SELECT id, full_name AS "fullName", headline, document_id AS "documentId", city, phone, email, availability, salary,
+        `SELECT id, full_name AS "fullName", headline, category, document_id AS "documentId", city, phone, email, availability, salary,
                 summary, experience, education, skills, references_text AS "referencesText", photo_data AS "photoData",
                 attachment_name AS "attachmentName", status, created_at AS "createdAt", updated_at AS "updatedAt"
          FROM link_resumes
@@ -1584,6 +1586,7 @@ async function saveResume(body, user) {
     userId: user.id,
     fullName,
     headline,
+    category: text(body.category, 80),
     documentId: text(body.documentId, 60),
     city: text(body.city, 80) || user.city,
     phone: text(body.phone, 80) || user.phone,
@@ -1607,11 +1610,11 @@ async function saveResume(body, user) {
     await pool.query("DELETE FROM link_resumes WHERE user_id = $1", [user.id]);
     await pool.query(
       `INSERT INTO link_resumes
-       (id, user_id, full_name, headline, document_id, city, phone, email, availability, salary, summary, experience,
+       (id, user_id, full_name, headline, category, document_id, city, phone, email, availability, salary, summary, experience,
         education, skills, references_text, photo_data, attachment_name, attachment_data, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)`,
       [
-        item.id, item.userId, item.fullName, item.headline, item.documentId, item.city, item.phone, item.email,
+        item.id, item.userId, item.fullName, item.headline, item.category, item.documentId, item.city, item.phone, item.email,
         item.availability, item.salary, item.summary, item.experience, item.education, item.skills,
         item.referencesText, item.photoData, item.attachmentName, item.attachmentData, item.status,
       ],
@@ -1772,7 +1775,7 @@ async function readAdminState() {
          ORDER BY t.created_at DESC LIMIT 200`,
       ),
       pool.query(
-        `SELECT r.id, r.full_name AS title, r.headline AS category, r.status, r.updated_at AS "createdAt", u.display_name AS author
+        `SELECT r.id, r.full_name AS title, COALESCE(NULLIF(r.category, ''), r.headline) AS category, r.status, r.updated_at AS "createdAt", u.display_name AS author
          FROM link_resumes r LEFT JOIN link_users u ON u.id = r.user_id
          ORDER BY r.updated_at DESC LIMIT 200`,
       ),
