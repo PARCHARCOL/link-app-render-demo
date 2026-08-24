@@ -1,4 +1,4 @@
-const CACHE_NAME = "link-app-v30";
+const CACHE_NAME = "link-app-v31";
 const CORE_ASSETS = [
   "/manifest.webmanifest",
   "/logolink.png",
