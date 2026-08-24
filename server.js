@@ -218,6 +218,55 @@ function mediaDataText(value, max) {
   return output;
 }
 
+function adBannerMediaDataText(value, max) {
+  const output = mediaDataText(value, max);
+  if (!output) return "";
+  if (/^data:video\//i.test(output) && !/^data:video\/mp4;base64,/i.test(output)) {
+    fail(400, "El video de pauta debe ser MP4 horizontal 16:9");
+  }
+  return output;
+}
+
+function mediaDataPayload(value) {
+  const match = String(value ?? "").trim().match(/^data:([^;,]+);base64,([\s\S]+)$/i);
+  if (!match) return null;
+  try {
+    return {
+      type: match[1].toLowerCase(),
+      buffer: Buffer.from(match[2], "base64"),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function adMediaUrl(item) {
+  if (!(item?.hasMedia || item?.mediaData || item?.media_data)) return "";
+  const id = text(item.id, 80);
+  if (!id) return "";
+  const version = item.updatedAt || item.updated_at || item.createdAt || item.created_at || id;
+  return `/api/ad-campaigns/${encodeURIComponent(id)}/media?v=${encodeURIComponent(String(version))}`;
+}
+
+function publicAdCampaign(item) {
+  if (!item) return null;
+  return {
+    id: text(item.id, 80),
+    title: text(item.title, 180),
+    advertiser: text(item.advertiser, 140),
+    body: text(item.body, 300),
+    targetUrl: text(item.targetUrl || item.target_url, 300),
+    mediaType: text(item.mediaType || item.media_type, 80),
+    mediaName: text(item.mediaName || item.media_name, 160),
+    mediaUrl: adMediaUrl(item),
+    startsAt: item.startsAt || item.starts_at || null,
+    endsAt: item.endsAt || item.ends_at || null,
+    status: normalizeStatus(item.status),
+    createdAt: item.createdAt || item.created_at || null,
+    updatedAt: item.updatedAt || item.updated_at || null,
+  };
+}
+
 function logoDataText(value, max) {
   const output = dataText(value, max);
   if (!output) return "";
@@ -1951,7 +2000,7 @@ async function saveAdRequest(body) {
     city: text(body.city, 80),
     targetUrl: normalizeUrl(body.targetUrl),
     message: text(body.message, 1200),
-    mediaData: mediaDataText(body.mediaData, 12_000_000),
+    mediaData: adBannerMediaDataText(body.mediaData, 12_000_000),
     mediaType: text(body.mediaType, 80),
     mediaName: text(body.mediaName, 160),
     status: "pending",
@@ -1981,7 +2030,7 @@ async function saveAdCampaign(body, admin) {
     advertiser: text(body.advertiser, 140),
     body: text(body.body, 300),
     targetUrl: normalizeUrl(body.targetUrl),
-    mediaData: mediaDataText(body.mediaData, 12_000_000),
+    mediaData: adBannerMediaDataText(body.mediaData, 12_000_000),
     mediaType: text(body.mediaType, 80),
     mediaName: text(body.mediaName, 160),
     startsAt: text(body.startsAt, 40) || null,
@@ -2009,25 +2058,56 @@ async function saveAdCampaign(body, admin) {
 async function readActiveAdCampaign() {
   if (dbReady) {
     const result = await pool.query(
-      `SELECT id, title, advertiser, body, target_url AS "targetUrl", media_data AS "mediaData",
-              media_type AS "mediaType", media_name AS "mediaName", starts_at AS "startsAt", ends_at AS "endsAt",
-              status, created_at AS "createdAt"
+      `SELECT id, title, advertiser, body, target_url AS "targetUrl",
+              COALESCE(media_data, '') <> '' AS "hasMedia", media_type AS "mediaType", media_name AS "mediaName",
+              starts_at AS "startsAt", ends_at AS "endsAt", status, created_at AS "createdAt", updated_at AS "updatedAt"
        FROM link_ad_campaigns
        WHERE status = 'published'
          AND (starts_at IS NULL OR starts_at <= now())
          AND (ends_at IS NULL OR ends_at >= now())
        ORDER BY created_at DESC LIMIT 1`,
     );
-    return result.rows[0] || null;
+    return publicAdCampaign(result.rows[0] || null);
   }
   const now = Date.now();
   const data = await readJsonData();
-  return data.adCampaigns.find((item) => {
+  const active = data.adCampaigns.find((item) => {
     const status = normalizeStatus(item.status);
     const starts = item.startsAt ? Date.parse(item.startsAt) : 0;
     const ends = item.endsAt ? Date.parse(item.endsAt) : 0;
     return status === "published" && (!starts || starts <= now) && (!ends || ends >= now);
   }) || null;
+  return publicAdCampaign(active);
+}
+
+async function readAdCampaignMedia(id) {
+  const cleanId = text(id, 80);
+  if (!cleanId) return null;
+  if (dbReady) {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanId)) return null;
+    const result = await pool.query(
+      `SELECT media_data AS "mediaData", media_type AS "mediaType"
+       FROM link_ad_campaigns
+       WHERE id = $1
+         AND status = 'published'
+         AND (starts_at IS NULL OR starts_at <= now())
+         AND (ends_at IS NULL OR ends_at >= now())
+       LIMIT 1`,
+      [cleanId],
+    );
+    const row = result.rows[0];
+    const payload = mediaDataPayload(row?.mediaData);
+    return payload ? { ...payload, type: payload.type || row?.mediaType || "application/octet-stream" } : null;
+  }
+  const now = Date.now();
+  const data = await readJsonData();
+  const item = data.adCampaigns.find((campaign) => {
+    const starts = campaign.startsAt ? Date.parse(campaign.startsAt) : 0;
+    const ends = campaign.endsAt ? Date.parse(campaign.endsAt) : 0;
+    return campaign.id === cleanId && normalizeStatus(campaign.status) === "published" && (!starts || starts <= now) && (!ends || ends >= now);
+  });
+  const payload = mediaDataPayload(item?.mediaData);
+  return payload ? { ...payload, type: payload.type || item?.mediaType || "application/octet-stream" } : null;
 }
 
 async function moderateAdRequest(body) {
@@ -2454,11 +2534,67 @@ function invalid(res, message) {
   json(res, 400, { error: message });
 }
 
+function sendMedia(res, req, media) {
+  const total = media.buffer.length;
+  const headers = {
+    "content-type": media.type || "application/octet-stream",
+    "cache-control": "public, max-age=3600",
+    "accept-ranges": "bytes",
+  };
+  const range = req.headers.range || "";
+  const match = String(range).match(/^bytes=(\d*)-(\d*)$/);
+  if (match && total > 0) {
+    let start = match[1] ? Number.parseInt(match[1], 10) : 0;
+    let end = match[2] ? Number.parseInt(match[2], 10) : total - 1;
+    if (!match[1] && match[2]) {
+      const suffixLength = Number.parseInt(match[2], 10);
+      start = Math.max(total - suffixLength, 0);
+      end = total - 1;
+    }
+    if (Number.isInteger(start) && Number.isInteger(end) && start >= 0 && end >= start && start < total) {
+      end = Math.min(end, total - 1);
+      res.writeHead(206, {
+        ...headers,
+        "content-length": end - start + 1,
+        "content-range": `bytes ${start}-${end}/${total}`,
+      });
+      res.end(media.buffer.subarray(start, end + 1));
+      return;
+    }
+    res.writeHead(416, { ...headers, "content-range": `bytes */${total}` });
+    res.end();
+    return;
+  }
+  res.writeHead(200, { ...headers, "content-length": total });
+  res.end(media.buffer);
+}
+
 async function handleApi(req, res, url) {
+  const adMediaMatch = url.pathname.match(/^\/api\/ad-campaigns\/([^/]+)\/media$/);
+  if (req.method === "GET" && adMediaMatch) {
+    const media = await readAdCampaignMedia(decodeURIComponent(adMediaMatch[1]));
+    if (!media) {
+      notFound(res);
+      return;
+    }
+    sendMedia(res, req, media);
+    return;
+  }
+
   if (req.method === "GET" && url.pathname === "/api/state") {
     const authUser = await getAuthUser(req);
     const data = await readData(authUser);
-    const officialNews = await getOfficialNews(url.searchParams.get("refresh") === "1").catch(() => officialNewsSnapshot());
+    const forceOfficialRefresh = url.searchParams.get("refresh") === "1";
+    let officialNews;
+    if (forceOfficialRefresh) {
+      officialNews = await getOfficialNews(true).catch(() => officialNewsSnapshot());
+    } else {
+      officialNews = officialNewsSnapshot();
+      const updatedAt = officialNews.updatedAt ? Date.parse(officialNews.updatedAt) : 0;
+      if (!officialNewsCache.promise && (!updatedAt || Date.now() - updatedAt >= officialNewsTtlMs)) {
+        getOfficialNews(false).catch(() => {});
+      }
+    }
     json(res, 200, {
       ...data,
       officialNews: officialNews.items,

@@ -9,9 +9,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v31">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v31">
-  <link rel="preload" href="/logolink.png?v=link-app-v31" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v32">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v32">
+  <link rel="preload" href="/logolink.png?v=link-app-v32" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -290,7 +290,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v31";
+    const appBuild = "link-app-v32";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -444,7 +444,7 @@
     }
 
     function logoSrc() {
-      return state.settings?.logoData || "/logolink.png?v=link-app-v31";
+      return state.settings?.logoData || "/logolink.png?v=link-app-v32";
     }
 
     function logoImg(className, alt = "Link") {
@@ -601,11 +601,12 @@
     }
 
     function adMedia(ad) {
-      if (!ad?.mediaData) return `<div class="ad-media ad-placeholder" aria-hidden="true"></div>`;
+      const src = ad?.mediaUrl || ad?.mediaData || "";
+      if (!src) return `<div class="ad-media ad-placeholder" aria-hidden="true"></div>`;
       if (String(ad.mediaType || "").startsWith("video/")) {
-        return `<div class="ad-media"><video src="${esc(ad.mediaData)}" muted autoplay loop playsinline></video></div>`;
+        return `<div class="ad-media"><video src="${esc(src)}" muted autoplay loop playsinline preload="metadata"></video></div>`;
       }
-      return `<div class="ad-media"><img src="${esc(ad.mediaData)}" alt="${esc(ad.title || "Pauta")}"></div>`;
+      return `<div class="ad-media"><img src="${esc(src)}" alt="${esc(ad.title || "Pauta")}"></div>`;
     }
 
     function renderAdBanner() {
@@ -816,8 +817,8 @@
         </div>
         <label class="file-field">
           <span>Arte de pauta, foto o video corto (opcional)</span>
-          <input name="adMediaFile" type="file" accept="image/*,video/*,.jpg,.jpeg,.png,.webp,.gif,.mp4,.mov,.webm">
-          <small data-file-status="adMediaFile">Video recomendado: horizontal 16:9, MP4 H.264, 1920x1080 o 1280x720, maximo 20 segundos y sin textos pegados a los bordes.</small>
+          <input name="adMediaFile" type="file" accept="image/*,video/mp4,.jpg,.jpeg,.png,.webp,.gif,.mp4">
+          <small data-file-status="adMediaFile">Video obligatorio para banner: MP4 horizontal 16:9, 1920x1080 o 1280x720, maximo 20 segundos, minimo 960x540 y sin textos pegados a los bordes.</small>
         </label>
         <textarea name="message" placeholder="Mensaje, fechas deseadas, ciudad o modulo donde quieres pautar"></textarea>
       `, adRequestOpen);
@@ -1294,8 +1295,8 @@
           </div>
           <label class="file-field">
             <span>Imagen o video del banner</span>
-            <input name="adMediaFile" type="file" accept="image/*,video/*,.jpg,.jpeg,.png,.webp,.gif,.mp4,.mov,.webm">
-            <small data-file-status="adMediaFile">Formato optimo: video horizontal 16:9, MP4 H.264, 1920x1080 o 1280x720, maximo 20 segundos. Mantener texto/logo dentro del centro seguro.</small>
+            <input name="adMediaFile" type="file" accept="image/*,video/mp4,.jpg,.jpeg,.png,.webp,.gif,.mp4">
+            <small data-file-status="adMediaFile">Formato obligatorio: MP4 horizontal 16:9, 1920x1080 o 1280x720, maximo 20 segundos, minimo 960x540. Mantener texto/logo dentro del centro seguro.</small>
           </label>
           <textarea name="body" placeholder="Texto corto del anuncio"></textarea>
         `)}
@@ -1413,25 +1414,56 @@
       return fileMime(file, "").startsWith("video/") || /\.(mp4|mov|webm)$/i.test(fileName(file));
     }
 
+    function isBannerVideoFile(file) {
+      return fileMime(file, "").toLowerCase() === "video/mp4" || /\.mp4$/i.test(fileName(file));
+    }
+
     function isDocumentFile(file) {
       return /(\.pdf|\.doc|\.docx)$/i.test(fileName(file)) || /application\/(pdf|msword|vnd\.openxmlformats-officedocument\.wordprocessingml\.document)/i.test(fileMime(file, ""));
     }
 
-    function videoDuration(file) {
+    function videoMetadata(file) {
       return new Promise((resolve, reject) => {
         const video = document.createElement("video");
         const url = URL.createObjectURL(file);
         video.preload = "metadata";
         video.onloadedmetadata = () => {
           URL.revokeObjectURL(url);
-          resolve(video.duration || 0);
+          resolve({
+            duration: Number.isFinite(video.duration) ? video.duration : 0,
+            width: video.videoWidth || 0,
+            height: video.videoHeight || 0,
+          });
         };
         video.onerror = () => {
           URL.revokeObjectURL(url);
-          reject(new Error("No se pudo validar la duracion del video"));
+          reject(new Error("No se pudo validar el video"));
         };
         video.src = url;
       });
+    }
+
+    async function videoDuration(file) {
+      const metadata = await videoMetadata(file);
+      return metadata.duration || 0;
+    }
+
+    async function validateBannerVideo(file) {
+      if (!isBannerVideoFile(file)) {
+        throw new Error("El video de pauta debe ser MP4 horizontal 16:9. Convierte MOV, WEBM o video vertical antes de subirlo.");
+      }
+      if (file.size > 8_000_000) throw new Error("El video de pauta debe pesar menos de 8 MB");
+      const metadata = await videoMetadata(file);
+      if (metadata.duration > 20.25) throw new Error("El video de pauta no puede superar 20 segundos");
+      if (!metadata.width || !metadata.height) throw new Error("No se pudo leer el tamano del video. Use MP4 horizontal 16:9.");
+      const ratio = metadata.width / metadata.height;
+      if (ratio < 1.68 || ratio > 1.9) {
+        throw new Error("El video de pauta debe ser horizontal 16:9, por ejemplo 1920x1080 o 1280x720.");
+      }
+      if (metadata.width < 960 || metadata.height < 540) {
+        throw new Error("El video de pauta debe tener minimo 960x540. Recomendado: 1920x1080 o 1280x720.");
+      }
+      return metadata;
     }
 
     async function payloadFromForm(form) {
@@ -1476,11 +1508,9 @@
             }
           } else if (key === "adMediaFile") {
             if (isVideoFile(value)) {
-              if (value.size > 8_000_000) throw new Error("El video de pauta debe pesar menos de 8 MB");
-              const duration = await videoDuration(value);
-              if (duration > 20.25) throw new Error("El video de pauta no puede superar 20 segundos");
+              await validateBannerVideo(value);
               payload.mediaName = value.name;
-              payload.mediaType = fileMime(value, /\.(mov)$/i.test(fileName(value)) ? "video/quicktime" : "video/mp4");
+              payload.mediaType = "video/mp4";
               payload.mediaData = await fileToDataUrl(value);
             } else if (isImageFile(value)) {
               if (value.size > 10_000_000) throw new Error("La imagen de pauta debe pesar menos de 10 MB");
@@ -1838,17 +1868,28 @@
     }
 
     async function logout() {
-      try {
-        await api.post("/api/auth/logout", {});
-      } catch {}
+      const previousToken = sessionToken;
       sessionToken = "";
       localStorage.removeItem(authKey);
       adminState = null;
       authMode = "login";
       accountMessage = "Sesion cerrada. Los formularios quedaron limpios.";
       active = "cuenta";
-      applyState(await api.state().catch(() => ({ ...baseState(), officialNews: state.officialNews, officialNewsUpdatedAt: state.officialNewsUpdatedAt, settings: state.settings })));
+      applyState({ ...state, currentUser: null });
       render();
+      showNotice(accountMessage);
+      if (previousToken) {
+        fetch("/api/auth/logout", {
+          method: "POST",
+          headers: { "content-type": "application/json", authorization: `Bearer ${previousToken}` },
+          body: "{}",
+        }).catch(() => {});
+      }
+      try {
+        applyState(await api.state());
+        render();
+        showNotice(accountMessage);
+      } catch {}
     }
 
     function saveSuccessMessage(path, result) {
@@ -2063,7 +2104,7 @@
     async function boot() {
       renderHeader();
       renderTabs();
-      content.innerHTML = `<section class="screen splash">${logoImg("logo-hero")}<h1>Link</h1><p>Cargando noticias oficiales y publicaciones aprobadas.</p><div class="loader"></div></section>`;
+      content.innerHTML = `<section class="screen splash">${logoImg("logo-hero")}<h1>Link</h1><p>Cargando publicaciones aprobadas.</p><div class="loader"></div></section>`;
       try {
         applyState(await api.state());
       } catch {
