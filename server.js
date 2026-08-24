@@ -219,12 +219,7 @@ function mediaDataText(value, max) {
 }
 
 function adBannerMediaDataText(value, max) {
-  const output = mediaDataText(value, max);
-  if (!output) return "";
-  if (/^data:video\//i.test(output) && !/^data:video\/mp4;base64,/i.test(output)) {
-    fail(400, "El video de pauta debe ser MP4 horizontal 16:9");
-  }
-  return output;
+  return mediaDataText(value, max);
 }
 
 function mediaDataPayload(value) {
@@ -2045,7 +2040,7 @@ async function saveAdRequest(body) {
     city: text(body.city, 80),
     targetUrl: normalizeUrl(body.targetUrl),
     message: text(body.message, 1200),
-    mediaData: adBannerMediaDataText(body.mediaData, 12_000_000),
+    mediaData: adBannerMediaDataText(body.mediaData, 24_000_000),
     mediaType: text(body.mediaType, 80),
     mediaName: text(body.mediaName, 160),
     status: "pending",
@@ -2075,7 +2070,7 @@ async function saveAdCampaign(body, admin) {
     advertiser: text(body.advertiser, 140),
     body: text(body.body, 300),
     targetUrl: normalizeUrl(body.targetUrl),
-    mediaData: adBannerMediaDataText(body.mediaData, 12_000_000),
+    mediaData: adBannerMediaDataText(body.mediaData, 24_000_000),
     mediaType: text(body.mediaType, 80),
     mediaName: text(body.mediaName, 160),
     startsAt: text(body.startsAt, 40) || null,

@@ -9,9 +9,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v33">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v33">
-  <link rel="preload" href="/logolink.png?v=link-app-v33" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v34">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v34">
+  <link rel="preload" href="/logolink.png?v=link-app-v34" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -72,8 +72,10 @@
     .global-notice.show{display:block}
     .ad-banner{position:relative;isolation:isolate;min-height:224px;display:grid;grid-template-columns:134px minmax(0,1fr);gap:14px;align-items:center;margin:10px 16px max(10px,env(safe-area-inset-bottom));padding:0 14px 54px;overflow:hidden;color:#fff;background:#fff7ea;border:1px solid rgba(255,106,0,.58);border-radius:14px;box-shadow:0 -10px 24px rgba(146,70,18,.08),0 12px 28px rgba(35,8,0,.18)}
     .ad-banner::after{content:"";position:absolute;inset:0 0 54px 0;z-index:-1;background:linear-gradient(90deg,rgba(0,0,0,.94) 0%,rgba(0,0,0,.52) 36%,rgba(0,0,0,.18) 66%,rgba(0,0,0,.66) 100%)}
-    .ad-media{position:absolute;inset:0 0 54px 0;z-index:-2;display:block;width:auto;height:auto;overflow:hidden;background:linear-gradient(135deg,#210600 0%,#681a05 46%,#d71920 100%)}
-    .ad-media img,.ad-media video{width:100%;height:100%;object-fit:cover;filter:saturate(1.08) brightness(.82)}
+    .ad-media{position:absolute;inset:0 0 54px 0;z-index:-2;display:grid;place-items:center;width:auto;height:auto;overflow:hidden;background:radial-gradient(circle at 78% 50%,rgba(255,179,70,.4),transparent 0 20%,transparent 42%),linear-gradient(135deg,#120500 0%,#4c1102 43%,#d71920 100%)}
+    .ad-media::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.24),transparent 34%,rgba(0,0,0,.2));pointer-events:none}
+    .ad-media-main{position:relative;z-index:1;width:100%;height:100%;object-fit:contain;filter:saturate(1.06) brightness(.9)}
+    .ad-media img,.ad-media video{display:block}
     .ad-media.ad-placeholder{background:radial-gradient(circle at 78% 55%,rgba(255,190,89,.45),transparent 0 18%,transparent 36%),linear-gradient(135deg,#0b0503 0%,#5a1604 42%,#d71920 100%)}
     .ad-copy{min-width:0;align-self:stretch;display:grid;align-content:space-between;padding:28px 0 18px;text-shadow:0 2px 10px rgba(0,0,0,.65)}
     .ad-copy::before{content:"ANUNCIO";width:max-content;padding:2px 6px;color:#fff;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.82);border-radius:6px;font-size:8px;font-weight:950;letter-spacing:.2px}
@@ -290,7 +292,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v33";
+    const appBuild = "link-app-v34";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -445,7 +447,7 @@
     }
 
     function logoSrc() {
-      return state.settings?.logoUrl || state.settings?.logoData || "/logolink.png?v=link-app-v33";
+      return state.settings?.logoUrl || state.settings?.logoData || "/logolink.png?v=link-app-v34";
     }
 
     function logoImg(className, alt = "Link") {
@@ -605,9 +607,9 @@
       const src = ad?.mediaUrl || ad?.mediaData || "";
       if (!src) return `<div class="ad-media ad-placeholder" aria-hidden="true"></div>`;
       if (String(ad.mediaType || "").startsWith("video/")) {
-        return `<div class="ad-media"><video src="${esc(src)}" muted autoplay loop playsinline preload="metadata"></video></div>`;
+        return `<div class="ad-media"><video class="ad-media-main" src="${esc(src)}" muted autoplay loop playsinline preload="metadata"></video></div>`;
       }
-      return `<div class="ad-media"><img src="${esc(src)}" alt="${esc(ad.title || "Pauta")}"></div>`;
+      return `<div class="ad-media"><img class="ad-media-main" src="${esc(src)}" alt="${esc(ad.title || "Pauta")}"></div>`;
     }
 
     function renderAdBanner() {
@@ -818,8 +820,8 @@
         </div>
         <label class="file-field">
           <span>Arte de pauta, foto o video corto (opcional)</span>
-          <input name="adMediaFile" type="file" accept="image/*,video/mp4,.jpg,.jpeg,.png,.webp,.gif,.mp4">
-          <small data-file-status="adMediaFile">Video obligatorio para banner: MP4 horizontal 16:9, 1920x1080 o 1280x720, maximo 20 segundos, minimo 960x540 y sin textos pegados a los bordes.</small>
+          <input name="adMediaFile" type="file" accept="image/*,video/*,.jpg,.jpeg,.png,.webp,.gif,.mp4,.mov,.webm">
+          <small data-file-status="adMediaFile">La app acomoda videos horizontales, verticales o cuadrados dentro del banner. Recomendado: MP4 16:9, maximo 18 MB.</small>
         </label>
         <textarea name="message" placeholder="Mensaje, fechas deseadas, ciudad o modulo donde quieres pautar"></textarea>
       `, adRequestOpen);
@@ -1297,8 +1299,8 @@
           </div>
           <label class="file-field">
             <span>Imagen o video del banner</span>
-            <input name="adMediaFile" type="file" accept="image/*,video/mp4,.jpg,.jpeg,.png,.webp,.gif,.mp4">
-            <small data-file-status="adMediaFile">Formato obligatorio: MP4 horizontal 16:9, 1920x1080 o 1280x720, maximo 20 segundos, minimo 960x540. Mantener texto/logo dentro del centro seguro.</small>
+            <input name="adMediaFile" type="file" accept="image/*,video/*,.jpg,.jpeg,.png,.webp,.gif,.mp4,.mov,.webm">
+            <small data-file-status="adMediaFile">La app acomoda videos horizontales, verticales o cuadrados dentro del banner. Mejor resultado: MP4 16:9, maximo 18 MB.</small>
           </label>
           <textarea name="body" placeholder="Texto corto del anuncio"></textarea>
         `)}
@@ -1416,10 +1418,6 @@
       return fileMime(file, "").startsWith("video/") || /\.(mp4|mov|webm)$/i.test(fileName(file));
     }
 
-    function isBannerVideoFile(file) {
-      return fileMime(file, "").toLowerCase() === "video/mp4" || /\.mp4$/i.test(fileName(file));
-    }
-
     function isDocumentFile(file) {
       return /(\.pdf|\.doc|\.docx)$/i.test(fileName(file)) || /application\/(pdf|msword|vnd\.openxmlformats-officedocument\.wordprocessingml\.document)/i.test(fileMime(file, ""));
     }
@@ -1448,24 +1446,6 @@
     async function videoDuration(file) {
       const metadata = await videoMetadata(file);
       return metadata.duration || 0;
-    }
-
-    async function validateBannerVideo(file) {
-      if (!isBannerVideoFile(file)) {
-        throw new Error("El video de pauta debe ser MP4 horizontal 16:9. Convierte MOV, WEBM o video vertical antes de subirlo.");
-      }
-      if (file.size > 8_000_000) throw new Error("El video de pauta debe pesar menos de 8 MB");
-      const metadata = await videoMetadata(file);
-      if (metadata.duration > 20.25) throw new Error("El video de pauta no puede superar 20 segundos");
-      if (!metadata.width || !metadata.height) throw new Error("No se pudo leer el tamano del video. Use MP4 horizontal 16:9.");
-      const ratio = metadata.width / metadata.height;
-      if (ratio < 1.68 || ratio > 1.9) {
-        throw new Error("El video de pauta debe ser horizontal 16:9, por ejemplo 1920x1080 o 1280x720.");
-      }
-      if (metadata.width < 960 || metadata.height < 540) {
-        throw new Error("El video de pauta debe tener minimo 960x540. Recomendado: 1920x1080 o 1280x720.");
-      }
-      return metadata;
     }
 
     async function payloadFromForm(form) {
@@ -1510,9 +1490,9 @@
             }
           } else if (key === "adMediaFile") {
             if (isVideoFile(value)) {
-              await validateBannerVideo(value);
+              if (value.size > 18_000_000) throw new Error("El video de pauta debe pesar menos de 18 MB para cargar bien en celular");
               payload.mediaName = value.name;
-              payload.mediaType = "video/mp4";
+              payload.mediaType = fileMime(value, /\.(mov)$/i.test(fileName(value)) ? "video/quicktime" : "video/mp4");
               payload.mediaData = await fileToDataUrl(value);
             } else if (isImageFile(value)) {
               if (value.size > 10_000_000) throw new Error("La imagen de pauta debe pesar menos de 10 MB");
