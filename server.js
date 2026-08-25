@@ -545,6 +545,72 @@ function safeUrl(value, base) {
   }
 }
 
+function safeImageUrl(value, base) {
+  const url = safeUrl(value, base);
+  if (!url) return "";
+  try {
+    const parsed = new URL(url);
+    if (!["http:", "https:"].includes(parsed.protocol)) return "";
+    const normalized = normalizeText(`${parsed.pathname} ${parsed.search}`);
+    if (/\b(logo|favicon|icon|sprite|placeholder|loading|avatar|profile)\b/.test(normalized)) return "";
+    return parsed.toString();
+  } catch {
+    return "";
+  }
+}
+
+function firstSrcsetUrl(value, base) {
+  const first = String(value || "")
+    .split(",")
+    .map((part) => part.trim().split(/\s+/)[0])
+    .find(Boolean);
+  return first ? safeImageUrl(first, base) : "";
+}
+
+function tagAttribute(tag, names) {
+  for (const name of names) {
+    const pattern = new RegExp(`\\b${name}\\s*=\\s*(["'])(.*?)\\1`, "i");
+    const match = String(tag || "").match(pattern);
+    if (match?.[2]) return decodeEntities(match[2]);
+  }
+  return "";
+}
+
+function imageFromTag(tag, base) {
+  const srcset = tagAttribute(tag, ["srcset", "data-srcset"]);
+  const fromSrcset = firstSrcsetUrl(srcset, base);
+  if (fromSrcset) return fromSrcset;
+  return safeImageUrl(tagAttribute(tag, ["data-src", "data-original", "data-lazy-src", "src"]), base);
+}
+
+function imageFromFragment(html, base) {
+  const imgPattern = /<img\b[^>]*>/gi;
+  let match;
+  while ((match = imgPattern.exec(String(html || ""))) !== null) {
+    const imageUrl = imageFromTag(match[0], base);
+    if (imageUrl) return imageUrl;
+  }
+  const sourcePattern = /<source\b[^>]*>/gi;
+  while ((match = sourcePattern.exec(String(html || ""))) !== null) {
+    const imageUrl = imageFromTag(match[0], base);
+    if (imageUrl) return imageUrl;
+  }
+  return "";
+}
+
+function extractMetaImage(html, base) {
+  const metaPattern = /<meta\b[^>]*>/gi;
+  let match;
+  while ((match = metaPattern.exec(String(html || ""))) !== null) {
+    const tag = match[0];
+    const key = normalizeText(`${tagAttribute(tag, ["property"])} ${tagAttribute(tag, ["name"])}`);
+    if (!/\b(og:image|twitter:image|twitter:image:src|image)\b/.test(key)) continue;
+    const imageUrl = safeImageUrl(tagAttribute(tag, ["content"]), base);
+    if (imageUrl) return imageUrl;
+  }
+  return "";
+}
+
 function isOfficialUrl(value) {
   try {
     const host = new URL(value).hostname.toLowerCase().replace(/^www\./, "");
@@ -850,6 +916,7 @@ function extractOfficialCandidates(source, sourceUrl, html) {
   const candidates = [];
   const pageText = htmlToText(html, 2600);
   const pageTitle = inferOfficialTitle(pageText, extractPageTitle(html), sourceUrl);
+  const pageImageUrl = extractMetaImage(html, sourceUrl) || imageFromFragment(html.slice(0, 8000), sourceUrl);
   if (!isListingSourceUrl(source, sourceUrl) && pageTitle && isLikelyContentTitle(pageTitle)) {
     candidates.push({
       entity: source.entity,
@@ -857,6 +924,7 @@ function extractOfficialCandidates(source, sourceUrl, html) {
       url: sourceUrl,
       sourceUrl,
       context: pageText,
+      imageUrl: pageImageUrl,
       kind: "page",
     });
   }
@@ -874,13 +942,17 @@ function extractOfficialCandidates(source, sourceUrl, html) {
 
     const start = Math.max(0, match.index - 700);
     const end = Math.min(html.length, match.index + match[0].length + 900);
+    const mediaStart = Math.max(0, match.index - 1200);
+    const mediaEnd = Math.min(html.length, match.index + match[0].length + 1400);
     const context = htmlToText(html.slice(start, end), 1200);
+    const imageUrl = imageFromFragment(match[0], sourceUrl) || imageFromFragment(html.slice(mediaStart, mediaEnd), sourceUrl);
     candidates.push({
       entity: source.entity,
       title,
       url,
       sourceUrl,
       context,
+      imageUrl,
       kind: "link",
     });
   }
@@ -902,6 +974,7 @@ async function scrapeOfficialSource(source, sourceUrl) {
         entity: candidate.entity,
         title,
         summary: officialSummary({ ...candidate, title }),
+        imageUrl: text(candidate.imageUrl, 600),
         url: candidate.url,
         sourceUrl: candidate.sourceUrl,
         matchedKeywords: matchedKeywords.slice(0, 4),

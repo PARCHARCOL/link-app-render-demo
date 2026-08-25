@@ -9,9 +9,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v37">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v37">
-  <link rel="preload" href="/logolink.png?v=link-app-v37" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v38">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v38">
+  <link rel="preload" href="/logolink.png?v=link-app-v38" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -100,8 +100,15 @@
     .newspaper{display:grid;gap:10px;margin-bottom:15px}
     .lead-story,.story-card,.source-card,.card{display:block;min-width:0;color:inherit;text-decoration:none;background:#ffffff;border:1px solid var(--line);border-radius:18px;box-shadow:0 12px 26px rgba(146,70,18,.08);overflow-wrap:anywhere}
     .lead-story{padding:16px;border-left:6px solid var(--red)}
+    .lead-story.has-image{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,38%);gap:0;padding:0;border-left:0;overflow:hidden}
     .story-list{display:grid;gap:9px}
     .story-card{padding:13px;border-left:4px solid var(--orange)}
+    .story-card.has-image{display:grid;grid-template-columns:112px minmax(0,1fr);gap:0;padding:0;border-left:0;overflow:hidden}
+    .story-content{min-width:0;padding:13px}
+    .lead-story .story-content{padding:16px;border-left:6px solid var(--red)}
+    .story-media{min-height:112px;background:#fff0e3;border-left:1px solid var(--line)}
+    .lead-story .story-media{min-height:100%;border-left:1px solid var(--line)}
+    .story-media img{display:block;width:100%;height:100%;object-fit:cover;background:#fff0e3}
     .source-card{padding:14px}
     .lead-story:hover,.story-card:hover,.source-card:hover{border-color:var(--red)}
     .news-tag,.status-badge{display:inline-flex;align-items:center;min-height:22px;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:950}
@@ -223,7 +230,7 @@
     .media-viewer-card img,.media-viewer-card video{max-width:100%;max-height:78vh;object-fit:contain;background:#fff}
     .media-viewer-close{position:absolute;right:12px;top:12px;z-index:2;min-width:42px;height:42px;color:#fff;background:rgba(0,0,0,.72);border:0;border-radius:999px;font-size:20px;font-weight:950}
     .media-viewer-title{margin:0;color:var(--ink);font-size:14px;font-weight:950}
-    @media (max-width:820px){.stage{min-height:100dvh;padding:0;place-items:stretch;background:#fff6ef}.app{width:100dvw;max-width:100dvw;height:100dvh;min-height:100dvh;border-left:0;border-right:0;border-radius:0}.app-header{padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) 12px max(10px,env(safe-area-inset-left));overflow:hidden}.phone-status{min-width:0}.phone-status small{max-width:44%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.brand-row{grid-template-columns:66px minmax(0,1fr) auto;gap:10px;margin-bottom:12px}.brand-mark{width:66px;height:66px}.brand-copy strong{font-size:28px}.brand-copy span{font-size:12px}.header-actions{display:flex;grid-column:auto;gap:7px;justify-content:flex-end}.header-action{width:auto;min-width:78px;min-height:42px;padding:5px 9px}.account-action{min-width:118px}.header-action strong,.header-action small{max-width:118px}.tabs{display:flex;grid-auto-flow:unset;grid-auto-columns:unset;grid-template-columns:none;gap:5px;max-width:100%;overflow-x:auto;overflow-y:hidden;padding:0 0 4px;-webkit-overflow-scrolling:touch}.menu-btn{flex:0 0 64px}.download-menu{flex-basis:70px}.menu-icon{width:46px;height:46px;border-radius:14px}.menu-icon svg{width:24px;height:24px}.menu-btn span:last-child{max-width:70px;font-size:9.5px}.screen{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right));padding-bottom:18px}.split,.auth-grid,.verify-row,.update-banner,.flow-branches{grid-template-columns:1fr}.hero h1{font-size:26px}.activity-grid{grid-template-columns:1fr}.product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.product h3{font-size:12px}.price{font-size:18px}.admin-row{grid-template-columns:1fr}.login-brand{grid-template-columns:1fr}.ad-banner{min-height:204px;grid-template-columns:112px minmax(0,1fr);margin:8px max(10px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));padding:0 10px 50px}.ad-banner::after,.ad-media{inset:0 0 50px 0}.ad-actions{min-height:50px;gap:6px;padding:7px 8px}.ad-actions .mini-btn,.ad-actions .secondary{min-height:36px;padding:0 10px;font-size:11px}.ad-copy{padding:28px 0 18px}.ad-copy strong{font-size:13px}.ad-copy span{font-size:8px}}
+    @media (max-width:820px){.stage{min-height:100dvh;padding:0;place-items:stretch;background:#fff6ef}.app{width:100dvw;max-width:100dvw;height:100dvh;min-height:100dvh;border-left:0;border-right:0;border-radius:0}.app-header{padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) 12px max(10px,env(safe-area-inset-left));overflow:hidden}.phone-status{min-width:0}.phone-status small{max-width:44%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.brand-row{grid-template-columns:66px minmax(0,1fr) auto;gap:10px;margin-bottom:12px}.brand-mark{width:66px;height:66px}.brand-copy strong{font-size:28px}.brand-copy span{font-size:12px}.header-actions{display:flex;grid-column:auto;gap:7px;justify-content:flex-end}.header-action{width:auto;min-width:78px;min-height:42px;padding:5px 9px}.account-action{min-width:118px}.header-action strong,.header-action small{max-width:118px}.tabs{display:flex;grid-auto-flow:unset;grid-auto-columns:unset;grid-template-columns:none;gap:5px;max-width:100%;overflow-x:auto;overflow-y:hidden;padding:0 0 4px;-webkit-overflow-scrolling:touch}.menu-btn{flex:0 0 64px}.download-menu{flex-basis:70px}.menu-icon{width:46px;height:46px;border-radius:14px}.menu-icon svg{width:24px;height:24px}.menu-btn span:last-child{max-width:70px;font-size:9.5px}.screen{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right));padding-bottom:18px}.split,.auth-grid,.verify-row,.update-banner,.flow-branches{grid-template-columns:1fr}.hero h1{font-size:26px}.lead-story.has-image{grid-template-columns:1fr}.lead-story .story-media{min-height:170px;order:-1;border-left:0;border-bottom:1px solid var(--line)}.story-card.has-image{grid-template-columns:96px minmax(0,1fr)}.story-media{min-height:104px}.activity-grid{grid-template-columns:1fr}.product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.product h3{font-size:12px}.price{font-size:18px}.admin-row{grid-template-columns:1fr}.login-brand{grid-template-columns:1fr}.ad-banner{min-height:204px;grid-template-columns:112px minmax(0,1fr);margin:8px max(10px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));padding:0 10px 50px}.ad-banner::after,.ad-media{inset:0 0 50px 0}.ad-actions{min-height:50px;gap:6px;padding:7px 8px}.ad-actions .mini-btn,.ad-actions .secondary{min-height:36px;padding:0 10px;font-size:11px}.ad-copy{padding:28px 0 18px}.ad-copy strong{font-size:13px}.ad-copy span{font-size:8px}}
     @media (max-width:380px){.brand-row{grid-template-columns:58px minmax(0,1fr) auto}.brand-mark{width:58px;height:58px}.brand-copy strong{font-size:25px}.brand-copy span{font-size:11px}.header-action{min-width:68px;padding:5px 7px}.account-action{min-width:104px}.header-action strong,.header-action small{max-width:104px}.menu-btn{flex-basis:58px}.download-menu{flex-basis:64px}.menu-icon{width:42px;height:42px}.menu-btn span:last-child{font-size:9px}.screen{padding-left:10px;padding-right:10px}.hero h1{font-size:24px}}
   </style>
 </head>
@@ -307,7 +314,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v37";
+    const appBuild = "link-app-v38";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -460,7 +467,7 @@
     }
 
     function logoSrc() {
-      return state.settings?.logoUrl || state.settings?.logoData || "/logolink.png?v=link-app-v37";
+      return state.settings?.logoUrl || state.settings?.logoData || "/logolink.png?v=link-app-v38";
     }
 
     function logoImg(className, alt = "Link") {
@@ -884,6 +891,12 @@
       `, adRequestOpen);
     }
 
+    function newsImage(item, eager = false) {
+      const src = String(item?.imageUrl || "").trim();
+      if (!src) return "";
+      return `<div class="story-media"><img src="${esc(src)}" alt="" loading="${eager ? "eager" : "lazy"}" decoding="async" referrerpolicy="no-referrer" onerror="this.closest('.story-media')?.remove()"></div>`;
+    }
+
     function renderOfficialNews() {
       const official = officialItems();
       if (!official.length) {
@@ -892,18 +905,24 @@
       const lead = official[0];
       const rest = official.slice(1, 7);
       return `<div class="newspaper">
-        <a class="lead-story" href="${esc(lead.url)}" target="_blank" rel="noopener noreferrer">
-          <span class="news-tag">${esc(lead.entity)}</span>
-          <h2>${esc(lead.title)}</h2>
-          ${lead.summary ? `<p>${esc(lead.summary)}</p>` : ""}
-          <span class="origin-link">Abrir fuente oficial</span>
+        <a class="lead-story ${lead.imageUrl ? "has-image" : ""}" href="${esc(lead.url)}" target="_blank" rel="noopener noreferrer">
+          <div class="story-content">
+            <span class="news-tag">${esc(lead.entity)}</span>
+            <h2>${esc(lead.title)}</h2>
+            ${lead.summary ? `<p>${esc(lead.summary)}</p>` : ""}
+            <span class="origin-link">Abrir fuente oficial</span>
+          </div>
+          ${newsImage(lead, true)}
         </a>
         <div class="story-list">
-          ${rest.map((item) => `<a class="story-card" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">
-            <span class="news-tag">${esc(item.entity)}</span>
-            <h3>${esc(item.title)}</h3>
-            ${item.summary ? `<p>${esc(item.summary)}</p>` : ""}
-            <span class="origin-link">Ver en origen</span>
+          ${rest.map((item) => `<a class="story-card ${item.imageUrl ? "has-image" : ""}" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">
+            ${newsImage(item)}
+            <div class="story-content">
+              <span class="news-tag">${esc(item.entity)}</span>
+              <h3>${esc(item.title)}</h3>
+              ${item.summary ? `<p>${esc(item.summary)}</p>` : ""}
+              <span class="origin-link">Ver en origen</span>
+            </div>
           </a>`).join("")}
         </div>
       </div>`;
