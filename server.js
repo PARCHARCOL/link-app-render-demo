@@ -98,6 +98,9 @@ const officialSources = [
       "https://www.gatevents.net/gat-expo/",
       "https://www.gatevents.net/gat-expo-cartagena/",
       "https://www.gatevents.net/gat-bogota/",
+      "https://www.gatevents.net/gat-expo-puerto-rico/",
+      "https://www.gatevents.net/gat-santo-domingo/",
+      "https://www.gatevents.net/gat-expo-sao-paulo-2026/",
     ],
   },
 ];
@@ -541,6 +544,7 @@ function isGenericLinkText(value) {
 function isLikelyContentTitle(value) {
   const normalized = normalizeText(value);
   if (isGenericLinkText(value)) return false;
+  if (/\bgat\s+(expo|bogota|bogotá|cartagena|san juan|santo domingo|sao paulo|são paulo)\b/.test(normalized)) return true;
   if (normalized.length >= 32) return true;
   return /\b(concepto|oficio|circular|decreto|resolucion|acuerdo|comunicado)\b/i.test(normalized);
 }
@@ -585,6 +589,15 @@ function inferOfficialTitle(pageText, fallbackTitle, sourceUrl) {
 }
 
 function candidateScore(candidate) {
+  if (candidate.entity === "GAT Events") {
+    const normalized = normalizeText(`${candidate.title} ${candidate.context} ${candidate.url}`);
+    if (!/\bgat\b/.test(normalized)) return -10;
+    let score = 5;
+    if (/\b(20\d{2}|septiembre|octubre|noviembre|marzo|feria|expo|gaming|juegos|casino|apuestas)\b/.test(normalized)) score += 6;
+    if (candidate.kind === "page") score += 3;
+    if (/gat-(expo|bogota|cartagena|santo-domingo|san-juan|sao-paulo)/i.test(candidate.url)) score += 3;
+    return score;
+  }
   const titleMatches = matchedCasinoKeywords(candidate.title);
   const contextMatches = matchedCasinoKeywords(candidate.context);
   if (!isLikelyContentTitle(candidate.title)) return -10;
@@ -664,22 +677,41 @@ function eventNameFromPath(url) {
       .replace(/\bexpo\b/i, "Expo")
       .replace(/\bbogota\b/i, "Bogota")
       .replace(/\bcartagena\b/i, "Cartagena")
+      .replace(/\bpuerto rico\b/i, "Puerto Rico")
+      .replace(/\bcdmx\b/i, "CDMX")
+      .replace(/\bsanto domingo\b/i, "Santo Domingo")
+      .replace(/\bsan juan\b/i, "San Juan")
+      .replace(/\bsao paulo\b/i, "Sao Paulo")
       .replace(/\bcolombia\b/i, "Colombia")
       .trim();
-    return /^GAT\s+(Expo|Bogota|Cartagena)/i.test(label) ? label : "";
+    return /^GAT\s+(Expo|Bogota|Cartagena|Puerto Rico|CDMX|Santo Domingo|San Juan|Sao Paulo)/i.test(label) ? label : "";
   } catch {
     return "";
   }
 }
 
+function gatEventTitle(candidate) {
+  const cleaned = cleanSummary(`${candidate.title || ""} ${candidate.context || ""}`);
+  const fromTitle = cleanSummary(candidate.title).match(/\bGAT\s+(?:Expo\s+)?[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s]+(?:COL|PR|RD|MX|BRA)?\s+20\d{2}\b/i)?.[0];
+  return fromTitle
+    || eventNameFromPath(candidate.url)
+    || cleaned.match(/\bGAT\s+Expo\s+[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s]+(?:COL|PR|RD|MX|BRA)?\s+20\d{2}\b/i)?.[0]
+    || cleanSummary(candidate.title)
+    || "Evento oficial GAT Events";
+}
+
+function officialTitle(candidate) {
+  if (candidate.entity === "GAT Events") return text(gatEventTitle(candidate), 180);
+  return text(candidate.title, 180);
+}
+
 function officialSummary(candidate) {
   if (candidate.entity === "GAT Events") {
     const cleaned = cleanSummary(candidate.context);
-    const eventName = eventNameFromPath(candidate.url)
-      || cleaned.match(/\bGAT\s+Expo\s+[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s]+(?:COL|PR|RD|MX|BRA)?\s+20\d{2}\b/i)?.[0]
-      || "Evento oficial GAT Events";
-    const dateText = /\b\d{1,2}\s*,\s*\d{1,2}\s+de\s+[a-záéíóúñ]+\s+&\s+\d{1,2}\s+[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+\s+de\s+20\d{2}\b/i.test(candidate.title)
-      ? ` Fechas: ${candidate.title}.`
+    const eventName = gatEventTitle(candidate);
+    const dateMatch = cleaned.match(/\b(?:\d{1,2}\s*(?:&|y)\s*\d{1,2}\s+de\s+[a-záéíóúñ]+\s+de\s+20\d{2}|\d{1,2}\s+de\s+[a-záéíóúñ]+\s+de\s+20\d{2}|\d{1,2}\s+&\s+\d{1,2}\s+[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+\s*\/\s*20\d{2})\b/i);
+    const dateText = dateMatch?.[0]
+      ? ` Fecha: ${dateMatch[0]}.`
       : "";
     return text(`${eventName}.${dateText} Organizador oficial: GAT Events.`, 240);
   }
@@ -757,11 +789,12 @@ async function scrapeOfficialSource(source, sourceUrl) {
       const matchedKeywords = matchedCasinoKeywords(combined);
       const score = candidateScore(candidate);
       if (matchedKeywords.length === 0 || score < 1) return null;
+      const title = officialTitle(candidate);
       return {
-        id: `${normalizeText(candidate.entity).replace(/\W+/g, "-")}-${hashId(candidate.url + candidate.title)}`,
+        id: `${normalizeText(candidate.entity).replace(/\W+/g, "-")}-${hashId(candidate.url + title)}`,
         entity: candidate.entity,
-        title: text(candidate.title, 180),
-        summary: officialSummary(candidate),
+        title,
+        summary: officialSummary({ ...candidate, title }),
         url: candidate.url,
         sourceUrl: candidate.sourceUrl,
         matchedKeywords: matchedKeywords.slice(0, 4),
