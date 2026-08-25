@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Link</title>
-  <meta name="description" content="Link: aplicacion online para noticias, bolsa de empleo, compra/ventas, mensajes y administracion del sector.">
+  <meta name="description" content="Link: aplicacion online para noticias, bolsa de empleo, compra/ventas, chat tecnico y administracion del sector.">
   <meta name="theme-color" content="#ff6a00">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v38">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v38">
-  <link rel="preload" href="/logolink.png?v=link-app-v38" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v39">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v39">
+  <link rel="preload" href="/logolink.png?v=link-app-v39" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -224,13 +224,19 @@
     .admin-row p{margin:4px 0 0;color:var(--muted);font-size:12px;line-height:1.28}
     .admin-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}
     .admin-actions button{min-height:31px;padding:0 9px;border-radius:10px;font-size:11px}
+    .admin-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+    .admin-kpi{min-width:0;padding:12px;text-align:left;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:15px;box-shadow:0 10px 22px rgba(146,70,18,.08)}
+    .admin-kpi strong,.admin-kpi span{display:block}
+    .admin-kpi strong{font-size:22px;line-height:1}
+    .admin-kpi span{margin-top:5px;color:var(--muted);font-size:11px;font-weight:850;line-height:1.25}
+    .admin-kpi:hover{border-color:var(--red)}
     .media-viewer{position:fixed;inset:0;z-index:80;display:none;place-items:center;padding:20px;background:rgba(31,12,2,.76);backdrop-filter:blur(10px)}
     .media-viewer.show{display:grid}
     .media-viewer-card{position:relative;width:min(96vw,980px);max-height:92vh;display:grid;gap:10px;padding:12px;background:#fffdf9;border:1px solid var(--line);border-radius:16px;box-shadow:0 24px 80px rgba(0,0,0,.35)}
     .media-viewer-card img,.media-viewer-card video{max-width:100%;max-height:78vh;object-fit:contain;background:#fff}
     .media-viewer-close{position:absolute;right:12px;top:12px;z-index:2;min-width:42px;height:42px;color:#fff;background:rgba(0,0,0,.72);border:0;border-radius:999px;font-size:20px;font-weight:950}
     .media-viewer-title{margin:0;color:var(--ink);font-size:14px;font-weight:950}
-    @media (max-width:820px){.stage{min-height:100dvh;padding:0;place-items:stretch;background:#fff6ef}.app{width:100dvw;max-width:100dvw;height:100dvh;min-height:100dvh;border-left:0;border-right:0;border-radius:0}.app-header{padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) 12px max(10px,env(safe-area-inset-left));overflow:hidden}.phone-status{min-width:0}.phone-status small{max-width:44%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.brand-row{grid-template-columns:66px minmax(0,1fr) auto;gap:10px;margin-bottom:12px}.brand-mark{width:66px;height:66px}.brand-copy strong{font-size:28px}.brand-copy span{font-size:12px}.header-actions{display:flex;grid-column:auto;gap:7px;justify-content:flex-end}.header-action{width:auto;min-width:78px;min-height:42px;padding:5px 9px}.account-action{min-width:118px}.header-action strong,.header-action small{max-width:118px}.tabs{display:flex;grid-auto-flow:unset;grid-auto-columns:unset;grid-template-columns:none;gap:5px;max-width:100%;overflow-x:auto;overflow-y:hidden;padding:0 0 4px;-webkit-overflow-scrolling:touch}.menu-btn{flex:0 0 64px}.download-menu{flex-basis:70px}.menu-icon{width:46px;height:46px;border-radius:14px}.menu-icon svg{width:24px;height:24px}.menu-btn span:last-child{max-width:70px;font-size:9.5px}.screen{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right));padding-bottom:18px}.split,.auth-grid,.verify-row,.update-banner,.flow-branches{grid-template-columns:1fr}.hero h1{font-size:26px}.lead-story.has-image{grid-template-columns:1fr}.lead-story .story-media{min-height:170px;order:-1;border-left:0;border-bottom:1px solid var(--line)}.story-card.has-image{grid-template-columns:96px minmax(0,1fr)}.story-media{min-height:104px}.activity-grid{grid-template-columns:1fr}.product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.product h3{font-size:12px}.price{font-size:18px}.admin-row{grid-template-columns:1fr}.login-brand{grid-template-columns:1fr}.ad-banner{min-height:204px;grid-template-columns:112px minmax(0,1fr);margin:8px max(10px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));padding:0 10px 50px}.ad-banner::after,.ad-media{inset:0 0 50px 0}.ad-actions{min-height:50px;gap:6px;padding:7px 8px}.ad-actions .mini-btn,.ad-actions .secondary{min-height:36px;padding:0 10px;font-size:11px}.ad-copy{padding:28px 0 18px}.ad-copy strong{font-size:13px}.ad-copy span{font-size:8px}}
+    @media (max-width:820px){.stage{min-height:100dvh;padding:0;place-items:stretch;background:#fff6ef}.app{width:100dvw;max-width:100dvw;height:100dvh;min-height:100dvh;border-left:0;border-right:0;border-radius:0}.app-header{padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) 12px max(10px,env(safe-area-inset-left));overflow:hidden}.phone-status{min-width:0}.phone-status small{max-width:44%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.brand-row{grid-template-columns:66px minmax(0,1fr) auto;gap:10px;margin-bottom:12px}.brand-mark{width:66px;height:66px}.brand-copy strong{font-size:28px}.brand-copy span{font-size:12px}.header-actions{display:flex;grid-column:auto;gap:7px;justify-content:flex-end}.header-action{width:auto;min-width:78px;min-height:42px;padding:5px 9px}.account-action{min-width:118px}.header-action strong,.header-action small{max-width:118px}.tabs{display:flex;grid-auto-flow:unset;grid-auto-columns:unset;grid-template-columns:none;gap:5px;max-width:100%;overflow-x:auto;overflow-y:hidden;padding:0 0 4px;-webkit-overflow-scrolling:touch}.menu-btn{flex:0 0 64px}.download-menu{flex-basis:70px}.menu-icon{width:46px;height:46px;border-radius:14px}.menu-icon svg{width:24px;height:24px}.menu-btn span:last-child{max-width:70px;font-size:9.5px}.screen{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right));padding-bottom:18px}.split,.auth-grid,.verify-row,.update-banner,.flow-branches{grid-template-columns:1fr}.hero h1{font-size:26px}.lead-story.has-image{grid-template-columns:1fr}.lead-story .story-media{min-height:170px;order:-1;border-left:0;border-bottom:1px solid var(--line)}.story-card.has-image{grid-template-columns:96px minmax(0,1fr)}.story-media{min-height:104px}.activity-grid{grid-template-columns:1fr}.product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.product h3{font-size:12px}.price{font-size:18px}.admin-row{grid-template-columns:1fr}.admin-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.login-brand{grid-template-columns:1fr}.ad-banner{min-height:204px;grid-template-columns:112px minmax(0,1fr);margin:8px max(10px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));padding:0 10px 50px}.ad-banner::after,.ad-media{inset:0 0 50px 0}.ad-actions{min-height:50px;gap:6px;padding:7px 8px}.ad-actions .mini-btn,.ad-actions .secondary{min-height:36px;padding:0 10px;font-size:11px}.ad-copy{padding:28px 0 18px}.ad-copy strong{font-size:13px}.ad-copy span{font-size:8px}}
     @media (max-width:380px){.brand-row{grid-template-columns:58px minmax(0,1fr) auto}.brand-mark{width:58px;height:58px}.brand-copy strong{font-size:25px}.brand-copy span{font-size:11px}.header-action{min-width:68px;padding:5px 7px}.account-action{min-width:104px}.header-action strong,.header-action small{max-width:104px}.menu-btn{flex-basis:58px}.download-menu{flex-basis:64px}.menu-icon{width:42px;height:42px}.menu-btn span:last-child{font-size:9px}.screen{padding-left:10px;padding-right:10px}.hero h1{font-size:24px}}
   </style>
 </head>
@@ -268,6 +274,8 @@
     let activeMediaPreview = null;
     let mercadoEditorOpen = false;
     let adRequestOpen = false;
+    let tokenRechargeOpen = false;
+    let editingAdCampaignId = "";
     let installPromptEvent = null;
     let installMessage = "";
     let pendingUpdateWorker = null;
@@ -314,13 +322,13 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v38";
+    const appBuild = "link-app-v39";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
       { key: "empleos", label: "Bolsa de Empleo" },
       { key: "marketplace", label: "Compra/Ventas" },
-      { key: "mensajes", label: "Mensajes" },
+      { key: "mensajes", label: "Chat Tecnico" },
     ];
 
     window.addEventListener("beforeinstallprompt", (event) => {
@@ -421,7 +429,7 @@
     function protectedMessage(tab) {
       if (tab === "empleos") return "Para subir o descargar una hoja de vida debe registrarse o ingresar.";
       if (tab === "marketplace") return "Para publicar ventas, subir fotos o videos en Compra/Ventas debe registrarse o ingresar.";
-      if (tab === "mensajes") return "Para escribir, responder o participar en la comunidad tecnica debe registrarse o ingresar.";
+      if (tab === "mensajes") return "Para escribir, responder o participar en el Chat Tecnico debe registrarse o ingresar.";
       return "Para usar esta opcion debe registrarse o ingresar.";
     }
 
@@ -467,7 +475,7 @@
     }
 
     function logoSrc() {
-      return state.settings?.logoUrl || state.settings?.logoData || "/logolink.png?v=link-app-v38";
+      return state.settings?.logoUrl || state.settings?.logoData || "/logolink.png?v=link-app-v39";
     }
 
     function logoImg(className, alt = "Link") {
@@ -595,6 +603,10 @@
 
     function money(value) {
       return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(Number(value || 0));
+    }
+
+    function moneyLabel(value) {
+      return money(value);
     }
 
     function tokensLabel(value) {
@@ -764,7 +776,7 @@
 
     function tokenRechargeForm(current) {
       if (!current || current.accountType !== "company") return "";
-      return `<details class="editor">
+      return `<details class="editor" ${tokenRechargeOpen ? "open" : ""} id="tokenRechargePanel">
         <summary>Solicitar recarga de tokens</summary>
         <form class="form" data-action="/api/token-requests">
           <p class="field-note">Paquete fijo: ${esc(moneyLabel(state.settings.tokenPackageValue))} por ${esc(tokensLabel(state.settings.tokenPackageTokens))}. Anexa el comprobante para que Admin confirme y active el saldo.</p>
@@ -950,9 +962,9 @@
         tab: "empleos",
       }));
       const threads = (state.threads || []).map((item) => ({
-        kind: "Mensajes",
+        kind: "Chat tecnico",
         title: item.topic,
-        subtitle: item.name || "Conversacion",
+        subtitle: item.name || "Chat tecnico",
         date: item.createdAt,
         status: item.status,
         tab: "mensajes",
@@ -1235,7 +1247,7 @@
       const replies = messages.slice(1);
       return `<article class="blog-post ${thread.id === activeThreadId ? "active" : ""}">
         <div class="topline"><span>${esc(thread.name || "Link")}</span><strong>${esc(dateLabel(thread.createdAt))}</strong></div>
-        <h3>${esc(thread.topic || "Conversacion")}</h3>
+        <h3>${esc(thread.topic || "Chat tecnico")}</h3>
         ${first.text ? `<p>${esc(first.text)}</p>` : ""}
         <div class="meta">${statusBadge(thread.status)}<span class="pill">${replies.length} respuesta(s)</span></div>
         ${!compact ? `<div class="comments">
@@ -1271,10 +1283,10 @@
           <div class="blog-feed">${technicalThreads.length ? technicalThreads.map((thread) => threadCard(thread)).join("") : empty("Aun no hay aportes tecnicos.")}</div>
         </div>`;
       }
-      return `<section class="screen">${hero("Mensajes", "Blog de la comunidad Link para publicar temas, responder y compartir conocimiento.")}
+      return `<section class="screen">${hero("Chat Tecnico", "Comunidad Link para publicar temas, responder y compartir conocimiento tecnico del sector.")}
         ${formError()}
         ${createBlog}
-        <div class="section-title"><h2>Blog de usuarios</h2><small>${normalThreads.length}</small></div>
+        <div class="section-title"><h2>Temas de interes</h2><small>${normalThreads.length}</small></div>
         <div class="blog-feed">${blog}</div>
         ${technical}
       </section>`;
@@ -1388,7 +1400,7 @@
 
     function renderTokenRequests() {
       const items = adminState?.tokenRequests || [];
-      return `<details class="editor" open>
+      return `<details class="editor" open id="admin-token-requests">
         <summary>Solicitudes de recarga (${items.length})</summary>
         <div class="form admin-list">${items.length ? items.map((item) => adminTokenRequestRow(item)).join("") : empty("No hay solicitudes de recarga.")}</div>
       </details>`;
@@ -1397,7 +1409,7 @@
     function renderTokenAdminPanel() {
       const settings = state.settings || {};
       const companies = (adminState?.users || []).filter((item) => item.accountType === "company");
-      return `<details class="editor" open>
+      return `<details class="editor" open id="admin-tokens">
         <summary>Monetizacion y tokens</summary>
         <form class="form" data-admin-token-settings>
           <p class="field-note">Fijos actuales: descarga HV ${esc(tokensLabel(settings.tokenCvDownloadCost))}, regalo empresa nueva ${esc(tokensLabel(settings.tokenTrialCompanyTokens))}, paquete base ${esc(moneyLabel(settings.tokenPackageValue))}. El valor anual se actualiza por Admin cuando aplique IPC.</p>
@@ -1427,28 +1439,114 @@
       </details>`;
     }
 
+    function pendingCount(items) {
+      return (items || []).filter((item) => (item.status || "pending") === "pending").length;
+    }
+
+    function renderAdminOverview() {
+      const contentGroups = adminState?.content || {};
+      const pendingContent = ["news", "resumes", "vacancies", "products", "threads", "adCampaigns"]
+        .reduce((total, key) => total + pendingCount(contentGroups[key] || []), 0);
+      const pendingTokens = pendingCount(adminState?.tokenRequests || []);
+      const pendingAds = pendingCount(adminState?.adRequests || []);
+      const activeCampaigns = (contentGroups.adCampaigns || []).filter((item) => item.status === "published").length;
+      return `<div class="admin-kpis">
+        <button class="admin-kpi" data-admin-jump="#admin-token-requests" type="button"><strong>${pendingTokens}</strong><span>Recargas por revisar</span></button>
+        <button class="admin-kpi" data-admin-jump="#admin-ad-requests" type="button"><strong>${pendingAds}</strong><span>Solicitudes de pauta</span></button>
+        <button class="admin-kpi" data-admin-jump="#admin-ad-campaigns" type="button"><strong>${activeCampaigns}</strong><span>Campanas activas</span></button>
+        <button class="admin-kpi" data-admin-jump="#admin-content" type="button"><strong>${pendingContent}</strong><span>Publicaciones pendientes</span></button>
+      </div>`;
+    }
+
+    function renderBrandAdminPanel() {
+      return `<details class="editor" open id="admin-brand">
+        <summary>Marca y logo</summary>
+        <form class="form" data-admin-settings>
+          <div class="logo-admin-preview">
+            ${logoImg("brand-mark")}
+            <p data-logo-status>${state.settings?.logoUrl || state.settings?.logoData ? `Logo actual: ${esc(state.settings.logoName || "personalizado")}` : "Logo actual: base del servidor"}</p>
+          </div>
+          <input name="logoFile" type="file" accept="image/*,video/*,.gif,.jpg,.jpeg,.png,.webp,.svg,.mp4,.webm,.mov">
+          <label class="check"><input name="clearLogo" type="checkbox"> Restaurar logo base</label>
+          <button class="primary" type="submit">Guardar logo</button>
+        </form>
+      </details>`;
+    }
+
+    function campaignDateValue(value) {
+      if (!value) return "";
+      const date = new Date(value);
+      if (!Number.isFinite(date.getTime())) return "";
+      const offset = date.getTimezoneOffset();
+      const local = new Date(date.getTime() - offset * 60000);
+      return local.toISOString().slice(0, 16);
+    }
+
+    function renderAdCampaignForm(item = null) {
+      const isEdit = Boolean(item);
+      const status = item?.status || "published";
+      return `<form class="form" data-action="/api/admin/ad-campaigns" id="${isEdit ? `adCampaignEdit-${esc(item.id)}` : "admin-ad-create"}">
+        ${isEdit ? `<input name="id" type="hidden" value="${esc(item.id)}">` : ""}
+        <input name="title" placeholder="Titulo del banner" value="${esc(item?.title || "")}" required>
+        <input name="advertiser" placeholder="Anunciante o empresa" value="${esc(item?.advertiser || "")}">
+        <input name="targetUrl" type="url" placeholder="Link de destino" value="${esc(item?.targetUrl || "")}">
+        <div class="split">
+          <input name="startsAt" type="datetime-local" value="${esc(campaignDateValue(item?.startsAt))}">
+          <input name="endsAt" type="datetime-local" value="${esc(campaignDateValue(item?.endsAt))}">
+        </div>
+        <select name="status">
+          <option value="published" ${status === "published" ? "selected" : ""}>Activa</option>
+          <option value="hidden" ${status === "hidden" ? "selected" : ""}>Pausada</option>
+          <option value="pending" ${status === "pending" ? "selected" : ""}>Pendiente</option>
+        </select>
+        <label class="file-field">
+          <span>${isEdit ? "Cambiar imagen o video del banner" : "Imagen o video del banner"}</span>
+          <input name="adMediaFile" type="file" accept="image/*,video/*,.jpg,.jpeg,.png,.webp,.gif,.mp4,.mov,.webm">
+          <small data-file-status="adMediaFile">${isEdit && item?.mediaName ? `Actual: ${esc(item.mediaName)}. Si no eliges archivo, se conserva.` : "La app acomoda videos horizontales, verticales o cuadrados dentro del banner. Mejor resultado: MP4 16:9, maximo 18 MB."}</small>
+        </label>
+        ${isEdit ? `<label class="check"><input name="clearMedia" type="checkbox"> Quitar imagen o video actual</label>` : ""}
+        <textarea name="body" placeholder="Texto corto del anuncio">${esc(item?.body || "")}</textarea>
+        <button class="primary" type="submit">${isEdit ? "Guardar cambios" : "Crear campana"}</button>
+        ${isEdit ? `<button class="secondary" data-edit-ad-campaign="" type="button">Cancelar edicion</button>` : ""}
+      </form>`;
+    }
+
+    function adminAdCampaignRow(item) {
+      const paused = item.status !== "published";
+      const editing = editingAdCampaignId === item.id;
+      return `<div class="admin-row">
+        <div>
+          <h3>${esc(item.title || "Campana publicitaria")}</h3>
+          <p>${statusBadge(item.status)} ${esc(item.advertiser || "Sin anunciante")} | ${item.mediaName ? `Archivo: ${esc(item.mediaName)}` : "Sin archivo"} | ${esc(dateLabel(item.createdAt))}</p>
+          ${item.body ? `<p>${esc(item.body)}</p>` : ""}
+          ${item.targetUrl ? `<p>${esc(item.targetUrl)}</p>` : ""}
+        </div>
+        <div class="admin-actions">
+          <button class="secondary" data-edit-ad-campaign="${esc(item.id)}" type="button">Editar</button>
+          ${paused
+            ? `<button class="primary" data-admin-action="publish" data-type="adCampaigns" data-id="${esc(item.id)}" type="button">Activar</button>`
+            : `<button class="secondary" data-admin-action="hide" data-type="adCampaigns" data-id="${esc(item.id)}" type="button">Pausar</button>`}
+          <button class="danger-btn" data-admin-action="delete" data-type="adCampaigns" data-id="${esc(item.id)}" type="button">Eliminar</button>
+        </div>
+      </div>${editing ? renderAdCampaignForm(item) : ""}`;
+    }
+
+    function renderAdCampaignsAdminPanel() {
+      const campaigns = adminState?.content?.adCampaigns || [];
+      return `<details class="editor" open id="admin-ad-campaigns">
+        <summary>Campanas publicitarias (${campaigns.length})</summary>
+        ${renderAdCampaignForm()}
+        <div class="form admin-list">${campaigns.length ? campaigns.map((item) => adminAdCampaignRow(item)).join("") : empty("No hay campanas publicitarias creadas.")}</div>
+      </details>`;
+    }
+
     function renderAdvertisingAdminPanel() {
       const requests = adminState?.adRequests || [];
-      return `<details class="editor" open>
-        <summary>Pauta publicitaria (${requests.length})</summary>
+      return `<details class="editor" open id="admin-ad-requests">
+        <summary>Solicitudes de pauta (${requests.length})</summary>
         <div class="form">
-          <p class="field-note">Crea una campana para mostrarla en el banner inferior. Las solicitudes solo quedan como contacto hasta que Admin publique una campana.</p>
+          <p class="field-note">Aqui llegan los clientes que tocan Pautar aqui. Para mostrar publicidad en el banner, crea o activa una campana publicitaria.</p>
         </div>
-        ${editor("Crear campana publicitaria", "/api/admin/ad-campaigns", `
-          <input name="title" placeholder="Titulo del banner" required>
-          <input name="advertiser" placeholder="Anunciante o empresa">
-          <input name="targetUrl" type="url" placeholder="Link de destino">
-          <div class="split">
-            <input name="startsAt" type="datetime-local">
-            <input name="endsAt" type="datetime-local">
-          </div>
-          <label class="file-field">
-            <span>Imagen o video del banner</span>
-            <input name="adMediaFile" type="file" accept="image/*,video/*,.jpg,.jpeg,.png,.webp,.gif,.mp4,.mov,.webm">
-            <small data-file-status="adMediaFile">La app acomoda videos horizontales, verticales o cuadrados dentro del banner. Mejor resultado: MP4 16:9, maximo 18 MB.</small>
-          </label>
-          <textarea name="body" placeholder="Texto corto del anuncio"></textarea>
-        `)}
         <div class="form admin-list">${requests.length ? requests.map((item) => adminAdRequestRow(item)).join("") : empty("No hay solicitudes de pauta.")}</div>
       </details>`;
     }
@@ -1470,29 +1568,20 @@
       }
       if (!adminState && !adminLoading) loadAdminState();
       const body = adminState ? `<div class="admin-grid">
-        ${renderTokenAdminPanel()}
+        ${renderAdminOverview()}
+        ${renderBrandAdminPanel()}
         ${renderTokenRequests()}
+        ${renderTokenAdminPanel()}
         ${renderAdvertisingAdminPanel()}
-        ${renderAdminGroup("adCampaigns", "Campanas publicitarias")}
+        ${renderAdCampaignsAdminPanel()}
         ${renderTokenTransactions()}
-        <div class="settings-card">
-          <strong>Marca Link</strong>
-          <span>Cambia el logo visible en la app. El logo base del servidor queda como respaldo.</span>
-          <form class="form" data-admin-settings>
-            <div class="logo-admin-preview">
-              ${logoImg("brand-mark")}
-              <p data-logo-status>${state.settings?.logoUrl || state.settings?.logoData ? `Logo actual: ${esc(state.settings.logoName || "personalizado")}` : "Logo actual: base del servidor"}</p>
-            </div>
-            <input name="logoFile" type="file" accept="image/*,video/*,.gif,.jpg,.jpeg,.png,.webp,.svg,.mp4,.webm,.mov">
-            <label class="check"><input name="clearLogo" type="checkbox"> Restaurar logo base</label>
-            <button class="primary" type="submit">Guardar logo</button>
-          </form>
+        <div id="admin-content" class="admin-grid">
+          ${renderAdminGroup("news", "Noticias internas")}
+          ${renderAdminGroup("resumes", "Hojas de vida")}
+          ${renderAdminGroup("vacancies", "Vacantes")}
+          ${renderAdminGroup("products", "Compra/Ventas")}
+          ${renderAdminGroup("threads", "Chat tecnico")}
         </div>
-        ${renderAdminGroup("news", "Noticias internas")}
-        ${renderAdminGroup("resumes", "Hojas de vida")}
-        ${renderAdminGroup("vacancies", "Vacantes")}
-        ${renderAdminGroup("products", "Compra/Ventas")}
-        ${renderAdminGroup("threads", "Conversaciones")}
         <details class="editor" open>
           <summary>Recuperacion de clave (${adminState.passwordRecoveryRequests?.length || 0})</summary>
           <div class="form admin-list">${(adminState.passwordRecoveryRequests || []).length ? adminState.passwordRecoveryRequests.map((item) => adminRecoveryRow(item)).join("") : empty("No hay solicitudes de recuperacion pendientes.")}</div>
@@ -1504,8 +1593,8 @@
       </div>` : empty("Cargando panel de administracion.");
       return `<section class="screen">${hero("Admin", "Moderacion de publicaciones, usuarios y marca.")}
         ${formError()}
-        ${accountPanel()}
         ${body}
+        ${accountPanel()}
       </section>`;
     }
 
@@ -1714,8 +1803,11 @@
       });
       document.querySelectorAll("[data-open-token-recharge]").forEach((button) => {
         button.onclick = () => {
+          tokenRechargeOpen = true;
+          accountMessage = "Anexa el comprobante de consignacion para que Admin apruebe y cargue los tokens.";
           active = "cuenta";
           render();
+          window.setTimeout(() => document.querySelector("#tokenRechargePanel")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
         };
       });
       document.querySelectorAll("[data-cv-download]").forEach((button) => {
@@ -1747,6 +1839,22 @@
         button.onclick = () => {
           active = button.dataset.goTab || "inicio";
           render();
+        };
+      });
+      document.querySelectorAll("[data-admin-jump]").forEach((button) => {
+        button.onclick = () => {
+          const target = document.querySelector(button.dataset.adminJump || "");
+          if (target?.tagName === "DETAILS") target.open = true;
+          target?.scrollIntoView({ behavior: "smooth", block: "start" });
+        };
+      });
+      document.querySelectorAll("[data-edit-ad-campaign]").forEach((button) => {
+        button.onclick = () => {
+          editingAdCampaignId = button.dataset.editAdCampaign || "";
+          render();
+          if (editingAdCampaignId) {
+            window.setTimeout(() => document.getElementById(`adCampaignEdit-${editingAdCampaignId}`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+          }
         };
       });
       document.querySelectorAll("[data-media-preview]").forEach((button) => {
@@ -2061,6 +2169,8 @@
       sessionToken = "";
       localStorage.removeItem(authKey);
       adminState = null;
+      tokenRechargeOpen = false;
+      editingAdCampaignId = "";
       authMode = "login";
       accountMessage = "Sesion cerrada. Los formularios quedaron limpios.";
       active = "cuenta";
@@ -2107,7 +2217,11 @@
         if (path === "/api/ad-requests") {
           adRequestOpen = false;
         }
+        if (path === "/api/token-requests") {
+          tokenRechargeOpen = false;
+        }
         if (path === "/api/resumes" || path === "/api/vacancies") bolsaAction = "";
+        if (path === "/api/admin/ad-campaigns") editingAdCampaignId = "";
         render();
         showNotice(saveSuccessMessage(path, result));
       } catch (error) {

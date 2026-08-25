@@ -310,6 +310,15 @@ function publicAdCampaign(item) {
   };
 }
 
+function isUuid(value) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(value || ""));
+}
+
+function adCampaignStatus(value, fallback = "published") {
+  const status = text(value, 40);
+  return ["published", "hidden", "pending"].includes(status) ? status : fallback;
+}
+
 function productMediaUrl(item) {
   if (!(item?.hasMedia || item?.mediaData || item?.media_data)) return "";
   const id = text(item.id, 80);
@@ -1216,7 +1225,7 @@ async function initDb() {
       id uuid PRIMARY KEY,
       author_id uuid REFERENCES link_users(id) ON DELETE SET NULL,
       name text NOT NULL,
-      topic text NOT NULL DEFAULT 'Conversacion',
+      topic text NOT NULL DEFAULT 'Chat tecnico',
       status text NOT NULL DEFAULT 'published',
       created_at timestamptz NOT NULL DEFAULT now()
     );
@@ -1983,7 +1992,7 @@ async function saveThread(body, user) {
   const item = {
     id: randomUUID(),
     name: publicAuthor(user),
-    topic: text(body.topic, 120) || "Conversacion",
+    topic: text(body.topic, 120) || "Chat tecnico",
     status: newContentStatus(user),
     createdAt: nowStamp(),
     messages: [
@@ -2020,7 +2029,7 @@ async function saveMessage(threadId, body, user) {
   };
   if (dbReady) {
     const thread = await pool.query("SELECT id FROM link_threads WHERE id = $1", [threadId]);
-    if (!thread.rows[0]) fail(404, "Conversacion no encontrada");
+    if (!thread.rows[0]) fail(404, "Chat tecnico no encontrado");
     await pool.query(
       `INSERT INTO link_messages (id, thread_id, author_id, author, text) VALUES ($1, $2, $3, $4, $5)`,
       [item.id, threadId, user.id, item.author, item.text],
@@ -2028,7 +2037,7 @@ async function saveMessage(threadId, body, user) {
   } else {
     const data = await readJsonData();
     const thread = data.threads.find((entry) => entry.id === threadId);
-    if (!thread) fail(404, "Conversacion no encontrada");
+    if (!thread) fail(404, "Chat tecnico no encontrado");
     thread.messages.push({ ...item, authorId: user.id });
     await writeJsonData(data);
   }
@@ -2425,37 +2434,101 @@ async function readTokenRequestReceipt(id, authUser) {
 }
 
 async function saveAdCampaign(body, admin) {
+  const requestedId = text(body.id, 80);
+  const isUpdate = Boolean(requestedId);
+  if (isUpdate && !isUuid(requestedId)) fail(400, "Campana publicitaria no valida");
+
   const title = text(body.title, 120);
   if (!title) fail(400, "Titulo de campana requerido");
+  const hasIncomingMedia = Boolean(String(body.mediaData || "").trim());
+  const clearMedia = Boolean(body.clearMedia);
+  const incomingMediaData = hasIncomingMedia ? adBannerMediaDataText(body.mediaData, 24_000_000) : "";
+  const incomingMediaType = hasIncomingMedia ? text(body.mediaType, 80) : "";
+  const incomingMediaName = hasIncomingMedia ? text(body.mediaName, 160) : "";
   const item = {
-    id: randomUUID(),
+    id: requestedId || randomUUID(),
     title,
     advertiser: text(body.advertiser, 140),
     body: text(body.body, 300),
     targetUrl: normalizeUrl(body.targetUrl),
-    mediaData: adBannerMediaDataText(body.mediaData, 24_000_000),
-    mediaType: text(body.mediaType, 80),
-    mediaName: text(body.mediaName, 160),
+    mediaData: incomingMediaData,
+    mediaType: incomingMediaType,
+    mediaName: incomingMediaName,
     startsAt: text(body.startsAt, 40) || null,
     endsAt: text(body.endsAt, 40) || null,
-    status: text(body.status, 40) === "pending" ? "pending" : "published",
+    status: adCampaignStatus(body.status),
     createdAt: nowStamp(),
     updatedAt: nowStamp(),
     author: admin.displayName || admin.email,
   };
   if (dbReady) {
-    await pool.query(
+    if (isUpdate) {
+      const result = await pool.query(
+        `UPDATE link_ad_campaigns
+         SET title = $1,
+             advertiser = $2,
+             body = $3,
+             target_url = $4,
+             status = $5,
+             media_data = CASE WHEN $6 THEN '' WHEN $7 THEN $8 ELSE media_data END,
+             media_type = CASE WHEN $6 THEN '' WHEN $7 THEN $9 ELSE media_type END,
+             media_name = CASE WHEN $6 THEN '' WHEN $7 THEN $10 ELSE media_name END,
+             starts_at = NULLIF($11, '')::timestamptz,
+             ends_at = NULLIF($12, '')::timestamptz,
+             updated_at = now()
+         WHERE id = $13
+         RETURNING id, title, advertiser, body, target_url AS "targetUrl",
+                   COALESCE(media_data, '') <> '' AS "hasMedia", media_type AS "mediaType", media_name AS "mediaName",
+                   starts_at AS "startsAt", ends_at AS "endsAt", status, created_at AS "createdAt", updated_at AS "updatedAt"`,
+        [
+          item.title,
+          item.advertiser,
+          item.body,
+          item.targetUrl,
+          item.status,
+          clearMedia,
+          hasIncomingMedia,
+          item.mediaData,
+          item.mediaType,
+          item.mediaName,
+          item.startsAt || "",
+          item.endsAt || "",
+          item.id,
+        ],
+      );
+      if (!result.rowCount) fail(404, "Campana publicitaria no encontrada");
+      return publicAdCampaign(result.rows[0]);
+    }
+    const result = await pool.query(
       `INSERT INTO link_ad_campaigns
        (id, title, advertiser, body, target_url, media_data, media_type, media_name, starts_at, ends_at, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULLIF($9, '')::timestamptz, NULLIF($10, '')::timestamptz, $11)`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULLIF($9, '')::timestamptz, NULLIF($10, '')::timestamptz, $11)
+       RETURNING id, title, advertiser, body, target_url AS "targetUrl",
+                 COALESCE(media_data, '') <> '' AS "hasMedia", media_type AS "mediaType", media_name AS "mediaName",
+                 starts_at AS "startsAt", ends_at AS "endsAt", status, created_at AS "createdAt", updated_at AS "updatedAt"`,
       [item.id, item.title, item.advertiser, item.body, item.targetUrl, item.mediaData, item.mediaType, item.mediaName, item.startsAt || "", item.endsAt || "", item.status],
     );
+    return publicAdCampaign(result.rows[0]);
   } else {
     const data = await readJsonData();
-    data.adCampaigns.unshift(item);
+    if (isUpdate) {
+      const index = data.adCampaigns.findIndex((campaign) => campaign.id === item.id);
+      if (index < 0) fail(404, "Campana publicitaria no encontrada");
+      const current = data.adCampaigns[index];
+      data.adCampaigns[index] = {
+        ...current,
+        ...item,
+        mediaData: clearMedia ? "" : (hasIncomingMedia ? item.mediaData : current.mediaData || ""),
+        mediaType: clearMedia ? "" : (hasIncomingMedia ? item.mediaType : current.mediaType || ""),
+        mediaName: clearMedia ? "" : (hasIncomingMedia ? item.mediaName : current.mediaName || ""),
+        createdAt: current.createdAt || item.createdAt,
+      };
+    } else {
+      data.adCampaigns.unshift(item);
+    }
     await writeJsonData(data);
+    return publicAdCampaign(isUpdate ? data.adCampaigns.find((campaign) => campaign.id === item.id) : item);
   }
-  return item;
 }
 
 async function readActiveAdCampaign() {
@@ -2618,7 +2691,7 @@ async function readAdminState() {
          ORDER BY p.created_at DESC LIMIT 200`,
       ),
       pool.query(
-        `SELECT t.id, t.topic AS title, 'Conversacion' AS category, t.status, t.created_at AS "createdAt", u.display_name AS author
+        `SELECT t.id, t.topic AS title, 'Chat tecnico' AS category, t.status, t.created_at AS "createdAt", u.display_name AS author
          FROM link_threads t LEFT JOIN link_users u ON u.id = t.author_id
          ORDER BY t.created_at DESC LIMIT 200`,
       ),
@@ -2639,7 +2712,8 @@ async function readAdminState() {
          ORDER BY CASE WHEN status = 'pending' THEN 0 ELSE 1 END, created_at DESC LIMIT 200`,
       ),
       pool.query(
-        `SELECT id, title, advertiser, body, target_url AS "targetUrl", media_name AS "mediaName",
+        `SELECT id, title, advertiser, body, target_url AS "targetUrl",
+                COALESCE(media_data, '') <> '' AS "hasMedia", media_type AS "mediaType", media_name AS "mediaName",
                 starts_at AS "startsAt", ends_at AS "endsAt", status, created_at AS "createdAt", updated_at AS "updatedAt"
          FROM link_ad_campaigns
          ORDER BY created_at DESC LIMIT 200`,
@@ -2672,7 +2746,7 @@ async function readAdminState() {
         threads: threads.rows,
         resumes: resumes.rows,
         vacancies: vacancies.rows,
-        adCampaigns: adCampaigns.rows.map((item) => ({ ...item, category: item.advertiser || "Pauta" })),
+        adCampaigns: adCampaigns.rows.map((item) => ({ ...publicAdCampaign(item), category: item.advertiser || "Pauta" })),
       },
       adRequests: adRequests.rows,
       tokenRequests: tokenRequests.rows.map(publicTokenRequest),
@@ -2712,7 +2786,7 @@ async function readAdminState() {
       threads: summarize(data.threads, "topic", "name"),
       resumes: summarize(data.resumes, "fullName", "headline"),
       vacancies: summarize(data.vacancies, "title", "company"),
-      adCampaigns: summarize(data.adCampaigns, "title", "advertiser"),
+      adCampaigns: data.adCampaigns.map((item) => ({ ...publicAdCampaign(item), category: item.advertiser || "Pauta" })),
     },
     adRequests: data.adRequests,
     tokenRequests: data.tokenRequests.map((item) => publicTokenRequest({
