@@ -623,6 +623,15 @@ function isRecentOfficialItem(item) {
   return officialItemYear(item) >= new Date().getFullYear() - 1;
 }
 
+function officialYearPriority(item) {
+  const current = new Date().getFullYear();
+  const year = officialItemYear(item);
+  if (year === current) return 4;
+  if (year === current + 1) return 3;
+  if (year === current - 1) return 2;
+  return 1;
+}
+
 function cleanSummary(value) {
   return String(value || "")
     .replace(/contraste aumentar tamano letra disminuir tamano letra/gi, " ")
@@ -690,14 +699,22 @@ function eventNameFromPath(url) {
   }
 }
 
+function gatDateText(value) {
+  const cleaned = cleanSummary(value);
+  const match = cleaned.match(/\b(?:\d{1,2}\s*,\s*\d{1,2}\s+de\s+[a-záéíóúñ]+\s*&\s*\d{1,2}\s+[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+\s+de\s+20\d{2}|\d{1,2}\s*(?:&|y)\s*\d{1,2}\s+de\s+[a-záéíóúñ]+\s+de\s+20\d{2}|\d{1,2}\s+de\s+[a-záéíóúñ]+\s+de\s+20\d{2}|\d{1,2}\s+&\s+\d{1,2}\s+[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+\s*\/\s*20\d{2})\b/i);
+  return match?.[0] || "";
+}
+
 function gatEventTitle(candidate) {
   const cleaned = cleanSummary(`${candidate.title || ""} ${candidate.context || ""}`);
   const fromTitle = cleanSummary(candidate.title).match(/\bGAT\s+(?:Expo\s+)?[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s]+(?:COL|PR|RD|MX|BRA)?\s+20\d{2}\b/i)?.[0];
-  return fromTitle
+  const label = fromTitle
     || eventNameFromPath(candidate.url)
     || cleaned.match(/\bGAT\s+Expo\s+[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s]+(?:COL|PR|RD|MX|BRA)?\s+20\d{2}\b/i)?.[0]
     || cleanSummary(candidate.title)
     || "Evento oficial GAT Events";
+  const year = gatDateText(cleaned).match(/\b20\d{2}\b/)?.[0] || "";
+  return year && !/\b20\d{2}\b/.test(label) ? `${label} ${year}` : label;
 }
 
 function officialTitle(candidate) {
@@ -709,9 +726,9 @@ function officialSummary(candidate) {
   if (candidate.entity === "GAT Events") {
     const cleaned = cleanSummary(candidate.context);
     const eventName = gatEventTitle(candidate);
-    const dateMatch = cleaned.match(/\b(?:\d{1,2}\s*(?:&|y)\s*\d{1,2}\s+de\s+[a-záéíóúñ]+\s+de\s+20\d{2}|\d{1,2}\s+de\s+[a-záéíóúñ]+\s+de\s+20\d{2}|\d{1,2}\s+&\s+\d{1,2}\s+[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+\s*\/\s*20\d{2})\b/i);
-    const dateText = dateMatch?.[0]
-      ? ` Fecha: ${dateMatch[0]}.`
+    const date = gatDateText(cleaned);
+    const dateText = date
+      ? ` Fecha: ${date}.`
       : "";
     return text(`${eventName}.${dateText} Organizador oficial: GAT Events.`, 240);
   }
@@ -839,7 +856,7 @@ async function refreshOfficialNews() {
   }
 
   const rankedItems = [...byKey.values()]
-    .sort((a, b) => officialItemYear(b) - officialItemYear(a) || b.score - a.score);
+    .sort((a, b) => officialYearPriority(b) - officialYearPriority(a) || b.score - a.score || officialItemYear(b) - officialItemYear(a));
   const recentItems = rankedItems.filter(isRecentOfficialItem);
 
   officialNewsCache.items = recentItems.slice(0, 18).map(({ score, ...item }) => item);
