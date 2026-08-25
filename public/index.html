@@ -9,9 +9,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v39">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v39">
-  <link rel="preload" href="/logolink.png?v=link-app-v39" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v40">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v40">
+  <link rel="preload" href="/logolink.png?v=link-app-v40" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -276,6 +276,7 @@
     let adRequestOpen = false;
     let tokenRechargeOpen = false;
     let editingAdCampaignId = "";
+    let pendingAdminJump = "";
     let installPromptEvent = null;
     let installMessage = "";
     let pendingUpdateWorker = null;
@@ -322,7 +323,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v39";
+    const appBuild = "link-app-v40";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -475,7 +476,7 @@
     }
 
     function logoSrc() {
-      return state.settings?.logoUrl || state.settings?.logoData || "/logolink.png?v=link-app-v39";
+      return state.settings?.logoUrl || state.settings?.logoData || "/logolink.png?v=link-app-v40";
     }
 
     function logoImg(className, alt = "Link") {
@@ -635,6 +636,15 @@
       pendingUpdateWorker.postMessage({ type: "SKIP_WAITING" });
     }
 
+    function scrollToPanel(selector) {
+      if (!selector) return false;
+      const target = document.querySelector(selector);
+      if (!target) return false;
+      if (target.tagName === "DETAILS") target.open = true;
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      return true;
+    }
+
     function adMedia(ad) {
       const src = ad?.mediaUrl || ad?.mediaData || "";
       if (!src) return `<div class="ad-media ad-placeholder" aria-hidden="true"></div>`;
@@ -770,6 +780,29 @@
       </div>`;
     }
 
+    function accountQuickActions(current) {
+      if (!current) return "";
+      if (current.isAdmin) {
+        return `<div class="module-actions">
+          <button class="primary" data-go-tab="admin" type="button">Abrir Admin</button>
+          <button class="secondary" data-account-flow="brand" type="button">Cambiar logo</button>
+          <button class="secondary" data-account-flow="token-review" type="button">Soportes de consignacion</button>
+        </div>`;
+      }
+      if (current.accountType === "company") {
+        return `<div class="module-actions">
+          <button class="primary" data-open-token-recharge="1" type="button">Recargar tokens</button>
+          <button class="secondary" data-account-flow="vacancy" type="button">Publicar vacante</button>
+          <button class="secondary" data-go-tab="empleos" type="button">Ver candidatos</button>
+        </div>`;
+      }
+      return `<div class="module-actions">
+        <button class="primary" data-account-flow="resume" type="button">Subir hoja de vida</button>
+        <button class="secondary" data-account-flow="market" type="button">Publicar venta</button>
+        <button class="secondary" data-go-tab="mensajes" type="button">Chat Tecnico</button>
+      </div>`;
+    }
+
     function hero(title, subtitle) {
       return `${installNotice()}<div class="hero"><p class="hero-kicker">Link</p><h1>${esc(title)}</h1><p>${esc(subtitle)}</p></div>`;
     }
@@ -808,6 +841,7 @@
             <div><strong>${esc(current.displayName)}</strong><span>${esc(type)} | ${esc(current.email)} | ${esc(state.storage?.mode === "postgres" ? "PostgreSQL" : "JSON local")}${current.isAdmin ? " | Admin" : ""}</span></div>
             <button class="secondary" type="button" id="logoutButton">Cerrar sesion</button>
           </div>
+          ${accountQuickActions(current)}
           ${storageWarning}
           ${companyTokens}
           ${tokenRechargeForm(current)}
@@ -1390,7 +1424,7 @@
           ${item.adminNote ? `<p>${esc(item.adminNote)}</p>` : ""}
         </div>
         <div class="admin-actions">
-          ${item.receiptUrl ? `<button class="secondary" data-token-request-receipt="${esc(item.id)}" type="button">Comprobante</button>` : ""}
+          ${item.receiptUrl ? `<button class="secondary" data-token-request-receipt="${esc(item.id)}" type="button">Ver soporte</button>` : ""}
           ${item.status === "pending" ? `<button class="primary" data-token-request-action="approve" data-id="${esc(item.id)}" type="button">Aprobar</button>
           <button class="secondary" data-token-request-action="reject" data-id="${esc(item.id)}" type="button">Rechazar</button>` : ""}
           <button class="danger-btn" data-token-request-action="delete" data-id="${esc(item.id)}" type="button">Eliminar</button>
@@ -1401,7 +1435,7 @@
     function renderTokenRequests() {
       const items = adminState?.tokenRequests || [];
       return `<details class="editor" open id="admin-token-requests">
-        <summary>Solicitudes de recarga (${items.length})</summary>
+        <summary>Soportes de consignacion / recargas (${items.length})</summary>
         <div class="form admin-list">${items.length ? items.map((item) => adminTokenRequestRow(item)).join("") : empty("No hay solicitudes de recarga.")}</div>
       </details>`;
     }
@@ -1451,7 +1485,7 @@
       const pendingAds = pendingCount(adminState?.adRequests || []);
       const activeCampaigns = (contentGroups.adCampaigns || []).filter((item) => item.status === "published").length;
       return `<div class="admin-kpis">
-        <button class="admin-kpi" data-admin-jump="#admin-token-requests" type="button"><strong>${pendingTokens}</strong><span>Recargas por revisar</span></button>
+        <button class="admin-kpi" data-admin-jump="#admin-token-requests" type="button"><strong>${pendingTokens}</strong><span>Soportes de consignacion</span></button>
         <button class="admin-kpi" data-admin-jump="#admin-ad-requests" type="button"><strong>${pendingAds}</strong><span>Solicitudes de pauta</span></button>
         <button class="admin-kpi" data-admin-jump="#admin-ad-campaigns" type="button"><strong>${activeCampaigns}</strong><span>Campanas activas</span></button>
         <button class="admin-kpi" data-admin-jump="#admin-content" type="button"><strong>${pendingContent}</strong><span>Publicaciones pendientes</span></button>
@@ -1807,7 +1841,7 @@
           accountMessage = "Anexa el comprobante de consignacion para que Admin apruebe y cargue los tokens.";
           active = "cuenta";
           render();
-          window.setTimeout(() => document.querySelector("#tokenRechargePanel")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+          window.setTimeout(() => scrollToPanel("#tokenRechargePanel"), 50);
         };
       });
       document.querySelectorAll("[data-cv-download]").forEach((button) => {
@@ -1841,11 +1875,34 @@
           render();
         };
       });
+      document.querySelectorAll("[data-account-flow]").forEach((button) => {
+        button.onclick = () => {
+          const flow = button.dataset.accountFlow || "";
+          if (flow === "brand" || flow === "token-review") {
+            active = "admin";
+            pendingAdminJump = flow === "brand" ? "#admin-brand" : "#admin-token-requests";
+            render();
+            window.setTimeout(() => {
+              if (scrollToPanel(pendingAdminJump)) pendingAdminJump = "";
+            }, 50);
+            return;
+          }
+          if (flow === "vacancy" || flow === "resume") {
+            active = "empleos";
+            bolsaAction = flow;
+            render();
+            return;
+          }
+          if (flow === "market") {
+            active = "marketplace";
+            mercadoEditorOpen = true;
+            render();
+          }
+        };
+      });
       document.querySelectorAll("[data-admin-jump]").forEach((button) => {
         button.onclick = () => {
-          const target = document.querySelector(button.dataset.adminJump || "");
-          if (target?.tagName === "DETAILS") target.open = true;
-          target?.scrollIntoView({ behavior: "smooth", block: "start" });
+          scrollToPanel(button.dataset.adminJump || "");
         };
       });
       document.querySelectorAll("[data-edit-ad-campaign]").forEach((button) => {
@@ -2171,6 +2228,7 @@
       adminState = null;
       tokenRechargeOpen = false;
       editingAdCampaignId = "";
+      pendingAdminJump = "";
       authMode = "login";
       accountMessage = "Sesion cerrada. Los formularios quedaron limpios.";
       active = "cuenta";
@@ -2347,10 +2405,22 @@
           throw new Error("Seleccione un archivo de logo antes de guardar");
         }
         if (logoFile instanceof File && logoFile.name) {
-          if (logoFile.size > 10_000_000) throw new Error("El logo debe pesar menos de 10 MB");
-          payload.logoData = await fileToDataUrl(logoFile);
-          payload.logoType = logoFile.type;
-          payload.logoName = logoFile.name;
+          if (logoFile.size > 35_000_000) throw new Error("El logo es demasiado pesado para cargar desde el celular");
+          let preparedLogo = logoFile;
+          if (isImageFile(logoFile) && !/image\/(?:gif|svg\+xml)/i.test(fileMime(logoFile, ""))) {
+            try {
+              preparedLogo = await optimizeImageFile(logoFile, 1400, 0.86);
+            } catch {}
+            if (preparedLogo.size > 6_000_000) {
+              preparedLogo = await optimizeImageFile(logoFile, 1000, 0.8);
+            }
+          } else if (logoFile.size > 18_000_000) {
+            throw new Error("Use una imagen para el logo o un archivo menor de 18 MB");
+          }
+          if (preparedLogo.size > 8_000_000) throw new Error("No se pudo preparar el logo. Use una imagen mas liviana");
+          payload.logoData = await fileToDataUrl(preparedLogo);
+          payload.logoType = fileMime(preparedLogo, logoFile.type || "image/jpeg");
+          payload.logoName = preparedLogo.name || logoFile.name;
         }
         const result = await api.post("/api/admin/settings", payload);
         applyState({ ...state, settings: result.settings || state.settings });
@@ -2444,6 +2514,11 @@
       if (active === "admin") content.innerHTML = renderAdmin();
       renderMediaViewer();
       bindForms();
+      if (pendingAdminJump && active === "admin") {
+        window.setTimeout(() => {
+          if (scrollToPanel(pendingAdminJump)) pendingAdminJump = "";
+        }, 50);
+      }
     }
 
     async function hydrateOfficialNews() {

@@ -366,7 +366,7 @@ function intSetting(value, fallback, min = 0, max = 1_000_000) {
 function normalizeSettings(settings = {}) {
   const logoData = String(settings.logoData || "").trim();
   return {
-    logoData: /^data:(?:image\/[a-z0-9.+-]+|video\/[a-z0-9.+-]+);base64,/i.test(logoData) && logoData.length <= 16_000_000 ? logoData : "",
+    logoData: /^data:(?:image\/[a-z0-9.+-]+|video\/[a-z0-9.+-]+);base64,/i.test(logoData) && logoData.length <= 24_000_000 ? logoData : "",
     logoType: text(settings.logoType || settings.logo_type, 120),
     logoName: text(settings.logoName || settings.logo_name, 160),
     tokenCvDownloadCost: fixedCvDownloadCost,
@@ -2953,7 +2953,7 @@ async function updateAdminSettings(body) {
     next.logoType = "";
     next.logoName = "";
   } else if (body.logoData) {
-    next.logoData = logoDataText(body.logoData, 16_000_000);
+    next.logoData = logoDataText(body.logoData, 24_000_000);
     next.logoType = text(body.logoType, 120);
     next.logoName = text(body.logoName, 160);
   } else {
