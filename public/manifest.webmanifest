@@ -1,7 +1,7 @@
 {
   "name": "Link",
   "short_name": "Link",
-  "description": "Aplicacion online de noticias oficiales, bolsa de empleo, mercado, mensajes y administracion para la red Link.",
+  "description": "Aplicacion online de noticias, bolsa de empleo, mercado, mensajes y administracion para la red Link.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

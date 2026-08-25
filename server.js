@@ -23,6 +23,9 @@ const sessionDays = Number(process.env.SESSION_DAYS || 30);
 const defaultAdminEmails = "jhonsilvadiaz@gmail.com";
 const configuredAdminEmails = [process.env.LINK_ADMIN_EMAILS, process.env.ADMIN_EMAILS, defaultAdminEmails].filter(Boolean).join(",");
 const adminRecoveryCode = process.env.LINK_ADMIN_RECOVERY_CODE || process.env.ADMIN_RECOVERY_CODE || "";
+const fixedCvDownloadCost = 5;
+const fixedTrialCompanyTokens = 5;
+const fixedTokenPackageValue = 50000;
 
 const emptyData = {
   users: [],
@@ -36,13 +39,14 @@ const emptyData = {
   passwordRecoveryRequests: [],
   adRequests: [],
   adCampaigns: [],
+  tokenRequests: [],
   tokenTransactions: [],
   settings: {
     logoData: "",
-    tokenCvDownloadCost: 10,
+    tokenCvDownloadCost: fixedCvDownloadCost,
     tokenVacancyCost: 25,
-    tokenTrialCompanyTokens: 30,
-    tokenPackageValue: 50000,
+    tokenTrialCompanyTokens: fixedTrialCompanyTokens,
+    tokenPackageValue: fixedTokenPackageValue,
     tokenPackageTokens: 500,
     paymentInfo: "Configure en Admin el Nequi o cuenta para recargar tokens.",
     updatedAt: null,
@@ -103,6 +107,26 @@ const officialSources = [
       "https://www.gatevents.net/gat-expo-sao-paulo-2026/",
     ],
   },
+  {
+    entity: "Fecoljuegos",
+    home: "https://fecoljuegos.com/",
+    urls: [
+      "https://fecoljuegos.com/",
+      "https://fecoljuegos.com/blogs/noticias",
+      "https://fecoljuegos.com/pages/eventos",
+      "https://www.fecoljuegos.com/",
+      "https://www.fecoljuegos.com/blogs/noticias",
+      "https://www.fecoljuegos.com/pages/eventos",
+    ],
+  },
+  {
+    entity: "Cornazar",
+    home: "https://cornazar.com/",
+    urls: [
+      "https://cornazar.com/",
+      "https://www.cornazar.com/",
+    ],
+  },
 ];
 
 const casinoKeywords = [
@@ -133,6 +157,15 @@ const casinoKeywords = [
   "gat expo",
   "fadja",
   "feria",
+  "fecoljuegos",
+  "cornazar",
+  "coonazae",
+  "cooperativa",
+  "federacion",
+  "federación",
+  "gremio",
+  "agremiacion",
+  "agremiación",
 ];
 
 const officialHostSuffixes = [
@@ -144,6 +177,9 @@ const officialHostSuffixes = [
   "normograma.supersalud.gov.co",
   "docs.supersalud.gov.co",
   "gatevents.net",
+  "fecoljuegos.com",
+  "fecoljuegos.myshopify.com",
+  "cornazar.com",
 ];
 
 const mimeTypes = new Map([
@@ -223,6 +259,15 @@ function mediaDataText(value, max) {
 
 function adBannerMediaDataText(value, max) {
   return mediaDataText(value, max);
+}
+
+function receiptDataText(value, max) {
+  const output = dataText(value, max);
+  if (!output) return "";
+  if (!/^data:(?:image\/(?:png|jpe?g|webp)|application\/pdf);base64,/i.test(output)) {
+    fail(400, "El comprobante debe ser imagen PNG/JPG/WebP o PDF");
+  }
+  return output;
 }
 
 function mediaDataPayload(value) {
@@ -315,10 +360,10 @@ function normalizeSettings(settings = {}) {
     logoData: /^data:(?:image\/[a-z0-9.+-]+|video\/[a-z0-9.+-]+);base64,/i.test(logoData) && logoData.length <= 16_000_000 ? logoData : "",
     logoType: text(settings.logoType || settings.logo_type, 120),
     logoName: text(settings.logoName || settings.logo_name, 160),
-    tokenCvDownloadCost: intSetting(settings.tokenCvDownloadCost ?? settings.token_cv_download_cost, 10, 0, 10000),
+    tokenCvDownloadCost: fixedCvDownloadCost,
     tokenVacancyCost: intSetting(settings.tokenVacancyCost ?? settings.token_vacancy_cost, 25, 0, 10000),
-    tokenTrialCompanyTokens: intSetting(settings.tokenTrialCompanyTokens ?? settings.token_trial_company_tokens, 30, 0, 100000),
-    tokenPackageValue: intSetting(settings.tokenPackageValue ?? settings.token_package_value, 50000, 0, 100000000),
+    tokenTrialCompanyTokens: fixedTrialCompanyTokens,
+    tokenPackageValue: fixedTokenPackageValue,
     tokenPackageTokens: intSetting(settings.tokenPackageTokens ?? settings.token_package_tokens, 500, 0, 1000000),
     paymentInfo: text(settings.paymentInfo || settings.payment_info, 300) || "Configure en Admin el Nequi o cuenta para recargar tokens.",
     updatedAt: settings.updatedAt || settings.updated_at || null,
@@ -559,7 +604,9 @@ function isListingSourceUrl(source, sourceUrl) {
     return /\/publicaciones\/noticias\/?(index\.php)?$/.test(path)
       || /comunicados-de-prensa\.aspx$/.test(path)
       || /listanoticias$/.test(path)
-      || /noticias-y-comunicados$/.test(path);
+      || /noticias-y-comunicados$/.test(path)
+      || /\/blogs\/noticias\/?$/.test(path)
+      || /\/pages\/eventos\/?$/.test(path);
   } catch {
     return false;
   }
@@ -598,6 +645,17 @@ function candidateScore(candidate) {
     if (/gat-(expo|bogota|cartagena|santo-domingo|san-juan|sao-paulo)/i.test(candidate.url)) score += 3;
     return score;
   }
+  if (["Fecoljuegos", "Cornazar"].includes(candidate.entity)) {
+    const normalized = normalizeText(`${candidate.title} ${candidate.context} ${candidate.url}`);
+    const titleMatches = matchedCasinoKeywords(candidate.title);
+    const contextMatches = matchedCasinoKeywords(candidate.context);
+    if (titleMatches.length === 0 && contextMatches.length === 0) return -10;
+    let score = 4 + titleMatches.length * 3 + contextMatches.length;
+    if (/\b(noticia|noticias|evento|eventos|gat|expo|feria|juegos|casino|casinos|azar|gaming|gremio|federacion|federación)\b/.test(normalized)) score += 4;
+    if (candidate.url.includes("/blogs/noticias") || candidate.url.includes("/pages/eventos")) score += 3;
+    if (candidate.kind === "page") score += 1;
+    return score;
+  }
   const titleMatches = matchedCasinoKeywords(candidate.title);
   const contextMatches = matchedCasinoKeywords(candidate.context);
   if (!isLikelyContentTitle(candidate.title)) return -10;
@@ -632,6 +690,13 @@ function officialYearPriority(item) {
   return 1;
 }
 
+function officialSourcePriority(item) {
+  if (item.entity === "GAT Events") return 30;
+  if (["Coljuegos", "UIAF", "DIAN", "Supersalud"].includes(item.entity)) return 20;
+  if (["Fecoljuegos", "Cornazar"].includes(item.entity)) return 10;
+  return 0;
+}
+
 function cleanSummary(value) {
   return String(value || "")
     .replace(/contraste aumentar tamano letra disminuir tamano letra/gi, " ")
@@ -639,12 +704,34 @@ function cleanSummary(value) {
     .replace(/"library"\s*:\s*"[^"]*"\s*\}?\s*,?\s*"toggle"\s*:\s*"[^"]*"\s*\}?/gi, " ")
     .replace(/"toggle"\s*:\s*"[^"]*"\s*\}?/gi, " ")
     .replace(/\bHome\s+Eventos\b/gi, "Eventos")
+    .replace(/\S*\.(?:jpe?g|png|webp|gif|svg)(?:\?\S*)?/gi, " ")
+    .replace(/\b\d{2,4}w\b/gi, " ")
     .replace(/\S*\.gov\.co\/\S*/gi, " ")
     .replace(/\S*\.co\/\S*/gi, " ")
+    .replace(/\S*\.(?:com|net)\/\S*/gi, " ")
     .replace(/\b[\w-]+=["'][^"']*["']>?/g, " ")
     .replace(/[<>]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function titleFromUrlSlug(url) {
+  try {
+    const slug = decodeURIComponent(new URL(url).pathname.split("/").filter(Boolean).pop() || "")
+      .replace(/\.(html?|aspx)$/i, "")
+      .replace(/[_-]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!slug || slug.length < 8) return "";
+    const label = slug
+      .replace(/\bfecoljuegos\b/gi, "Fecoljuegos")
+      .replace(/\bcornazar\b/gi, "Cornazar")
+      .replace(/\bgat\b/gi, "GAT")
+      .replace(/\bcasino\b/gi, "casino");
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  } catch {
+    return "";
+  }
 }
 
 function keywordWindow(value, max = 260) {
@@ -719,6 +806,9 @@ function gatEventTitle(candidate) {
 
 function officialTitle(candidate) {
   if (candidate.entity === "GAT Events") return text(gatEventTitle(candidate), 180);
+  if (["Fecoljuegos", "Cornazar"].includes(candidate.entity)) {
+    return text(titleFromUrlSlug(candidate.url) || candidate.title, 180);
+  }
   return text(candidate.title, 180);
 }
 
@@ -777,7 +867,7 @@ function extractOfficialCandidates(source, sourceUrl, html) {
     const url = safeUrl(match[2], sourceUrl);
     if (!url || !isOfficialUrl(url)) continue;
     if (/^(mailto|tel|javascript):/i.test(match[2])) continue;
-    if (url.endsWith("#")) continue;
+    if (url.includes("#")) continue;
 
     const title = htmlToText(match[3], 180);
     if (!isLikelyContentTitle(title)) continue;
@@ -849,20 +939,26 @@ async function refreshOfficialNews() {
       continue;
     }
     for (const item of result.value) {
-      const key = normalizeText(`${item.entity}|${item.url}`);
+      const canonicalUrl = String(item.url || "").replace(/^https?:\/\/www\./i, "https://");
+      const key = normalizeText(`${item.entity}|${canonicalUrl}`);
       const current = byKey.get(key);
       if (!current || item.score > current.score) byKey.set(key, item);
     }
   }
 
   const rankedItems = [...byKey.values()]
-    .sort((a, b) => officialYearPriority(b) - officialYearPriority(a) || b.score - a.score || officialItemYear(b) - officialItemYear(a));
+    .sort((a, b) =>
+      officialYearPriority(b) - officialYearPriority(a)
+      || officialSourcePriority(b) - officialSourcePriority(a)
+      || b.score - a.score
+      || officialItemYear(b) - officialItemYear(a)
+    );
   const recentItems = rankedItems.filter(isRecentOfficialItem);
 
   officialNewsCache.items = recentItems.slice(0, 18).map(({ score, ...item }) => item);
   officialNewsCache.updatedAt = nowStamp();
   officialNewsCache.error = officialNewsCache.items.length === 0
-    ? "No se encontraron publicaciones recientes en las fuentes oficiales autorizadas."
+    ? "No se encontraron publicaciones recientes en las fuentes autorizadas."
     : null;
   return officialNewsSnapshot();
 }
@@ -903,6 +999,12 @@ function normalizeData(parsed = {}) {
     threads: Array.isArray(parsed.threads) ? parsed.threads.map((item) => ({ ...item, status: normalizeStatus(item.status) })) : [],
     adRequests: Array.isArray(parsed.adRequests) ? parsed.adRequests.map((item) => ({ ...item, status: normalizeStatus(item.status) })) : [],
     adCampaigns: Array.isArray(parsed.adCampaigns) ? parsed.adCampaigns.map((item) => ({ ...item, status: normalizeStatus(item.status) })) : [],
+    tokenRequests: Array.isArray(parsed.tokenRequests)
+      ? parsed.tokenRequests.map((item) => ({
+        ...item,
+        status: ["pending", "approved", "rejected"].includes(item.status) ? item.status : "pending",
+      }))
+      : [],
     tokenTransactions: Array.isArray(parsed.tokenTransactions) ? parsed.tokenTransactions : [],
     settings: normalizeSettings(parsed.settings || emptyData.settings),
   };
@@ -1140,6 +1242,24 @@ async function initDb() {
       created_at timestamptz NOT NULL DEFAULT now()
     );
 
+    CREATE TABLE IF NOT EXISTS link_token_requests (
+      id uuid PRIMARY KEY,
+      user_id uuid NOT NULL REFERENCES link_users(id) ON DELETE CASCADE,
+      company text DEFAULT '',
+      contact_name text DEFAULT '',
+      phone text DEFAULT '',
+      email text DEFAULT '',
+      amount_pesos integer NOT NULL DEFAULT 50000,
+      requested_tokens integer NOT NULL DEFAULT 500,
+      receipt_data text DEFAULT '',
+      receipt_type text DEFAULT '',
+      receipt_name text DEFAULT '',
+      status text NOT NULL DEFAULT 'pending',
+      admin_note text DEFAULT '',
+      created_at timestamptz NOT NULL DEFAULT now(),
+      resolved_at timestamptz
+    );
+
     ALTER TABLE link_users ADD COLUMN IF NOT EXISTS is_admin boolean NOT NULL DEFAULT false;
     ALTER TABLE link_users ADD COLUMN IF NOT EXISTS token_balance integer NOT NULL DEFAULT 0;
     ALTER TABLE link_users ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'active';
@@ -1160,6 +1280,7 @@ async function initDb() {
     ALTER TABLE link_vacancies ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'published';
     ALTER TABLE link_ad_requests ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'pending';
     ALTER TABLE link_ad_campaigns ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'published';
+    ALTER TABLE link_token_requests ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'pending';
   `);
 
   if (adminEmails.size) {
@@ -1251,6 +1372,31 @@ function rowUser(row) {
 
 function publicAuthor(user) {
   return user?.displayName || user?.display_name || user?.email || "Link";
+}
+
+function publicResume(item, authUser = null) {
+  const ownerId = item.userId || item.user_id || "";
+  const canSeeContact = isAdminUser(authUser) || Boolean(authUser?.id && ownerId === authUser.id);
+  const resume = {
+    ...item,
+    userId: ownerId,
+    fullName: item.fullName || item.full_name || "",
+    documentId: item.documentId || item.document_id || "",
+    referencesText: item.referencesText || item.references_text || "",
+    photoData: item.photoData || item.photo_data || "",
+    attachmentName: item.attachmentName || item.attachment_name || "",
+    createdAt: item.createdAt || item.created_at || null,
+    updatedAt: item.updatedAt || item.updated_at || null,
+    availability: availabilityDisplay(item.availability),
+    contactLocked: !canSeeContact,
+  };
+  if (!canSeeContact) {
+    resume.phone = "";
+    resume.email = "";
+    resume.documentId = "";
+    resume.referencesText = "";
+  }
+  return resume;
 }
 
 async function createSession(userId) {
@@ -1652,7 +1798,7 @@ async function readData(authUser = null) {
     return {
       news: news.rows,
       jobs: [],
-      resumes: resumes.rows.map((item) => ({ ...item, availability: availabilityDisplay(item.availability) })),
+      resumes: resumes.rows.map((item) => publicResume(item, authUser)),
       vacancies: vacancies.rows,
       products: products.rows.map(publicProduct),
       threads: threads.rows.map((thread) => ({ ...thread, messages: messagesByThread.get(thread.id) || [] })),
@@ -1669,7 +1815,7 @@ async function readData(authUser = null) {
   return {
     news: data.news.filter(visibleAuthor),
     jobs: data.jobs,
-    resumes: data.resumes.filter(visibleOwner).map((item) => ({ ...item, availability: availabilityDisplay(item.availability) })),
+    resumes: data.resumes.filter(visibleOwner).map((item) => publicResume(item, authUser)),
     vacancies: data.vacancies.filter(visibleOwner),
     products: data.products.filter(visibleAuthor).map(publicProduct),
     threads: data.threads.filter(visibleAuthor),
@@ -2111,6 +2257,100 @@ async function saveAdRequest(body) {
   return item;
 }
 
+function tokenRequestReceiptUrl(item) {
+  if (!(item?.hasReceipt || item?.receiptData || item?.receipt_data)) return "";
+  const id = text(item.id, 80);
+  if (!id) return "";
+  const version = item.resolvedAt || item.resolved_at || item.createdAt || item.created_at || id;
+  return `/api/token-requests/${encodeURIComponent(id)}/receipt?v=${encodeURIComponent(String(version))}`;
+}
+
+function publicTokenRequest(item = {}) {
+  return {
+    id: text(item.id, 80),
+    userId: item.userId || item.user_id || "",
+    company: text(item.company, 140),
+    contactName: text(item.contactName || item.contact_name, 120),
+    phone: text(item.phone, 80),
+    email: text(item.email, 160),
+    amountPesos: intSetting(item.amountPesos ?? item.amount_pesos, fixedTokenPackageValue, 0, 100_000_000),
+    requestedTokens: intSetting(item.requestedTokens ?? item.requested_tokens, 0, 0, 1_000_000),
+    receiptName: text(item.receiptName || item.receipt_name, 160),
+    receiptUrl: tokenRequestReceiptUrl(item),
+    status: ["pending", "approved", "rejected"].includes(item.status) ? item.status : "pending",
+    adminNote: text(item.adminNote || item.admin_note, 240),
+    createdAt: item.createdAt || item.created_at || null,
+    resolvedAt: item.resolvedAt || item.resolved_at || null,
+    userName: item.userName || "",
+    userEmail: item.userEmail || "",
+  };
+}
+
+async function saveTokenRequest(body, user) {
+  if (user.accountType !== "company") fail(403, "Solo las empresas pueden solicitar recarga de tokens");
+  const settings = await readSettings();
+  const item = {
+    id: randomUUID(),
+    userId: user.id,
+    company: text(body.company, 140) || user.companyName || user.displayName,
+    contactName: text(body.contactName, 120) || user.displayName,
+    phone: text(body.phone, 80) || user.phone,
+    email: normalizeEmail(body.email) || user.email,
+    amountPesos: fixedTokenPackageValue,
+    requestedTokens: settings.tokenPackageTokens,
+    receiptData: receiptDataText(body.receiptData, 8_000_000),
+    receiptType: text(body.receiptType, 80),
+    receiptName: text(body.receiptName, 160),
+    status: "pending",
+    adminNote: "",
+    createdAt: nowStamp(),
+    resolvedAt: null,
+  };
+  if (!item.receiptData) fail(400, "Anexa el comprobante de consignacion para solicitar la recarga");
+  if (dbReady) {
+    await pool.query(
+      `INSERT INTO link_token_requests
+       (id, user_id, company, contact_name, phone, email, amount_pesos, requested_tokens,
+        receipt_data, receipt_type, receipt_name, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+      [
+        item.id, item.userId, item.company, item.contactName, item.phone, item.email,
+        item.amountPesos, item.requestedTokens, item.receiptData, item.receiptType,
+        item.receiptName, item.status,
+      ],
+    );
+  } else {
+    const data = await readJsonData();
+    data.tokenRequests.unshift(item);
+    await writeJsonData(data);
+  }
+  return publicTokenRequest(item);
+}
+
+async function readTokenRequestReceipt(id, authUser) {
+  const cleanId = text(id, 80);
+  if (!cleanId || !authUser) return null;
+  if (dbReady) {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanId)) return null;
+    const result = await pool.query(
+      `SELECT user_id AS "userId", receipt_data AS "receiptData", receipt_type AS "receiptType"
+       FROM link_token_requests WHERE id = $1 LIMIT 1`,
+      [cleanId],
+    );
+    const row = result.rows[0];
+    if (!row) return null;
+    if (!isAdminUser(authUser) && row.userId !== authUser.id) return null;
+    const payload = mediaDataPayload(row.receiptData);
+    return payload ? { ...payload, type: payload.type || row.receiptType || "application/octet-stream" } : null;
+  }
+  const data = await readJsonData();
+  const item = data.tokenRequests.find((entry) => entry.id === cleanId);
+  if (!item) return null;
+  if (!isAdminUser(authUser) && item.userId !== authUser.id) return null;
+  const payload = mediaDataPayload(item.receiptData);
+  return payload ? { ...payload, type: payload.type || item.receiptType || "application/octet-stream" } : null;
+}
+
 async function saveAdCampaign(body, admin) {
   const title = text(body.title, 120);
   if (!title) fail(400, "Titulo de campana requerido");
@@ -2279,7 +2519,7 @@ function statusFromAction(action) {
 async function readAdminState() {
   const settings = await readSettings();
   if (dbReady) {
-    const [users, recovery, news, products, threads, resumes, vacancies, adRequests, adCampaigns, tokenTransactions] = await Promise.all([
+    const [users, recovery, news, products, threads, resumes, vacancies, adRequests, adCampaigns, tokenRequests, tokenTransactions] = await Promise.all([
       pool.query(
         `SELECT id, email, account_type AS "accountType", display_name AS "displayName", city, company_name AS "companyName",
                 role, is_admin AS "isAdmin", token_balance AS "tokenBalance", status, last_seen_at AS "lastSeenAt", deactivated_at AS "deactivatedAt",
@@ -2332,6 +2572,16 @@ async function readAdminState() {
          ORDER BY created_at DESC LIMIT 200`,
       ),
       pool.query(
+        `SELECT r.id, r.user_id AS "userId", r.company, r.contact_name AS "contactName", r.phone, r.email,
+                r.amount_pesos AS "amountPesos", r.requested_tokens AS "requestedTokens",
+                r.receipt_name AS "receiptName", COALESCE(r.receipt_data, '') <> '' AS "hasReceipt",
+                r.status, r.admin_note AS "adminNote", r.created_at AS "createdAt", r.resolved_at AS "resolvedAt",
+                u.display_name AS "userName", u.email AS "userEmail"
+         FROM link_token_requests r
+         LEFT JOIN link_users u ON u.id = r.user_id
+         ORDER BY CASE WHEN r.status = 'pending' THEN 0 ELSE 1 END, r.created_at DESC LIMIT 200`,
+      ),
+      pool.query(
         `SELECT t.id, t.user_id AS "userId", t.admin_id AS "adminId", t.kind, t.amount, t.balance_after AS "balanceAfter",
                 t.reference_id AS "referenceId", t.note, t.created_at AS "createdAt", u.display_name AS "userName", u.email AS "userEmail"
          FROM link_token_transactions t
@@ -2352,6 +2602,7 @@ async function readAdminState() {
         adCampaigns: adCampaigns.rows.map((item) => ({ ...item, category: item.advertiser || "Pauta" })),
       },
       adRequests: adRequests.rows,
+      tokenRequests: tokenRequests.rows.map(publicTokenRequest),
       tokenTransactions: tokenTransactions.rows,
       storage: storageInfo(),
     };
@@ -2391,6 +2642,11 @@ async function readAdminState() {
       adCampaigns: summarize(data.adCampaigns, "title", "advertiser"),
     },
     adRequests: data.adRequests,
+    tokenRequests: data.tokenRequests.map((item) => publicTokenRequest({
+      ...item,
+      userName: adminLabelUser(users, item.userId),
+      userEmail: users.find((user) => user.id === item.userId)?.email || "",
+    })),
     tokenTransactions: data.tokenTransactions,
     storage: storageInfo(),
   };
@@ -2564,10 +2820,10 @@ async function updateTokenSettings(body) {
   const current = await readSettings();
   const next = {
     ...current,
-    tokenCvDownloadCost: intSetting(body.tokenCvDownloadCost, current.tokenCvDownloadCost, 0, 10000),
+    tokenCvDownloadCost: fixedCvDownloadCost,
     tokenVacancyCost: intSetting(body.tokenVacancyCost, current.tokenVacancyCost, 0, 10000),
-    tokenTrialCompanyTokens: intSetting(body.tokenTrialCompanyTokens, current.tokenTrialCompanyTokens, 0, 100000),
-    tokenPackageValue: intSetting(body.tokenPackageValue, current.tokenPackageValue, 0, 100000000),
+    tokenTrialCompanyTokens: fixedTrialCompanyTokens,
+    tokenPackageValue: fixedTokenPackageValue,
     tokenPackageTokens: intSetting(body.tokenPackageTokens, current.tokenPackageTokens, 0, 1000000),
     paymentInfo: text(body.paymentInfo, 300) || current.paymentInfo,
     updatedAt: nowStamp(),
@@ -2626,6 +2882,116 @@ async function adminLoadTokens(body, admin) {
   });
   await writeJsonData(data);
   return { ok: true, tokenBalance: nextBalance };
+}
+
+async function moderateTokenRequest(body, admin) {
+  const id = text(body.id, 80);
+  const action = text(body.action, 40);
+  const adminNote = text(body.note || body.adminNote, 240);
+  if (!id || !["approve", "reject", "delete"].includes(action)) fail(400, "Solicitud de tokens no valida");
+  if (dbReady) {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const requestResult = await client.query(
+        `SELECT id, user_id, requested_tokens, amount_pesos, status, company
+         FROM link_token_requests WHERE id = $1 FOR UPDATE`,
+        [id],
+      );
+      const request = requestResult.rows[0];
+      if (!request) fail(404, "Solicitud de tokens no encontrada");
+      if (action === "delete") {
+        await client.query("DELETE FROM link_token_requests WHERE id = $1", [id]);
+        await client.query("COMMIT");
+        return { ok: true, status: "deleted" };
+      }
+      if (request.status !== "pending") fail(400, "La solicitud ya fue procesada");
+      if (action === "approve") {
+        const userResult = await client.query(
+          "SELECT id, account_type, token_balance FROM link_users WHERE id = $1 FOR UPDATE",
+          [request.user_id],
+        );
+        const company = userResult.rows[0];
+        if (!company) fail(404, "Empresa no encontrada");
+        if (company.account_type !== "company") fail(400, "Solo se cargan tokens a cuentas de empresa");
+        const amount = intSetting(request.requested_tokens, 0, 0, 1_000_000);
+        const nextBalance = Number(company.token_balance || 0) + amount;
+        await client.query("UPDATE link_users SET token_balance = $1, updated_at = now() WHERE id = $2", [nextBalance, company.id]);
+        await client.query(
+          `UPDATE link_token_requests
+           SET status = 'approved', admin_note = $1, resolved_at = now()
+           WHERE id = $2`,
+          [adminNote || "Comprobante confirmado por Admin", id],
+        );
+        await client.query(
+          `INSERT INTO link_token_transactions (id, user_id, admin_id, kind, amount, balance_after, reference_id, note)
+           VALUES ($1, $2, $3, 'receipt_load', $4, $5, $6, $7)`,
+          [
+            randomUUID(),
+            company.id,
+            admin.id,
+            amount,
+            nextBalance,
+            id,
+            adminNote || `Recarga aprobada por ${request.amount_pesos} COP`,
+          ],
+        );
+        await client.query("COMMIT");
+        return { ok: true, status: "approved", tokenBalance: nextBalance };
+      }
+      await client.query(
+        "UPDATE link_token_requests SET status = 'rejected', admin_note = $1, resolved_at = now() WHERE id = $2",
+        [adminNote || "Comprobante rechazado por Admin", id],
+      );
+      await client.query("COMMIT");
+      return { ok: true, status: "rejected" };
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  const data = await readJsonData();
+  const index = data.tokenRequests.findIndex((item) => item.id === id);
+  if (index < 0) fail(404, "Solicitud de tokens no encontrada");
+  const request = data.tokenRequests[index];
+  if (action === "delete") {
+    data.tokenRequests.splice(index, 1);
+    await writeJsonData(data);
+    return { ok: true, status: "deleted" };
+  }
+  if (request.status !== "pending") fail(400, "La solicitud ya fue procesada");
+  if (action === "approve") {
+    const company = data.users.find((item) => item.id === request.userId);
+    if (!company) fail(404, "Empresa no encontrada");
+    if (normalizeAccountType(company.accountType) !== "company") fail(400, "Solo se cargan tokens a cuentas de empresa");
+    const amount = intSetting(request.requestedTokens, 0, 0, 1_000_000);
+    const nextBalance = intSetting(company.tokenBalance, 0, 0, 1_000_000) + amount;
+    company.tokenBalance = nextBalance;
+    request.status = "approved";
+    request.adminNote = adminNote || "Comprobante confirmado por Admin";
+    request.resolvedAt = nowStamp();
+    data.tokenTransactions.unshift({
+      id: randomUUID(),
+      userId: company.id,
+      adminId: admin.id,
+      kind: "receipt_load",
+      amount,
+      balanceAfter: nextBalance,
+      referenceId: id,
+      note: adminNote || `Recarga aprobada por ${request.amountPesos} COP`,
+      createdAt: nowStamp(),
+    });
+    await writeJsonData(data);
+    return { ok: true, status: "approved", tokenBalance: nextBalance };
+  }
+  request.status = "rejected";
+  request.adminNote = adminNote || "Comprobante rechazado por Admin";
+  request.resolvedAt = nowStamp();
+  await writeJsonData(data);
+  return { ok: true, status: "rejected" };
 }
 
 async function readBody(req) {
@@ -2720,6 +3086,17 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  const tokenReceiptMatch = url.pathname.match(/^\/api\/token-requests\/([^/]+)\/receipt$/);
+  if (req.method === "GET" && tokenReceiptMatch) {
+    const media = await readTokenRequestReceipt(decodeURIComponent(tokenReceiptMatch[1]), await requireUser(req));
+    if (!media) {
+      notFound(res);
+      return;
+    }
+    sendMedia(res, req, media);
+    return;
+  }
+
   if (req.method === "GET" && url.pathname === "/api/state") {
     const authUser = await getAuthUser(req);
     const data = await readData(authUser);
@@ -2796,6 +3173,12 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (req.method === "POST" && url.pathname === "/api/admin/token-requests") {
+    const admin = await requireAdmin(req);
+    json(res, 200, await moderateTokenRequest(await readBody(req), admin));
+    return;
+  }
+
   if (req.method === "POST" && url.pathname === "/api/admin/ad-campaigns") {
     const admin = await requireAdmin(req);
     json(res, 201, await saveAdCampaign(await readBody(req), admin));
@@ -2846,6 +3229,11 @@ async function handleApi(req, res, url) {
 
   if (req.method === "POST" && url.pathname === "/api/ad-requests") {
     json(res, 201, await saveAdRequest(await readBody(req)));
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/token-requests") {
+    json(res, 201, await saveTokenRequest(await readBody(req), await requireUser(req)));
     return;
   }
 
