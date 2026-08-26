@@ -9,9 +9,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v47">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v47">
-  <link rel="preload" href="/logolink.png?v=link-app-v47" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v48">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v48">
+  <link rel="preload" href="/logolink.png?v=link-app-v48" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -103,6 +103,7 @@
     .mini-btn{display:inline-flex;align-items:center;justify-content:center;min-height:32px;padding:0 10px;font-size:12px;text-decoration:none}
     .newspaper{display:grid;gap:10px;margin-bottom:15px}
     .lead-story,.story-card,.source-card,.card{display:block;min-width:0;color:inherit;text-decoration:none;background:#ffffff;border:1px solid var(--line);border-radius:18px;box-shadow:0 12px 26px rgba(146,70,18,.08);overflow-wrap:anywhere}
+    .lead-story,.story-card{width:100%;font:inherit;text-align:left;cursor:pointer;appearance:none}
     .lead-story{padding:16px;border-left:6px solid var(--red)}
     .lead-story.has-image{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,38%);gap:0;padding:0;border-left:0;overflow:hidden}
     .story-list{display:grid;gap:9px}
@@ -129,6 +130,7 @@
     .story-card h3,.source-card h3,.card h3{font-size:16px}
     .lead-story p,.story-card p,.source-card p,.card p{margin:8px 0 0;color:var(--muted);font-size:13px;line-height:1.4;white-space:pre-line}
     .origin-link,.text-link{display:inline-flex;margin-top:10px;color:var(--red);font-size:12px;font-weight:950;text-decoration:none}
+    .news-detail-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
     details.editor{margin-bottom:13px;background:#ffffff;border:1px solid var(--line);border-radius:18px;box-shadow:0 12px 26px rgba(146,70,18,.07)}
     details.editor summary{list-style:none;padding:14px;color:var(--ink);font-size:14px;font-weight:950}
     details.editor summary::-webkit-details-marker{display:none}
@@ -282,6 +284,7 @@
     let expandedResumeId = "";
     let activeProductCategory = "Todos";
     let activeMediaPreview = null;
+    let activeOfficialNewsUrl = "";
     let mercadoEditorOpen = false;
     let adRequestOpen = false;
     let tokenRechargeOpen = false;
@@ -336,7 +339,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v47";
+    const appBuild = "link-app-v48";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -460,9 +463,41 @@
     }
 
     function navigateTab(tab) {
+      activeOfficialNewsUrl = "";
       active = tab;
       render();
     }
+
+    function openOfficialNews(url, pushHistory = true) {
+      if (!url) return;
+      active = "inicio";
+      activeOfficialNewsUrl = url;
+      if (pushHistory) {
+        window.history.pushState({ linkOfficialNewsUrl: url }, "", `${window.location.pathname}${window.location.search}#noticia`);
+      }
+      render();
+      content.scrollTop = 0;
+    }
+
+    function closeOfficialNews() {
+      activeOfficialNewsUrl = "";
+      if (window.location.hash === "#noticia") {
+        window.history.replaceState({}, "", `${window.location.pathname}${window.location.search}`);
+      }
+      render();
+      content.scrollTop = 0;
+    }
+
+    window.addEventListener("popstate", (event) => {
+      if (event.state?.linkOfficialNewsUrl) {
+        openOfficialNews(event.state.linkOfficialNewsUrl, false);
+        return;
+      }
+      if (activeOfficialNewsUrl) {
+        activeOfficialNewsUrl = "";
+        render();
+      }
+    });
 
     function syncLogoCache() {
       try {
@@ -491,7 +526,7 @@
     }
 
     function logoSrc() {
-      return state.settings?.logoUrl || state.settings?.logoData || "/logolink.png?v=link-app-v47";
+      return state.settings?.logoUrl || state.settings?.logoData || "/logolink.png?v=link-app-v48";
     }
 
     function logoImg(className, alt = "Link") {
@@ -613,6 +648,10 @@
 
     function officialItems() {
       return Array.isArray(state.officialNews) ? state.officialNews : [];
+    }
+
+    function officialNewsByUrl(url) {
+      return officialItems().find((item) => String(item.url || "") === String(url || "")) || null;
     }
 
     function installNotice() {
@@ -1005,28 +1044,49 @@
       if (!official.length) {
         return empty(state.officialNewsError || "Aun no se encontraron publicaciones recientes con palabras de casinos o juegos localizados.");
       }
+      if (activeOfficialNewsUrl) {
+        const item = officialNewsByUrl(activeOfficialNewsUrl);
+        if (!item) {
+          activeOfficialNewsUrl = "";
+        } else {
+          return `<div class="newspaper">
+            <article class="lead-story ${item.imageUrl ? "has-image" : ""}">
+              <div class="story-content">
+                <span class="news-tag">${esc(item.entity)}</span>
+                <h2>${esc(item.title)}</h2>
+                ${item.summary ? `<p>${esc(item.summary)}</p>` : ""}
+                <div class="news-detail-actions">
+                  <button class="secondary" data-close-official-news="1" type="button">Volver a noticias</button>
+                  <a class="mini-btn" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">Abrir fuente oficial</a>
+                </div>
+              </div>
+              ${newsImage(item, true)}
+            </article>
+          </div>`;
+        }
+      }
       const lead = official[0];
       const rest = official.slice(1, 7);
       return `<div class="newspaper">
-        <a class="lead-story ${lead.imageUrl ? "has-image" : ""}" href="${esc(lead.url)}" target="_blank" rel="noopener noreferrer">
+        <button class="lead-story ${lead.imageUrl ? "has-image" : ""}" data-official-news-url="${esc(lead.url)}" type="button">
           <div class="story-content">
             <span class="news-tag">${esc(lead.entity)}</span>
             <h2>${esc(lead.title)}</h2>
             ${lead.summary ? `<p>${esc(lead.summary)}</p>` : ""}
-            <span class="origin-link">Abrir fuente oficial</span>
+            <span class="origin-link">Ver detalle</span>
           </div>
           ${newsImage(lead, true)}
-        </a>
+        </button>
         <div class="story-list">
-          ${rest.map((item) => `<a class="story-card ${item.imageUrl ? "has-image" : ""}" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">
+          ${rest.map((item) => `<button class="story-card ${item.imageUrl ? "has-image" : ""}" data-official-news-url="${esc(item.url)}" type="button">
             ${newsImage(item)}
             <div class="story-content">
               <span class="news-tag">${esc(item.entity)}</span>
               <h3>${esc(item.title)}</h3>
               ${item.summary ? `<p>${esc(item.summary)}</p>` : ""}
-              <span class="origin-link">Ver en origen</span>
+              <span class="origin-link">Ver detalle</span>
             </div>
-          </a>`).join("")}
+          </button>`).join("")}
         </div>
       </div>`;
     }
@@ -1906,6 +1966,12 @@
     function bindForms() {
       const updateAppButton = document.querySelector("#updateAppButton");
       if (updateAppButton) updateAppButton.onclick = updateAppNow;
+      document.querySelectorAll("[data-official-news-url]").forEach((button) => {
+        button.onclick = () => openOfficialNews(button.dataset.officialNewsUrl || "");
+      });
+      document.querySelectorAll("[data-close-official-news]").forEach((button) => {
+        button.onclick = closeOfficialNews;
+      });
       document.querySelectorAll("[data-open-ad-request]").forEach((button) => {
         button.onclick = () => {
           adRequestOpen = true;
