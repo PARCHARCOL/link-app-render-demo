@@ -9,9 +9,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v49">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v49">
-  <link rel="preload" href="/logolink.png?v=link-app-v49" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v50">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v50">
+  <link rel="preload" href="/logolink.png?v=link-app-v50" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -339,7 +339,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v49";
+    const appBuild = "link-app-v50";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -561,7 +561,7 @@
     }
 
     function logoSrc() {
-      return state.settings?.logoUrl || state.settings?.logoData || "/logolink.png?v=link-app-v49";
+      return state.settings?.logoUrl || state.settings?.logoData || "/logolink.png?v=link-app-v50";
     }
 
     function logoImg(className, alt = "Link") {
@@ -1202,6 +1202,8 @@
 
     function renderBolsa() {
       const current = user();
+      const showingVacancyForm = bolsaAction === "vacancy";
+      const showingResumeForm = bolsaAction === "resume";
       const cvCost = Number(state.settings.tokenCvDownloadCost || 0);
       const allResumes = Array.isArray(state.resumes) ? state.resumes : [];
       const filteredResumes = activeResumeCategory === "Todos" ? allResumes : allResumes.filter((item) => resumeCategory(item) === activeResumeCategory);
@@ -1327,20 +1329,26 @@
       if (current && bolsaAction === "vacancy") {
         publishBlock = current.accountType === "company" ? companyForm : `<p class="notice">Para subir vacantes ingrese con cuenta de empresa.</p>`;
       }
+      const resumeSection = showingVacancyForm ? "" : `
+        <div class="section-title"><h2>Hojas de vida</h2><small>${filteredResumes.length}/${allResumes.length}</small></div>
+        ${filterButtons(allResumes, activeResumeCategory, "data-resume-filter", resumeCategory, resumeCategories)}
+        <div class="stack">${resumes}</div>`;
+      const vacancySection = showingResumeForm ? "" : `
+        <div class="section-title"><h2>Vacantes</h2><small>${state.vacancies.length}</small></div>
+        <div class="stack">${vacancies}</div>`;
       return `<section class="screen">${hero("Bolsa de Empleo", "Hojas de vida, vacantes y contactos profesionales del sector.")}
         ${formError()}
         <div class="flow-panel">
           <div class="flow-branches">
+            <button class="flow-btn ${bolsaAction ? "" : "active"}" data-bolsa-action="browse" type="button">Ver perfiles</button>
             <button class="flow-btn" data-bolsa-action="resume" type="button">Subir hoja de vida</button>
             <button class="flow-btn" data-bolsa-action="vacancy" type="button">Subir vacante empresa</button>
           </div>
         </div>
         ${publishBlock}
-        <div class="section-title"><h2>Hojas de vida</h2><small>${filteredResumes.length}/${allResumes.length}</small></div>
-        ${filterButtons(allResumes, activeResumeCategory, "data-resume-filter", resumeCategory, resumeCategories)}
-        <div class="stack">${resumes}</div>
-        <div class="section-title"><h2>Vacantes</h2><small>${state.vacancies.length}</small></div>
-        <div class="stack">${vacancies}</div>
+        ${showingVacancyForm ? `<p class="notice">Estas publicando una vacante. La descarga de hojas de vida se hace aparte desde Ver perfiles y descuenta tokens al abrir cada HV.</p>` : ""}
+        ${resumeSection}
+        ${vacancySection}
       </section>`;
     }
 
