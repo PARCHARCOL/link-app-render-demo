@@ -9,9 +9,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v54">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v54">
-  <link rel="preload" href="/logolink.png?v=link-app-v54" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v55">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v55">
+  <link rel="preload" href="/logolink.png?v=link-app-v55" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -306,9 +306,6 @@
     let adRenderedKey = "";
     let adMuted = true;
     let appHistoryReady = false;
-    try {
-      adMuted = localStorage.getItem("linkAdMuted") !== "0";
-    } catch {}
     let state = baseState();
 
     const content = document.querySelector("#content");
@@ -350,7 +347,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v54";
+    const appBuild = "link-app-v55";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -632,7 +629,7 @@
     }
 
     function logoSrc() {
-      return state.settings?.logoUrl || state.settings?.logoData || "/logolink.png?v=link-app-v54";
+      return state.settings?.logoUrl || state.settings?.logoData || "/logolink.png?v=link-app-v55";
     }
 
     function logoImg(className, alt = "Link") {
@@ -887,9 +884,6 @@
 
     function setAdMuted(nextMuted) {
       adMuted = Boolean(nextMuted);
-      try {
-        localStorage.setItem("linkAdMuted", adMuted ? "1" : "0");
-      } catch {}
       adBanner.querySelectorAll("[data-ad-main-video]").forEach((video) => {
         video.muted = adMuted;
         if (!adMuted) {
@@ -977,7 +971,16 @@
         };
       })();
       if (video) {
+        video.muted = adMuted;
         video.loop = false;
+        video.play().catch(() => {
+          adMuted = true;
+          video.muted = true;
+          adBanner.querySelectorAll("[data-ad-sound]").forEach((button) => {
+            button.textContent = "Sonido";
+          });
+          video.play().catch(() => {});
+        });
         const scheduleFromMetadata = () => {
           const duration = Number.isFinite(video.duration) ? video.duration : 0;
           const durationMs = duration > 0 ? Math.max(7_000, Math.ceil(duration * 1000) + 600) : 15_000;
