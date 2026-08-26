@@ -9,9 +9,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v53">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v53">
-  <link rel="preload" href="/logolink.png?v=link-app-v53" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v54">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v54">
+  <link rel="preload" href="/logolink.png?v=link-app-v54" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -303,6 +303,7 @@
     let adRotationIndex = 0;
     let adRotationTimer = null;
     let adRotationSignature = "";
+    let adRenderedKey = "";
     let adMuted = true;
     let appHistoryReady = false;
     try {
@@ -349,7 +350,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v53";
+    const appBuild = "link-app-v54";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -631,7 +632,7 @@
     }
 
     function logoSrc() {
-      return state.settings?.logoUrl || state.settings?.logoData || "/logolink.png?v=link-app-v53";
+      return state.settings?.logoUrl || state.settings?.logoData || "/logolink.png?v=link-app-v54";
     }
 
     function logoImg(className, alt = "Link") {
@@ -775,6 +776,20 @@
       return `${Number(value || 0).toLocaleString("es-CO")} tokens`;
     }
 
+    function priorityValue(value) {
+      const parsed = Number.parseInt(value, 10);
+      if (!Number.isFinite(parsed)) return 1;
+      return Math.min(10, Math.max(1, parsed));
+    }
+
+    function priorityOptions(value) {
+      const current = priorityValue(value);
+      return Array.from({ length: 10 }, (_, index) => {
+        const priority = index + 1;
+        return `<option value="${priority}" ${priority === current ? "selected" : ""}>Prioridad ${priority}</option>`;
+      }).join("");
+    }
+
     function updateNotice() {
       if (!updateAvailable) return "";
       return `<div class="update-banner">
@@ -839,7 +854,35 @@
       const ads = Array.isArray(state.activeAds) && state.activeAds.length
         ? state.activeAds
         : (state.activeAd ? [state.activeAd] : []);
-      return ads.filter(Boolean);
+      return weightedAdList(ads.filter(Boolean));
+    }
+
+    function adPriorityValue(ad) {
+      const parsed = Number.parseInt(ad?.priority, 10);
+      if (!Number.isFinite(parsed)) return 1;
+      return Math.min(10, Math.max(1, parsed));
+    }
+
+    function adIdentity(ad) {
+      return ad?.id || `${ad?.title || ""}-${ad?.mediaUrl || ""}`;
+    }
+
+    function uniqueAdCount(ads) {
+      return new Set(ads.map(adIdentity)).size;
+    }
+
+    function weightedAdList(ads) {
+      const rows = ads
+        .filter(Boolean)
+        .map((ad, index) => ({ ad, index, priority: adPriorityValue(ad) }))
+        .sort((a, b) => b.priority - a.priority || a.index - b.index);
+      const output = [];
+      for (let slot = 0; slot < 10; slot += 1) {
+        rows.forEach((row) => {
+          if (row.priority > slot) output.push(row.ad);
+        });
+      }
+      return output;
     }
 
     function setAdMuted(nextMuted) {
@@ -890,34 +933,76 @@
       }
     }
 
+    function clearAdRotationTimer() {
+      if (adRotationTimer) window.clearTimeout(adRotationTimer);
+      adRotationTimer = null;
+    }
+
+    function advanceAdBanner() {
+      const ads = activeAdList();
+      if (uniqueAdCount(ads) <= 1) return;
+      adRotationIndex = (adRotationIndex + 1) % ads.length;
+      adRenderedKey = "";
+      renderAdBanner();
+    }
+
     function syncAdRotation(ads) {
-      const signature = ads.map((ad) => ad.id || `${ad.title}-${ad.mediaUrl}`).join("|");
+      const signature = ads.map((ad) => `${adIdentity(ad)}:${adPriorityValue(ad)}:${ad.updatedAt || ""}`).join("|");
       if (adRotationIndex >= ads.length) adRotationIndex = 0;
-      if (ads.length <= 1) {
-        if (adRotationTimer) window.clearInterval(adRotationTimer);
-        adRotationTimer = null;
+      if (uniqueAdCount(ads) <= 1) {
+        clearAdRotationTimer();
         adRotationSignature = signature;
         return;
       }
       if (adRotationTimer && adRotationSignature === signature) return;
-      if (adRotationTimer) window.clearInterval(adRotationTimer);
+      clearAdRotationTimer();
       adRotationSignature = signature;
-      adRotationTimer = window.setInterval(() => {
-        const currentAds = activeAdList();
-        if (currentAds.length <= 1) {
-          syncAdRotation(currentAds);
-          renderAdBanner();
-          return;
+    }
+
+    function scheduleAdRotation(ad, ads) {
+      clearAdRotationTimer();
+      if (uniqueAdCount(ads) <= 1) {
+        const soloVideo = adBanner.querySelector("[data-ad-main-video]");
+        if (soloVideo) soloVideo.loop = true;
+        return;
+      }
+      const video = adBanner.querySelector("[data-ad-main-video]");
+      const finish = (() => {
+        let done = false;
+        return () => {
+          if (done) return;
+          done = true;
+          clearAdRotationTimer();
+          advanceAdBanner();
+        };
+      })();
+      if (video) {
+        video.loop = false;
+        const scheduleFromMetadata = () => {
+          const duration = Number.isFinite(video.duration) ? video.duration : 0;
+          const durationMs = duration > 0 ? Math.max(7_000, Math.ceil(duration * 1000) + 600) : 15_000;
+          clearAdRotationTimer();
+          adRotationTimer = window.setTimeout(finish, durationMs);
+        };
+        video.addEventListener("ended", finish, { once: true });
+        if (video.readyState >= 1) {
+          scheduleFromMetadata();
+        } else {
+          video.addEventListener("loadedmetadata", scheduleFromMetadata, { once: true });
+          adRotationTimer = window.setTimeout(finish, 20_000);
         }
-        adRotationIndex = (adRotationIndex + 1) % currentAds.length;
-        renderAdBanner();
-      }, 7000);
+        return;
+      }
+      adRotationTimer = window.setTimeout(finish, 8_000);
     }
 
     function renderAdBanner() {
       const ads = activeAdList();
       syncAdRotation(ads);
       const ad = ads[adRotationIndex] || null;
+      const renderKey = `${adRotationIndex}:${adIdentity(ad)}:${ad?.mediaUrl || ""}:${ad?.updatedAt || ""}:${adPriorityValue(ad)}:${adMuted}:${ads.map((item) => `${adIdentity(item)}:${adPriorityValue(item)}`).join(",")}`;
+      if (adRenderedKey === renderKey) return;
+      adRenderedKey = renderKey;
       const title = ad?.title || "Tu publicidad aqui";
       const subtitle = ad?.body || ad?.advertiser || "Pauta visible en todas las ventanas de Link.";
       adBanner.classList.toggle("ad-has-media", Boolean(ad?.mediaUrl || ad?.mediaData));
@@ -931,6 +1016,7 @@
         </div>`;
       bindAdBannerActions();
       syncAdMediaFrame();
+      scheduleAdRotation(ad, ads);
     }
 
     function renderHeader() {
@@ -1174,10 +1260,14 @@
           <input name="city" placeholder="Ciudad">
           <input name="targetUrl" type="url" placeholder="Link de destino opcional">
         </div>
+        <select name="priority">
+          ${priorityOptions(1)}
+        </select>
+        <p class="field-note">Prioridad 1 a 10: a mayor prioridad, mas apariciones en el banner y mayor valor comercial.</p>
         <label class="file-field">
           <span>Arte de pauta, foto o video corto (opcional)</span>
           <input name="adMediaFile" type="file" accept="image/*,video/*,.jpg,.jpeg,.png,.webp,.gif,.mp4,.mov,.webm">
-          <small data-file-status="adMediaFile">La app encaja el video completo sin recortarlo. Ideal: MP4 horizontal 1280x720, 10 a 15 segundos, maximo 18 MB. Si es vertical, se vera completo con franjas.</small>
+          <small data-file-status="adMediaFile">La app encaja el video completo sin recortarlo y respeta su duracion. Ideal: MP4, maximo 18 MB. Si es vertical, se vera completo con fondo adaptado.</small>
         </label>
         <textarea name="message" placeholder="Mensaje, fechas deseadas, ciudad o modulo donde quieres pautar"></textarea>
       `, adRequestOpen);
@@ -1667,7 +1757,7 @@
       return `<div class="admin-row">
         <div>
           <h3>${esc(item.company || item.requesterName || "Solicitud de pauta")}</h3>
-          <p>${esc(item.requesterName || "")} | ${esc(item.phone || "")} | ${esc(item.email || "")} | ${esc(item.city || "")}</p>
+          <p>${esc(item.requesterName || "")} | ${esc(item.phone || "")} | ${esc(item.email || "")} | ${esc(item.city || "")} | Prioridad ${esc(priorityValue(item.priority))}/10</p>
           <p>${esc(item.message || "Sin mensaje")} ${statusBadge(item.status)}</p>
         </div>
         <div class="admin-actions">
@@ -1802,6 +1892,10 @@
           <input name="startsAt" type="datetime-local" value="${esc(campaignDateValue(item?.startsAt))}">
           <input name="endsAt" type="datetime-local" value="${esc(campaignDateValue(item?.endsAt))}">
         </div>
+        <select name="priority">
+          ${priorityOptions(item?.priority || 1)}
+        </select>
+        <p class="field-note">Prioridad 1 a 10: la rotacion muestra mas veces las campanas con prioridad alta. Este numero debe coincidir con el plan cobrado.</p>
         <select name="status">
           <option value="published" ${status === "published" ? "selected" : ""}>Activa</option>
           <option value="hidden" ${status === "hidden" ? "selected" : ""}>Pausada</option>
@@ -1810,7 +1904,7 @@
         <label class="file-field">
           <span>${isEdit ? "Cambiar imagen o video del banner" : "Imagen o video del banner"}</span>
           <input name="adMediaFile" type="file" accept="image/*,video/*,.jpg,.jpeg,.png,.webp,.gif,.mp4,.mov,.webm">
-          <small data-file-status="adMediaFile">${isEdit && item?.mediaName ? `Actual: ${esc(item.mediaName)}. Si no eliges archivo, se conserva.` : "La app encaja el video completo sin recortarlo. Ideal: MP4 horizontal 1280x720, 10 a 15 segundos, maximo 18 MB. Si es vertical, se vera completo con franjas."}</small>
+          <small data-file-status="adMediaFile">${isEdit && item?.mediaName ? `Actual: ${esc(item.mediaName)}. Si no eliges archivo, se conserva.` : "La app encaja el video completo sin recortarlo y respeta su duracion. Ideal: MP4, maximo 18 MB. Si es vertical, se vera completo con fondo adaptado."}</small>
         </label>
         ${isEdit ? `<label class="check"><input name="clearMedia" type="checkbox"> Quitar imagen o video actual</label>` : ""}
         <textarea name="body" placeholder="Texto corto del anuncio">${esc(item?.body || "")}</textarea>
@@ -1825,7 +1919,7 @@
       return `<div class="admin-row">
         <div>
           <h3>${esc(item.title || "Campana publicitaria")}</h3>
-          <p>${statusBadge(item.status)} ${esc(item.advertiser || "Sin anunciante")} | ${item.mediaName ? `Archivo: ${esc(item.mediaName)}` : "Sin archivo"} | ${esc(dateLabel(item.createdAt))}</p>
+          <p>${statusBadge(item.status)} Prioridad ${esc(priorityValue(item.priority))}/10 | ${esc(item.advertiser || "Sin anunciante")} | ${item.mediaName ? `Archivo: ${esc(item.mediaName)}` : "Sin archivo"} | ${esc(dateLabel(item.createdAt))}</p>
           ${item.body ? `<p>${esc(item.body)}</p>` : ""}
           ${item.targetUrl ? `<p>${esc(item.targetUrl)}</p>` : ""}
         </div>

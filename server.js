@@ -299,6 +299,7 @@ function publicAdCampaign(item) {
     advertiser: text(item.advertiser, 140),
     body: text(item.body, 300),
     targetUrl: text(item.targetUrl || item.target_url, 300),
+    priority: adPriority(item.priority),
     mediaType: text(item.mediaType || item.media_type, 80),
     mediaName: text(item.mediaName || item.media_name, 160),
     mediaUrl: adMediaUrl(item),
@@ -317,6 +318,10 @@ function isUuid(value) {
 function adCampaignStatus(value, fallback = "published") {
   const status = text(value, 40);
   return ["published", "hidden", "pending"].includes(status) ? status : fallback;
+}
+
+function adPriority(value) {
+  return intSetting(value, 1, 1, 10);
 }
 
 function productMediaUrl(item) {
@@ -1086,8 +1091,8 @@ function normalizeData(parsed = {}) {
     vacancies: Array.isArray(parsed.vacancies) ? parsed.vacancies.map((item) => ({ ...item, status: normalizeStatus(item.status) })) : [],
     products: Array.isArray(parsed.products) ? parsed.products.map((item) => ({ ...item, status: normalizeStatus(item.status) })) : [],
     threads: Array.isArray(parsed.threads) ? parsed.threads.map((item) => ({ ...item, status: normalizeStatus(item.status) })) : [],
-    adRequests: Array.isArray(parsed.adRequests) ? parsed.adRequests.map((item) => ({ ...item, status: normalizeAdRequestStatus(item.status) })) : [],
-    adCampaigns: Array.isArray(parsed.adCampaigns) ? parsed.adCampaigns.map((item) => ({ ...item, status: normalizeStatus(item.status) })) : [],
+    adRequests: Array.isArray(parsed.adRequests) ? parsed.adRequests.map((item) => ({ ...item, priority: adPriority(item.priority), status: normalizeAdRequestStatus(item.status) })) : [],
+    adCampaigns: Array.isArray(parsed.adCampaigns) ? parsed.adCampaigns.map((item) => ({ ...item, priority: adPriority(item.priority), status: normalizeStatus(item.status) })) : [],
     tokenRequests: Array.isArray(parsed.tokenRequests)
       ? parsed.tokenRequests.map((item) => ({
         ...item,
@@ -1294,6 +1299,7 @@ async function initDb() {
       email text DEFAULT '',
       city text DEFAULT '',
       target_url text DEFAULT '',
+      priority integer NOT NULL DEFAULT 1,
       message text DEFAULT '',
       media_data text DEFAULT '',
       media_type text DEFAULT '',
@@ -1309,6 +1315,7 @@ async function initDb() {
       advertiser text DEFAULT '',
       body text DEFAULT '',
       target_url text DEFAULT '',
+      priority integer NOT NULL DEFAULT 1,
       media_data text DEFAULT '',
       media_type text DEFAULT '',
       media_name text DEFAULT '',
@@ -1368,17 +1375,23 @@ async function initDb() {
     ALTER TABLE link_resumes ADD COLUMN IF NOT EXISTS category text DEFAULT '';
     ALTER TABLE link_vacancies ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'published';
     ALTER TABLE link_ad_requests ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'pending';
+    ALTER TABLE link_ad_requests ADD COLUMN IF NOT EXISTS priority integer NOT NULL DEFAULT 1;
     ALTER TABLE link_ad_campaigns ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'published';
+    ALTER TABLE link_ad_campaigns ADD COLUMN IF NOT EXISTS priority integer NOT NULL DEFAULT 1;
     ALTER TABLE link_token_requests ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'pending';
 
+    UPDATE link_ad_requests SET priority = GREATEST(1, LEAST(10, COALESCE(priority, 1)));
+    UPDATE link_ad_campaigns SET priority = GREATEST(1, LEAST(10, COALESCE(priority, 1)));
+
     INSERT INTO link_ad_campaigns
-      (id, title, advertiser, body, target_url, media_data, media_type, media_name, status, created_at, updated_at)
+      (id, title, advertiser, body, target_url, priority, media_data, media_type, media_name, status, created_at, updated_at)
     SELECT
       r.id,
       COALESCE(NULLIF(r.company, ''), NULLIF(r.requester_name, ''), 'Pauta Link') AS title,
       COALESCE(NULLIF(r.company, ''), NULLIF(r.requester_name, ''), '') AS advertiser,
       LEFT(COALESCE(NULLIF(r.message, ''), 'Pauta aprobada por Admin.'), 300) AS body,
       r.target_url,
+      GREATEST(1, LEAST(10, COALESCE(r.priority, 1))),
       r.media_data,
       r.media_type,
       r.media_name,
@@ -2348,6 +2361,7 @@ async function saveAdRequest(body) {
     email,
     city: text(body.city, 80),
     targetUrl: normalizeUrl(body.targetUrl),
+    priority: adPriority(body.priority),
     message: text(body.message, 1200),
     mediaData: adBannerMediaDataText(body.mediaData, 28_000_000),
     mediaType: text(body.mediaType, 80),
@@ -2358,9 +2372,9 @@ async function saveAdRequest(body) {
   if (dbReady) {
     await pool.query(
       `INSERT INTO link_ad_requests
-       (id, requester_name, company, phone, email, city, target_url, message, media_data, media_type, media_name, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-      [item.id, item.requesterName, item.company, item.phone, item.email, item.city, item.targetUrl, item.message, item.mediaData, item.mediaType, item.mediaName, item.status],
+       (id, requester_name, company, phone, email, city, target_url, priority, message, media_data, media_type, media_name, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+      [item.id, item.requesterName, item.company, item.phone, item.email, item.city, item.targetUrl, item.priority, item.message, item.mediaData, item.mediaType, item.mediaName, item.status],
     );
   } else {
     const data = await readJsonData();
@@ -2380,6 +2394,7 @@ function adCampaignFromRequest(request) {
     advertiser,
     body: text(request.message, 300) || "Pauta aprobada por Admin.",
     targetUrl: normalizeUrl(request.targetUrl || request.target_url),
+    priority: adPriority(request.priority),
     mediaData: String(request.mediaData || request.media_data || ""),
     mediaType: text(request.mediaType || request.media_type, 80),
     mediaName: text(request.mediaName || request.media_name, 160),
@@ -2390,6 +2405,7 @@ function publicAdRequest(item) {
   if (!item) return null;
   return {
     ...item,
+    priority: adPriority(item.priority),
     status: normalizeAdRequestStatus(item.status),
   };
 }
@@ -2506,6 +2522,7 @@ async function saveAdCampaign(body, admin) {
     advertiser: text(body.advertiser, 140),
     body: text(body.body, 300),
     targetUrl: normalizeUrl(body.targetUrl),
+    priority: adPriority(body.priority),
     mediaData: incomingMediaData,
     mediaType: incomingMediaType,
     mediaName: incomingMediaName,
@@ -2522,24 +2539,26 @@ async function saveAdCampaign(body, admin) {
         `UPDATE link_ad_campaigns
          SET title = $1,
              advertiser = $2,
-             body = $3,
-             target_url = $4,
-             status = $5,
-             media_data = CASE WHEN $6 THEN '' WHEN $7 THEN $8 ELSE media_data END,
-             media_type = CASE WHEN $6 THEN '' WHEN $7 THEN $9 ELSE media_type END,
-             media_name = CASE WHEN $6 THEN '' WHEN $7 THEN $10 ELSE media_name END,
-             starts_at = NULLIF($11, '')::timestamptz,
-             ends_at = NULLIF($12, '')::timestamptz,
-             updated_at = now()
-         WHERE id = $13
-         RETURNING id, title, advertiser, body, target_url AS "targetUrl",
-                   COALESCE(media_data, '') <> '' AS "hasMedia", media_type AS "mediaType", media_name AS "mediaName",
-                   starts_at AS "startsAt", ends_at AS "endsAt", status, created_at AS "createdAt", updated_at AS "updatedAt"`,
+              body = $3,
+              target_url = $4,
+              priority = $5,
+              status = $6,
+              media_data = CASE WHEN $7 THEN '' WHEN $8 THEN $9 ELSE media_data END,
+              media_type = CASE WHEN $7 THEN '' WHEN $8 THEN $10 ELSE media_type END,
+              media_name = CASE WHEN $7 THEN '' WHEN $8 THEN $11 ELSE media_name END,
+              starts_at = NULLIF($12, '')::timestamptz,
+              ends_at = NULLIF($13, '')::timestamptz,
+              updated_at = now()
+          WHERE id = $14
+          RETURNING id, title, advertiser, body, target_url AS "targetUrl", priority,
+                    COALESCE(media_data, '') <> '' AS "hasMedia", media_type AS "mediaType", media_name AS "mediaName",
+                    starts_at AS "startsAt", ends_at AS "endsAt", status, created_at AS "createdAt", updated_at AS "updatedAt"`,
         [
           item.title,
           item.advertiser,
           item.body,
           item.targetUrl,
+          item.priority,
           item.status,
           clearMedia,
           hasIncomingMedia,
@@ -2556,12 +2575,12 @@ async function saveAdCampaign(body, admin) {
     }
     const result = await pool.query(
       `INSERT INTO link_ad_campaigns
-       (id, title, advertiser, body, target_url, media_data, media_type, media_name, starts_at, ends_at, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULLIF($9, '')::timestamptz, NULLIF($10, '')::timestamptz, $11)
-       RETURNING id, title, advertiser, body, target_url AS "targetUrl",
-                 COALESCE(media_data, '') <> '' AS "hasMedia", media_type AS "mediaType", media_name AS "mediaName",
-                 starts_at AS "startsAt", ends_at AS "endsAt", status, created_at AS "createdAt", updated_at AS "updatedAt"`,
-      [item.id, item.title, item.advertiser, item.body, item.targetUrl, item.mediaData, item.mediaType, item.mediaName, item.startsAt || "", item.endsAt || "", item.status],
+       (id, title, advertiser, body, target_url, priority, media_data, media_type, media_name, starts_at, ends_at, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NULLIF($10, '')::timestamptz, NULLIF($11, '')::timestamptz, $12)
+       RETURNING id, title, advertiser, body, target_url AS "targetUrl", priority,
+                  COALESCE(media_data, '') <> '' AS "hasMedia", media_type AS "mediaType", media_name AS "mediaName",
+                  starts_at AS "startsAt", ends_at AS "endsAt", status, created_at AS "createdAt", updated_at AS "updatedAt"`,
+      [item.id, item.title, item.advertiser, item.body, item.targetUrl, item.priority, item.mediaData, item.mediaType, item.mediaName, item.startsAt || "", item.endsAt || "", item.status],
     );
     return publicAdCampaign(result.rows[0]);
   } else {
@@ -2590,13 +2609,14 @@ async function readActiveAdCampaigns() {
   if (dbReady) {
     const result = await pool.query(
       `SELECT id, title, advertiser, body, target_url AS "targetUrl",
+              priority,
               COALESCE(media_data, '') <> '' AS "hasMedia", media_type AS "mediaType", media_name AS "mediaName",
               starts_at AS "startsAt", ends_at AS "endsAt", status, created_at AS "createdAt", updated_at AS "updatedAt"
        FROM link_ad_campaigns
        WHERE status = 'published'
          AND (starts_at IS NULL OR starts_at <= now())
          AND (ends_at IS NULL OR ends_at >= now())
-       ORDER BY created_at DESC LIMIT 20`,
+       ORDER BY priority DESC, created_at DESC LIMIT 20`,
     );
     return result.rows.map(publicAdCampaign).filter(Boolean);
   }
@@ -2609,7 +2629,7 @@ async function readActiveAdCampaigns() {
       const ends = item.endsAt ? Date.parse(item.endsAt) : 0;
       return status === "published" && (!starts || starts <= now) && (!ends || ends >= now);
     })
-    .sort((a, b) => Date.parse(b.createdAt || 0) - Date.parse(a.createdAt || 0))
+    .sort((a, b) => adPriority(b.priority) - adPriority(a.priority) || Date.parse(b.createdAt || 0) - Date.parse(a.createdAt || 0))
     .slice(0, 20)
     .map(publicAdCampaign)
     .filter(Boolean);
@@ -2689,10 +2709,10 @@ async function moderateAdRequest(body) {
     }
     const found = await pool.query(
       `SELECT id, requester_name AS "requesterName", company, phone, email, city,
-              target_url AS "targetUrl", message, media_data AS "mediaData",
-              media_type AS "mediaType", media_name AS "mediaName", status
-       FROM link_ad_requests
-       WHERE id = $1`,
+               target_url AS "targetUrl", message, media_data AS "mediaData",
+               media_type AS "mediaType", media_name AS "mediaName", priority, status
+        FROM link_ad_requests
+        WHERE id = $1`,
       [id],
     );
     const request = found.rows[0];
@@ -2704,19 +2724,20 @@ async function moderateAdRequest(body) {
       try {
         await pool.query(
           `INSERT INTO link_ad_campaigns
-           (id, title, advertiser, body, target_url, media_data, media_type, media_name, status)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'published')
+           (id, title, advertiser, body, target_url, priority, media_data, media_type, media_name, status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'published')
            ON CONFLICT (id) DO UPDATE
            SET title = EXCLUDED.title,
                advertiser = EXCLUDED.advertiser,
                body = EXCLUDED.body,
                target_url = EXCLUDED.target_url,
+               priority = EXCLUDED.priority,
                media_data = EXCLUDED.media_data,
                media_type = EXCLUDED.media_type,
                media_name = EXCLUDED.media_name,
                status = 'published',
                updated_at = now()`,
-          [campaign.id, campaign.title, campaign.advertiser, campaign.body, campaign.targetUrl, campaign.mediaData, campaign.mediaType, campaign.mediaName],
+          [campaign.id, campaign.title, campaign.advertiser, campaign.body, campaign.targetUrl, campaign.priority, campaign.mediaData, campaign.mediaType, campaign.mediaName],
         );
         await pool.query("UPDATE link_ad_requests SET status = 'approved', resolved_at = now() WHERE id = $1", [id]);
         await pool.query("COMMIT");
@@ -2836,16 +2857,17 @@ async function readAdminState() {
       ),
       pool.query(
         `SELECT id, requester_name AS "requesterName", company, phone, email, city, target_url AS "targetUrl",
-                message, media_name AS "mediaName", status, created_at AS "createdAt", resolved_at AS "resolvedAt"
+                priority, message, media_name AS "mediaName", status, created_at AS "createdAt", resolved_at AS "resolvedAt"
          FROM link_ad_requests
-         ORDER BY CASE WHEN status = 'pending' THEN 0 ELSE 1 END, created_at DESC LIMIT 200`,
+         ORDER BY CASE WHEN status = 'pending' THEN 0 ELSE 1 END, priority DESC, created_at DESC LIMIT 200`,
       ),
       pool.query(
         `SELECT id, title, advertiser, body, target_url AS "targetUrl",
+                priority,
                 COALESCE(media_data, '') <> '' AS "hasMedia", media_type AS "mediaType", media_name AS "mediaName",
                 starts_at AS "startsAt", ends_at AS "endsAt", status, created_at AS "createdAt", updated_at AS "updatedAt"
          FROM link_ad_campaigns
-         ORDER BY created_at DESC LIMIT 200`,
+         ORDER BY priority DESC, created_at DESC LIMIT 200`,
       ),
       pool.query(
         `SELECT r.id, r.user_id AS "userId", r.company, r.contact_name AS "contactName", r.phone, r.email,
