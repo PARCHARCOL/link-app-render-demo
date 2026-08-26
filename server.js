@@ -366,7 +366,7 @@ function intSetting(value, fallback, min = 0, max = 1_000_000) {
 function normalizeSettings(settings = {}) {
   const logoData = String(settings.logoData || "").trim();
   return {
-    logoData: /^data:(?:image\/[a-z0-9.+-]+|video\/[a-z0-9.+-]+);base64,/i.test(logoData) && logoData.length <= 24_000_000 ? logoData : "",
+    logoData: /^data:(?:image\/[a-z0-9.+-]+|video\/[a-z0-9.+-]+);base64,/i.test(logoData) && logoData.length <= 28_000_000 ? logoData : "",
     logoType: text(settings.logoType || settings.logo_type, 120),
     logoName: text(settings.logoName || settings.logo_name, 160),
     tokenCvDownloadCost: fixedCvDownloadCost,
@@ -435,6 +435,13 @@ async function canRecoverAdminEmail(email) {
 
 function normalizeStatus(value) {
   return ["pending", "published", "hidden"].includes(value) ? value : "published";
+}
+
+function normalizeAdRequestStatus(value) {
+  const status = text(value, 40);
+  if (status === "published") return "approved";
+  if (status === "hidden") return "rejected";
+  return ["pending", "approved", "rejected"].includes(status) ? status : "pending";
 }
 
 function normalizeUserStatus(value) {
@@ -1079,7 +1086,7 @@ function normalizeData(parsed = {}) {
     vacancies: Array.isArray(parsed.vacancies) ? parsed.vacancies.map((item) => ({ ...item, status: normalizeStatus(item.status) })) : [],
     products: Array.isArray(parsed.products) ? parsed.products.map((item) => ({ ...item, status: normalizeStatus(item.status) })) : [],
     threads: Array.isArray(parsed.threads) ? parsed.threads.map((item) => ({ ...item, status: normalizeStatus(item.status) })) : [],
-    adRequests: Array.isArray(parsed.adRequests) ? parsed.adRequests.map((item) => ({ ...item, status: normalizeStatus(item.status) })) : [],
+    adRequests: Array.isArray(parsed.adRequests) ? parsed.adRequests.map((item) => ({ ...item, status: normalizeAdRequestStatus(item.status) })) : [],
     adCampaigns: Array.isArray(parsed.adCampaigns) ? parsed.adCampaigns.map((item) => ({ ...item, status: normalizeStatus(item.status) })) : [],
     tokenRequests: Array.isArray(parsed.tokenRequests)
       ? parsed.tokenRequests.map((item) => ({
@@ -1363,6 +1370,27 @@ async function initDb() {
     ALTER TABLE link_ad_requests ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'pending';
     ALTER TABLE link_ad_campaigns ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'published';
     ALTER TABLE link_token_requests ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'pending';
+
+    INSERT INTO link_ad_campaigns
+      (id, title, advertiser, body, target_url, media_data, media_type, media_name, status, created_at, updated_at)
+    SELECT
+      r.id,
+      COALESCE(NULLIF(r.company, ''), NULLIF(r.requester_name, ''), 'Pauta Link') AS title,
+      COALESCE(NULLIF(r.company, ''), NULLIF(r.requester_name, ''), '') AS advertiser,
+      LEFT(COALESCE(NULLIF(r.message, ''), 'Pauta aprobada por Admin.'), 300) AS body,
+      r.target_url,
+      r.media_data,
+      r.media_type,
+      r.media_name,
+      'published',
+      COALESCE(r.resolved_at, now()),
+      now()
+    FROM link_ad_requests r
+    WHERE r.status IN ('published', 'approved')
+      AND NOT EXISTS (SELECT 1 FROM link_ad_campaigns c WHERE c.id = r.id);
+
+    UPDATE link_ad_requests SET status = 'approved' WHERE status = 'published';
+    UPDATE link_ad_requests SET status = 'rejected' WHERE status = 'hidden';
   `);
 
   if (adminEmails.size) {
@@ -2318,7 +2346,7 @@ async function saveAdRequest(body) {
     city: text(body.city, 80),
     targetUrl: normalizeUrl(body.targetUrl),
     message: text(body.message, 1200),
-    mediaData: adBannerMediaDataText(body.mediaData, 24_000_000),
+    mediaData: adBannerMediaDataText(body.mediaData, 28_000_000),
     mediaType: text(body.mediaType, 80),
     mediaName: text(body.mediaName, 160),
     status: "pending",
@@ -2337,6 +2365,30 @@ async function saveAdRequest(body) {
     await writeJsonData(data);
   }
   return item;
+}
+
+function adCampaignFromRequest(request) {
+  const requesterName = text(request.requesterName || request.requester_name, 120);
+  const company = text(request.company, 140);
+  const advertiser = company || requesterName;
+  return {
+    id: text(request.id, 80),
+    title: advertiser || "Pauta Link",
+    advertiser,
+    body: text(request.message, 300) || "Pauta aprobada por Admin.",
+    targetUrl: normalizeUrl(request.targetUrl || request.target_url),
+    mediaData: String(request.mediaData || request.media_data || ""),
+    mediaType: text(request.mediaType || request.media_type, 80),
+    mediaName: text(request.mediaName || request.media_name, 160),
+  };
+}
+
+function publicAdRequest(item) {
+  if (!item) return null;
+  return {
+    ...item,
+    status: normalizeAdRequestStatus(item.status),
+  };
 }
 
 function tokenRequestReceiptUrl(item) {
@@ -2442,7 +2494,7 @@ async function saveAdCampaign(body, admin) {
   if (!title) fail(400, "Titulo de campana requerido");
   const hasIncomingMedia = Boolean(String(body.mediaData || "").trim());
   const clearMedia = Boolean(body.clearMedia);
-  const incomingMediaData = hasIncomingMedia ? adBannerMediaDataText(body.mediaData, 24_000_000) : "";
+  const incomingMediaData = hasIncomingMedia ? adBannerMediaDataText(body.mediaData, 28_000_000) : "";
   const incomingMediaType = hasIncomingMedia ? text(body.mediaType, 80) : "";
   const incomingMediaName = hasIncomingMedia ? text(body.mediaName, 160) : "";
   const item = {
@@ -2623,22 +2675,87 @@ async function moderateAdRequest(body) {
       await pool.query("DELETE FROM link_ad_requests WHERE id = $1", [id]);
       return { ok: true, status: "deleted" };
     }
-    const status = action === "approve" ? "published" : "hidden";
-    const result = await pool.query("UPDATE link_ad_requests SET status = $1, resolved_at = now() WHERE id = $2", [status, id]);
-    if (!result.rowCount) fail(404, "Solicitud de pauta no encontrada");
-    return { ok: true, status };
+    const found = await pool.query(
+      `SELECT id, requester_name AS "requesterName", company, phone, email, city,
+              target_url AS "targetUrl", message, media_data AS "mediaData",
+              media_type AS "mediaType", media_name AS "mediaName", status
+       FROM link_ad_requests
+       WHERE id = $1`,
+      [id],
+    );
+    const request = found.rows[0];
+    if (!request) fail(404, "Solicitud de pauta no encontrada");
+
+    if (action === "approve") {
+      const campaign = adCampaignFromRequest(request);
+      await pool.query("BEGIN");
+      try {
+        await pool.query(
+          `INSERT INTO link_ad_campaigns
+           (id, title, advertiser, body, target_url, media_data, media_type, media_name, status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'published')
+           ON CONFLICT (id) DO UPDATE
+           SET title = EXCLUDED.title,
+               advertiser = EXCLUDED.advertiser,
+               body = EXCLUDED.body,
+               target_url = EXCLUDED.target_url,
+               media_data = EXCLUDED.media_data,
+               media_type = EXCLUDED.media_type,
+               media_name = EXCLUDED.media_name,
+               status = 'published',
+               updated_at = now()`,
+          [campaign.id, campaign.title, campaign.advertiser, campaign.body, campaign.targetUrl, campaign.mediaData, campaign.mediaType, campaign.mediaName],
+        );
+        await pool.query("UPDATE link_ad_requests SET status = 'approved', resolved_at = now() WHERE id = $1", [id]);
+        await pool.query("COMMIT");
+      } catch (error) {
+        await pool.query("ROLLBACK");
+        throw error;
+      }
+      return { ok: true, status: "approved" };
+    }
+
+    await pool.query("BEGIN");
+    try {
+      await pool.query("UPDATE link_ad_requests SET status = 'rejected', resolved_at = now() WHERE id = $1", [id]);
+      await pool.query("UPDATE link_ad_campaigns SET status = 'hidden', updated_at = now() WHERE id = $1", [id]);
+      await pool.query("COMMIT");
+    } catch (error) {
+      await pool.query("ROLLBACK");
+      throw error;
+    }
+    return { ok: true, status: "rejected" };
   }
   const data = await readJsonData();
   const index = data.adRequests.findIndex((item) => item.id === id);
   if (index < 0) fail(404, "Solicitud de pauta no encontrada");
+  let resultStatus = "deleted";
   if (action === "delete") {
     data.adRequests.splice(index, 1);
-  } else {
-    data.adRequests[index].status = action === "approve" ? "published" : "hidden";
+  } else if (action === "approve") {
+    const request = data.adRequests[index];
+    const campaign = {
+      ...adCampaignFromRequest(request),
+      startsAt: null,
+      endsAt: null,
+      status: "published",
+      createdAt: nowStamp(),
+      updatedAt: nowStamp(),
+      author: "Admin",
+    };
+    data.adRequests[index].status = "approved";
     data.adRequests[index].resolvedAt = nowStamp();
+    resultStatus = "approved";
+    data.adCampaigns = data.adCampaigns.filter((item) => item.id !== campaign.id);
+    data.adCampaigns.unshift(campaign);
+  } else {
+    data.adRequests[index].status = "rejected";
+    data.adRequests[index].resolvedAt = nowStamp();
+    resultStatus = "rejected";
+    data.adCampaigns = data.adCampaigns.map((item) => item.id === id ? { ...item, status: "hidden", updatedAt: nowStamp() } : item);
   }
   await writeJsonData(data);
-  return { ok: true, status: data.adRequests[index]?.status || "deleted" };
+  return { ok: true, status: resultStatus };
 }
 
 const moderationTargets = {
@@ -2748,7 +2865,7 @@ async function readAdminState() {
         vacancies: vacancies.rows,
         adCampaigns: adCampaigns.rows.map((item) => ({ ...publicAdCampaign(item), category: item.advertiser || "Pauta" })),
       },
-      adRequests: adRequests.rows,
+      adRequests: adRequests.rows.map(publicAdRequest),
       tokenRequests: tokenRequests.rows.map(publicTokenRequest),
       tokenTransactions: tokenTransactions.rows,
       storage: storageInfo(),
@@ -2788,7 +2905,7 @@ async function readAdminState() {
       vacancies: summarize(data.vacancies, "title", "company"),
       adCampaigns: data.adCampaigns.map((item) => ({ ...publicAdCampaign(item), category: item.advertiser || "Pauta" })),
     },
-    adRequests: data.adRequests,
+    adRequests: data.adRequests.map(publicAdRequest),
     tokenRequests: data.tokenRequests.map((item) => publicTokenRequest({
       ...item,
       userName: adminLabelUser(users, item.userId),
@@ -2953,7 +3070,7 @@ async function updateAdminSettings(body) {
     next.logoType = "";
     next.logoName = "";
   } else if (body.logoData) {
-    next.logoData = logoDataText(body.logoData, 24_000_000);
+    next.logoData = logoDataText(body.logoData, 28_000_000);
     next.logoType = text(body.logoType, 120);
     next.logoName = text(body.logoName, 160);
   } else {
