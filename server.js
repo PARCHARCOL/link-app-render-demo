@@ -1852,7 +1852,7 @@ async function readData(authUser = null) {
       resumes,
       vacancies,
       settings,
-      activeAd,
+      activeAds,
     ] = await Promise.all([
       pool.query(
         `SELECT id, title, body, category, contact, status, created_at AS "createdAt"
@@ -1895,7 +1895,7 @@ async function readData(authUser = null) {
         [authUserId],
       ),
       readSettings(),
-      readActiveAdCampaign(),
+      readActiveAdCampaigns(),
     ]);
 
     const messagesByThread = new Map();
@@ -1915,13 +1915,15 @@ async function readData(authUser = null) {
       currentUser: authUser,
       storage: storageInfo(),
       settings: publicSettings(settings),
-      activeAd,
+      activeAds,
+      activeAd: activeAds[0] || null,
     };
   }
 
   const data = await readJsonData();
   const visibleAuthor = (item) => normalizeStatus(item.status) === "published" || (authUser?.id && item.authorId === authUser.id);
   const visibleOwner = (item) => normalizeStatus(item.status) === "published" || (authUser?.id && item.userId === authUser.id);
+  const activeAds = await readActiveAdCampaigns();
   return {
     news: data.news.filter(visibleAuthor),
     jobs: data.jobs,
@@ -1932,7 +1934,8 @@ async function readData(authUser = null) {
     currentUser: authUser,
     storage: storageInfo(),
     settings: publicSettings(data.settings),
-    activeAd: await readActiveAdCampaign(),
+    activeAds,
+    activeAd: activeAds[0] || null,
   };
 }
 
@@ -2583,7 +2586,7 @@ async function saveAdCampaign(body, admin) {
   }
 }
 
-async function readActiveAdCampaign() {
+async function readActiveAdCampaigns() {
   if (dbReady) {
     const result = await pool.query(
       `SELECT id, title, advertiser, body, target_url AS "targetUrl",
@@ -2593,19 +2596,28 @@ async function readActiveAdCampaign() {
        WHERE status = 'published'
          AND (starts_at IS NULL OR starts_at <= now())
          AND (ends_at IS NULL OR ends_at >= now())
-       ORDER BY created_at DESC LIMIT 1`,
+       ORDER BY created_at DESC LIMIT 20`,
     );
-    return publicAdCampaign(result.rows[0] || null);
+    return result.rows.map(publicAdCampaign).filter(Boolean);
   }
   const now = Date.now();
   const data = await readJsonData();
-  const active = data.adCampaigns.find((item) => {
-    const status = normalizeStatus(item.status);
-    const starts = item.startsAt ? Date.parse(item.startsAt) : 0;
-    const ends = item.endsAt ? Date.parse(item.endsAt) : 0;
-    return status === "published" && (!starts || starts <= now) && (!ends || ends >= now);
-  }) || null;
-  return publicAdCampaign(active);
+  return data.adCampaigns
+    .filter((item) => {
+      const status = normalizeStatus(item.status);
+      const starts = item.startsAt ? Date.parse(item.startsAt) : 0;
+      const ends = item.endsAt ? Date.parse(item.endsAt) : 0;
+      return status === "published" && (!starts || starts <= now) && (!ends || ends >= now);
+    })
+    .sort((a, b) => Date.parse(b.createdAt || 0) - Date.parse(a.createdAt || 0))
+    .slice(0, 20)
+    .map(publicAdCampaign)
+    .filter(Boolean);
+}
+
+async function readActiveAdCampaign() {
+  const campaigns = await readActiveAdCampaigns();
+  return campaigns[0] || null;
 }
 
 async function readAdCampaignMedia(id) {

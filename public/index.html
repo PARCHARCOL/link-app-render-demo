@@ -9,9 +9,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v46">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v46">
-  <link rel="preload" href="/logolink.png?v=link-app-v46" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v47">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v47">
+  <link rel="preload" href="/logolink.png?v=link-app-v47" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -293,6 +293,9 @@
     let updateAvailable = false;
     let adminState = null;
     let adminLoading = false;
+    let adRotationIndex = 0;
+    let adRotationTimer = null;
+    let adRotationSignature = "";
     let state = baseState();
 
     const content = document.querySelector("#content");
@@ -333,7 +336,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v46";
+    const appBuild = "link-app-v47";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -384,6 +387,7 @@
         officialNewsUpdatedAt: null,
         officialNewsError: null,
         officialSources: [],
+        activeAds: [],
         activeAd: null,
         currentUser: null,
         storage: { mode: "json", dbConfigured: false, dbReady: false },
@@ -487,7 +491,7 @@
     }
 
     function logoSrc() {
-      return state.settings?.logoUrl || state.settings?.logoData || "/logolink.png?v=link-app-v46";
+      return state.settings?.logoUrl || state.settings?.logoData || "/logolink.png?v=link-app-v47";
     }
 
     function logoImg(className, alt = "Link") {
@@ -687,8 +691,51 @@
       </div>`;
     }
 
+    function activeAdList() {
+      const ads = Array.isArray(state.activeAds) && state.activeAds.length
+        ? state.activeAds
+        : (state.activeAd ? [state.activeAd] : []);
+      return ads.filter(Boolean);
+    }
+
+    function bindAdBannerActions() {
+      adBanner.querySelectorAll("[data-open-ad-request]").forEach((button) => {
+        button.onclick = () => {
+          adRequestOpen = true;
+          active = "cuenta";
+          render();
+        };
+      });
+    }
+
+    function syncAdRotation(ads) {
+      const signature = ads.map((ad) => ad.id || `${ad.title}-${ad.mediaUrl}`).join("|");
+      if (adRotationIndex >= ads.length) adRotationIndex = 0;
+      if (ads.length <= 1) {
+        if (adRotationTimer) window.clearInterval(adRotationTimer);
+        adRotationTimer = null;
+        adRotationSignature = signature;
+        return;
+      }
+      if (adRotationTimer && adRotationSignature === signature) return;
+      if (adRotationTimer) window.clearInterval(adRotationTimer);
+      adRotationSignature = signature;
+      adRotationTimer = window.setInterval(() => {
+        const currentAds = activeAdList();
+        if (currentAds.length <= 1) {
+          syncAdRotation(currentAds);
+          renderAdBanner();
+          return;
+        }
+        adRotationIndex = (adRotationIndex + 1) % currentAds.length;
+        renderAdBanner();
+      }, 7000);
+    }
+
     function renderAdBanner() {
-      const ad = state.activeAd || null;
+      const ads = activeAdList();
+      syncAdRotation(ads);
+      const ad = ads[adRotationIndex] || null;
       const title = ad?.title || "Tu publicidad aqui";
       const subtitle = ad?.body || ad?.advertiser || "Pauta visible en todas las ventanas de Link.";
       adBanner.classList.toggle("ad-has-media", Boolean(ad?.mediaUrl || ad?.mediaData));
@@ -699,6 +746,7 @@
           ${ad?.targetUrl ? `<a class="mini-btn" href="${esc(ad.targetUrl)}" target="_blank" rel="noopener noreferrer">Ver oferta</a>` : ""}
           <button class="secondary" data-open-ad-request="1" type="button">Pautar aqui</button>
         </div>`;
+      bindAdBannerActions();
     }
 
     function renderHeader() {
