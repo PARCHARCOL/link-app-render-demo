@@ -3336,6 +3336,7 @@ function sendMedia(res, req, media) {
   };
   const range = req.headers.range || "";
   const match = String(range).match(/^bytes=(\d*)-(\d*)$/);
+  const headOnly = req.method === "HEAD";
   if (match && total > 0) {
     let start = match[1] ? Number.parseInt(match[1], 10) : 0;
     let end = match[2] ? Number.parseInt(match[2], 10) : total - 1;
@@ -3351,6 +3352,10 @@ function sendMedia(res, req, media) {
         "content-length": end - start + 1,
         "content-range": `bytes ${start}-${end}/${total}`,
       });
+      if (headOnly) {
+        res.end();
+        return;
+      }
       res.end(media.buffer.subarray(start, end + 1));
       return;
     }
@@ -3359,11 +3364,15 @@ function sendMedia(res, req, media) {
     return;
   }
   res.writeHead(200, { ...headers, "content-length": total });
+  if (headOnly) {
+    res.end();
+    return;
+  }
   res.end(media.buffer);
 }
 
 async function handleApi(req, res, url) {
-  if (req.method === "GET" && url.pathname === "/api/settings/logo") {
+  if ((req.method === "GET" || req.method === "HEAD") && url.pathname === "/api/settings/logo") {
     const media = await readSettingsLogoMedia();
     if (!media) {
       notFound(res);
@@ -3374,7 +3383,7 @@ async function handleApi(req, res, url) {
   }
 
   const productMediaMatch = url.pathname.match(/^\/api\/products\/([^/]+)\/media$/);
-  if (req.method === "GET" && productMediaMatch) {
+  if ((req.method === "GET" || req.method === "HEAD") && productMediaMatch) {
     const media = await readProductMedia(decodeURIComponent(productMediaMatch[1]));
     if (!media) {
       notFound(res);
@@ -3385,7 +3394,7 @@ async function handleApi(req, res, url) {
   }
 
   const adMediaMatch = url.pathname.match(/^\/api\/ad-campaigns\/([^/]+)\/media$/);
-  if (req.method === "GET" && adMediaMatch) {
+  if ((req.method === "GET" || req.method === "HEAD") && adMediaMatch) {
     const media = await readAdCampaignMedia(decodeURIComponent(adMediaMatch[1]));
     if (!media) {
       notFound(res);
@@ -3396,7 +3405,7 @@ async function handleApi(req, res, url) {
   }
 
   const tokenReceiptMatch = url.pathname.match(/^\/api\/token-requests\/([^/]+)\/receipt$/);
-  if (req.method === "GET" && tokenReceiptMatch) {
+  if ((req.method === "GET" || req.method === "HEAD") && tokenReceiptMatch) {
     const media = await readTokenRequestReceipt(decodeURIComponent(tokenReceiptMatch[1]), await requireUser(req));
     if (!media) {
       notFound(res);
