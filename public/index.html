@@ -9,9 +9,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v56">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v56">
-  <link rel="preload" href="/logolink.png?v=link-app-v56" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v57">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v57">
+  <link rel="preload" href="/logolink.png?v=link-app-v57" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -41,6 +41,7 @@
     .header-action small{margin-top:2px;color:#fff9e8;font-size:10px;font-weight:950;line-height:1.1}
     .tabs{display:flex;justify-content:space-around;align-items:flex-start;gap:10px;overflow-x:auto;padding:0 2px 2px;scrollbar-width:none}
     .tabs::-webkit-scrollbar{display:none}
+    .nav-toggle{display:none}
     .menu-btn{flex:0 0 92px;min-width:0;display:grid;justify-items:center;align-content:start;gap:4px;min-height:78px;padding:6px 4px;color:#6f5b4c;background:transparent;border:0;border-radius:14px}
     .menu-icon{width:50px;height:50px;display:grid;place-items:center;color:#ffffff;background:linear-gradient(180deg,#ff9b2a,#d71920);border-radius:14px;box-shadow:0 8px 16px rgba(215,25,32,.24);font-size:15px;font-weight:950}
     .menu-icon svg{width:25px;height:25px;display:block}
@@ -253,6 +254,7 @@
     .media-viewer-title{margin:0;color:var(--ink);font-size:14px;font-weight:950}
     @media (max-width:820px){.stage{min-height:100dvh;padding:0;place-items:stretch;background:#fff6ef}.app{width:100dvw;max-width:100dvw;height:100dvh;min-height:100dvh;grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr) auto;border-left:0;border-right:0;border-radius:0}.app-header{grid-column:1;grid-row:1;padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) 12px max(10px,env(safe-area-inset-left));overflow:hidden}#content{grid-column:1;grid-row:2}.phone-status{min-width:0}.phone-status small{max-width:44%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.brand-row{grid-template-columns:60px minmax(0,1fr) auto;gap:8px;margin-bottom:10px}.brand-mark{width:60px;height:60px;border-radius:17px}.brand-copy strong{font-size:25px}.brand-copy span{font-size:11px;line-height:1.2}.header-actions{display:flex;grid-column:auto;gap:6px;justify-content:flex-end;flex-wrap:nowrap}.header-action{width:auto;min-width:76px;min-height:34px;padding:4px 8px;font-size:11px}.account-action{min-width:104px}.header-action strong,.header-action small{max-width:104px}.tabs{display:flex;grid-auto-flow:unset;grid-auto-columns:unset;grid-template-columns:none;gap:5px;max-width:100%;overflow-x:auto;overflow-y:hidden;padding:0 0 4px;-webkit-overflow-scrolling:touch}.menu-btn{flex:0 0 64px}.download-menu{flex-basis:70px}.menu-icon{width:46px;height:46px;border-radius:14px}.menu-icon svg{width:24px;height:24px}.menu-btn span:last-child{max-width:70px;font-size:9.5px}.screen{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right));padding-bottom:18px}.split,.auth-grid,.verify-row,.update-banner{grid-template-columns:1fr}.hero h1{font-size:26px}.lead-story.has-image{grid-template-columns:1fr}.lead-story .story-media{min-height:170px;order:-1;border-left:0;border-bottom:1px solid var(--line)}.story-card.has-image{grid-template-columns:96px minmax(0,1fr)}.story-media{min-height:104px}.activity-grid{grid-template-columns:1fr}.product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.product h3{font-size:12px}.price{font-size:18px}.admin-row{grid-template-columns:1fr}.admin-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.login-brand{grid-template-columns:1fr}.module-actions,.flow-branches{flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}.module-actions::-webkit-scrollbar,.flow-branches::-webkit-scrollbar{display:none}.module-actions .primary,.module-actions .secondary,.flow-btn{flex:0 0 auto;min-height:34px;font-size:11px}.ad-banner{grid-column:1;grid-row:3;align-self:auto;height:clamp(168px,calc((100dvw - 16px)*.5625),240px);min-height:clamp(168px,calc((100dvw - 16px)*.5625),240px);max-height:clamp(168px,calc((100dvw - 16px)*.5625),240px);grid-template-columns:1fr;margin:0 max(8px,env(safe-area-inset-right)) max(6px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));padding:0;border-radius:18px;box-shadow:0 -8px 22px rgba(35,8,0,.16)}.ad-banner::after,.ad-media{inset:0}.ad-media-main{object-fit:contain;background:#090302}.ad-actions{left:auto;right:8px;top:8px;bottom:auto;min-height:0;display:flex;gap:6px;justify-content:flex-end;padding:0;background:transparent;border-top:0}.ad-actions .mini-btn,.ad-actions .secondary{width:auto;min-width:96px;min-height:30px;padding:0 10px;border-radius:9px;font-size:10.5px;box-shadow:0 8px 16px rgba(35,8,0,.18)}.ad-actions .secondary{background:rgba(255,255,255,.94);border-color:rgba(255,255,255,.9)}.ad-copy{max-width:min(70%,260px);align-content:start;padding:12px 10px}.ad-banner.ad-has-media .ad-copy strong,.ad-banner.ad-has-media .ad-copy span{display:none}.ad-copy strong{font-size:15px;-webkit-line-clamp:2}.ad-copy span{font-size:9px;-webkit-line-clamp:2}}
     @media (max-width:820px){.ad-banner{display:block;height:clamp(176px,calc((100dvw - 16px)*.545),218px);min-height:clamp(176px,calc((100dvw - 16px)*.545),218px);max-height:clamp(176px,calc((100dvw - 16px)*.545),218px);align-content:stretch;overflow:hidden;background:#090302}.ad-banner::after{display:none}.ad-media{position:absolute;inset:0;z-index:0;width:100%;height:100%;min-height:0;overflow:hidden;background:#090302}.ad-media::before{z-index:2;background:linear-gradient(180deg,rgba(0,0,0,.04),transparent 50%,rgba(0,0,0,.28))}.ad-media-bg{display:block;filter:blur(18px) brightness(.62) saturate(1.16);transform:scale(1.1)}.ad-media-main{position:absolute;inset:0;z-index:1;width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain;object-position:center center;background:transparent;filter:saturate(1.04) brightness(.98)}.ad-banner.ad-landscape .ad-media-main,.ad-banner.ad-square .ad-media-main{object-fit:cover}.ad-copy{display:none}.ad-actions{position:absolute;left:8px;right:8px;top:auto;bottom:8px;z-index:3;display:flex;align-items:center;justify-content:flex-end;gap:6px;min-height:30px;padding:0;background:transparent;border-top:0;pointer-events:none}.ad-actions .mini-btn,.ad-actions .secondary{width:auto;min-width:82px;min-height:29px;padding:0 9px;border-radius:10px;font-size:10px;box-shadow:0 8px 18px rgba(0,0,0,.22);pointer-events:auto}.ad-actions [data-ad-sound]{min-width:62px}.ad-actions .secondary{background:rgba(255,255,255,.94);border-color:rgba(255,255,255,.72)}}
+    @media (max-width:820px){.nav-toggle{width:min(220px,62vw);min-height:27px;display:flex;align-items:center;justify-content:center;margin:4px auto 0;color:var(--red);background:#fff;border:1px solid rgba(215,25,32,.22);border-radius:999px;box-shadow:0 8px 18px rgba(137,57,0,.12);font-size:11px;font-weight:950}.app-header .tabs{max-height:84px;transition:max-height .22s ease,opacity .18s ease,transform .22s ease,padding .22s ease}.app-header.nav-collapsed .brand-row{margin-bottom:6px}.app-header.nav-collapsed .tabs{max-height:0;opacity:0;transform:translateY(-6px);pointer-events:none;padding-top:0;padding-bottom:0}.app-header.nav-collapsed .nav-toggle{margin-top:2px;background:linear-gradient(180deg,#fff,#fff4ed)}}
     @media (max-width:380px){.brand-row{grid-template-columns:56px minmax(0,1fr) auto}.brand-mark{width:56px;height:56px}.brand-copy strong{font-size:23px}.brand-copy span{font-size:10.5px}.header-action{min-width:64px;min-height:32px;padding:4px 6px;font-size:10px}.account-action{min-width:94px}.header-action strong,.header-action small{max-width:94px}.menu-btn{flex-basis:58px}.download-menu{flex-basis:64px}.menu-icon{width:42px;height:42px}.menu-btn span:last-child{font-size:9px}.screen{padding-left:10px;padding-right:10px}.hero h1{font-size:24px}}
   </style>
 </head>
@@ -262,7 +264,8 @@
       <header class="app-header">
         <div id="phoneStatus" class="phone-status"></div>
         <div id="headerBrand"></div>
-        <nav class="tabs" aria-label="Navegacion principal"></nav>
+        <nav id="mainTabs" class="tabs" aria-label="Navegacion principal"></nav>
+        <button id="navToggle" class="nav-toggle" type="button" aria-controls="mainTabs" aria-expanded="true" hidden>Subir botones</button>
       </header>
       <div id="content"></div>
       <div id="adBanner" class="ad-banner"></div>
@@ -305,11 +308,14 @@
     let adRotationSignature = "";
     let adRenderedKey = "";
     let adMuted = true;
+    let menuButtonsCollapsed = localStorage.getItem("link-menu-buttons-collapsed") === "1";
     let appHistoryReady = false;
     let state = baseState();
 
     const content = document.querySelector("#content");
     const nav = document.querySelector(".tabs");
+    const navToggle = document.querySelector("#navToggle");
+    const appHeader = document.querySelector(".app-header");
     const headerBrand = document.querySelector("#headerBrand");
     const phoneStatus = document.querySelector("#phoneStatus");
     const adBanner = document.querySelector("#adBanner");
@@ -347,7 +353,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v56";
+    const appBuild = "link-app-v57";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -629,7 +635,7 @@
     }
 
     function logoSrc() {
-      return state.settings?.logoUrl || state.settings?.logoData || "/logolink.png?v=link-app-v56";
+      return state.settings?.logoUrl || state.settings?.logoData || "/logolink.png?v=link-app-v57";
     }
 
     function logoImg(className, alt = "Link") {
@@ -1022,6 +1028,27 @@
       scheduleAdRotation(ad, ads);
     }
 
+    function isMobileMenuMode() {
+      return window.matchMedia("(max-width:820px)").matches;
+    }
+
+    function setMenuButtonsCollapsed(collapsed) {
+      menuButtonsCollapsed = Boolean(collapsed);
+      localStorage.setItem("link-menu-buttons-collapsed", menuButtonsCollapsed ? "1" : "0");
+      syncMenuButtons();
+    }
+
+    function syncMenuButtons() {
+      if (!appHeader || !navToggle || !nav) return;
+      const mobile = isMobileMenuMode();
+      const collapsed = mobile && menuButtonsCollapsed;
+      appHeader.classList.toggle("nav-collapsed", collapsed);
+      navToggle.hidden = !mobile;
+      navToggle.textContent = collapsed ? "Bajar botones" : "Subir botones";
+      navToggle.setAttribute("aria-expanded", String(!collapsed));
+      nav.setAttribute("aria-hidden", String(collapsed));
+    }
+
     function renderHeader() {
       const verified = state.officialNewsUpdatedAt ? `Fuentes verificadas ${dateTimeLabel(state.officialNewsUpdatedAt)}` : "Consultando fuentes";
       const current = user();
@@ -1043,6 +1070,7 @@
         <div class="brand-copy"><p>Link</p><strong>Link</strong><span>${esc(verified)}</span></div>
         ${actions}
       </div>`;
+      syncMenuButtons();
     }
 
     function menuItems() {
@@ -1075,10 +1103,15 @@
         </button>`;
       nav.querySelectorAll("[data-tab]").forEach((button) => {
         button.onclick = () => {
+          if (isMobileMenuMode()) setMenuButtonsCollapsed(true);
           navigateTab(button.dataset.tab);
         };
       });
       nav.querySelector("[data-install]").onclick = installApp;
+      if (navToggle) {
+        navToggle.onclick = () => setMenuButtonsCollapsed(!menuButtonsCollapsed);
+      }
+      syncMenuButtons();
     }
 
     async function installApp() {
@@ -2961,6 +2994,7 @@
       hydrateOfficialNews();
     }
 
+    window.addEventListener("resize", syncMenuButtons);
     applyBootstrapSettings();
     boot();
   </script>
