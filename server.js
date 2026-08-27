@@ -1499,7 +1499,7 @@ function publicAuthor(user) {
 
 function publicResume(item, authUser = null) {
   const ownerId = item.userId || item.user_id || "";
-  const canSeeContact = isAdminUser(authUser) || Boolean(authUser?.id && ownerId === authUser.id);
+  const canSeePrivate = isAdminUser(authUser);
   const resume = {
     ...item,
     userId: ownerId,
@@ -1511,13 +1511,25 @@ function publicResume(item, authUser = null) {
     createdAt: item.createdAt || item.created_at || null,
     updatedAt: item.updatedAt || item.updated_at || null,
     availability: availabilityDisplay(item.availability),
-    contactLocked: !canSeeContact,
+    contactLocked: !canSeePrivate,
+    fullLocked: !canSeePrivate,
   };
-  if (!canSeeContact) {
+  if (!canSeePrivate) {
     resume.phone = "";
     resume.email = "";
     resume.documentId = "";
+    resume.document_id = "";
+    resume.salary = "";
+    resume.summary = "";
+    resume.experience = "";
+    resume.education = "";
+    resume.skills = "";
     resume.referencesText = "";
+    resume.references_text = "";
+    resume.attachmentName = "";
+    resume.attachment_name = "";
+    resume.attachmentData = "";
+    resume.attachment_data = "";
   }
   return resume;
 }
@@ -2247,8 +2259,7 @@ async function getResume(id) {
 
 function resumeDownloadRequiresCharge(resume, user) {
   if (isAdminUser(user)) return false;
-  if (user.accountType === "person" && resume.userId === user.id) return false;
-  if (user.accountType !== "company") fail(403, "Solo empresas registradas pueden descargar hojas de vida de candidatos");
+  if (user.accountType !== "company") fail(403, "La HV completa y descarga son solo para empresas registradas con tokens");
   return true;
 }
 
