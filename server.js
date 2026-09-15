@@ -15,7 +15,15 @@ const publicDir = path.join(__dirname, "public");
 const dataDir = path.join(__dirname, "data");
 const dataFile = path.join(dataDir, "link-data.json");
 const port = Number(process.env.PORT || 3000);
-const databaseUrl = process.env.DATABASE_URL || "";
+const databaseEnvEntries = [
+  ["DATABASE_URL", process.env.DATABASE_URL],
+  ["DATABASE", process.env.DATABASE],
+  ["POSTGRES_URL", process.env.POSTGRES_URL],
+  ["POSTGRESQL_URL", process.env.POSTGRESQL_URL],
+].map(([key, value]) => [key, String(value || "").trim()]).filter(([, value]) => value);
+const databaseEnvKey = databaseEnvEntries[0]?.[0] || "";
+const databaseUrl = databaseEnvEntries[0]?.[1] || "";
+const requirePostgresStorage = process.env.NODE_ENV === "production";
 const officialNewsTtlMs = Number(process.env.OFFICIAL_NEWS_TTL_MS || 10 * 60 * 1000);
 const officialNewsTimeoutMs = Number(process.env.OFFICIAL_NEWS_TIMEOUT_MS || 12_000);
 const bodyLimitBytes = Number(process.env.BODY_LIMIT_BYTES || 30_000_000);
@@ -61,6 +69,14 @@ const officialSources = [
       "https://www.coljuegos.gov.co/",
       "https://www.coljuegos.gov.co/publicaciones/noticias/index.php",
       "https://www.coljuegos.gov.co/publicaciones/noticias/?tema=300014",
+      "https://www.coljuegos.gov.co/publicaciones/307383/atencion-servicios-restablecidos/",
+      "https://www.coljuegos.gov.co/publicaciones/306362/seccion-pqrsd/",
+      "https://www.coljuegos.gov.co/publicaciones/306312/canales-de-atencion/index.php",
+      "https://www.coljuegos.gov.co/documentos/200440/portal-del-operador/",
+      "https://www.coljuegos.gov.co/documentos/200515/juegos-localizados-a-traves-del-portal-del-operador/",
+      "https://tramiteagil.coljuegos.gov.co/PortalOperador/Coljuegos/index.xhtml",
+      "https://cnjsa.coljuegos.gov.co/",
+      "https://azdigital.coljuegos.gov.co/",
     ],
   },
   {
@@ -471,8 +487,10 @@ function storageInfo() {
   return {
     mode: dbReady ? "postgres" : "json",
     dbConfigured: Boolean(databaseUrl),
+    dbEnvKey: databaseEnvKey || null,
     dbReady,
     dbError,
+    writeMode: requirePostgresStorage && !dbReady ? "blocked" : "enabled",
   };
 }
 
@@ -1124,6 +1142,9 @@ async function readJsonData() {
 }
 
 async function writeJsonData(data) {
+  if (requirePostgresStorage && !dbReady) {
+    throw fail(503, "Base de datos PostgreSQL no conectada. No se guarda en archivo temporal en produccion.");
+  }
   await mkdir(dataDir, { recursive: true });
   const tempFile = `${dataFile}.${process.pid}.tmp`;
   await writeFile(tempFile, JSON.stringify(normalizeData(data), null, 2), "utf8");
