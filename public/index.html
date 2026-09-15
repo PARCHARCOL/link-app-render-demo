@@ -1207,7 +1207,9 @@
       const current = user();
       const storageWarning = state.storage?.mode === "postgres"
         ? ""
-        : `<p class="notice"><strong>Base de datos no conectada.</strong> Render esta guardando en archivo temporal. Las claves, usuarios y publicaciones pueden perderse si Render reinicia. Conecta la base link-db en Environment con DATABASE_URL.</p>`;
+        : current?.isAdmin
+          ? `<p class="notice"><strong>Conexion de datos pendiente.</strong> El servidor no logro conectar PostgreSQL con ${esc(state.storage?.dbEnvKey || "DATABASE_URL")}. Las escrituras estan bloqueadas para evitar guardar en archivo temporal.</p>`
+          : `<p class="notice"><strong>Estamos actualizando la conexion de datos.</strong> Puedes navegar la app; los registros, publicaciones y cambios quedaran habilitados cuando finalice el ajuste.</p>`;
       if (current) {
         const type = current.accountType === "company" ? "Empresa" : "Persona natural";
         const companyTokens = current.accountType === "company" ? `<p class="notice"><strong>Saldo empresa: ${esc(tokensLabel(current.tokenBalance))}</strong><br>Descargar HV cuesta ${esc(tokensLabel(state.settings.tokenCvDownloadCost))}. Publicar vacante cuesta ${esc(tokensLabel(state.settings.tokenVacancyCost))}. ${esc(state.settings.paymentInfo)}</p>` : "";

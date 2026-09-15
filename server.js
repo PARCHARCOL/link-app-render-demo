@@ -1143,7 +1143,7 @@ async function readJsonData() {
 
 async function writeJsonData(data) {
   if (requirePostgresStorage && !dbReady) {
-    throw fail(503, "Base de datos PostgreSQL no conectada. No se guarda en archivo temporal en produccion.");
+    throw fail(503, "Estamos ajustando la conexion de datos. Por seguridad no se guardo la informacion; intenta de nuevo cuando el administrador confirme la conexion.");
   }
   await mkdir(dataDir, { recursive: true });
   const tempFile = `${dataFile}.${process.pid}.tmp`;
