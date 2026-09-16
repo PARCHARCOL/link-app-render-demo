@@ -42,6 +42,7 @@ const emptyData = {
   jobs: [],
   resumes: [],
   vacancies: [],
+  vacancyApplications: [],
   products: [],
   threads: [],
   passwordRecoveryRequests: [],
@@ -1107,6 +1108,10 @@ function normalizeData(parsed = {}) {
     jobs: Array.isArray(parsed.jobs) ? parsed.jobs : [],
     resumes: Array.isArray(parsed.resumes) ? parsed.resumes.map((item) => ({ ...item, status: normalizeStatus(item.status) })) : [],
     vacancies: Array.isArray(parsed.vacancies) ? parsed.vacancies.map((item) => ({ ...item, status: normalizeStatus(item.status) })) : [],
+    vacancyApplications: Array.isArray(parsed.vacancyApplications) ? parsed.vacancyApplications.map((item) => ({
+      ...item,
+      status: text(item.status, 40) || "new",
+    })) : [],
     products: Array.isArray(parsed.products) ? parsed.products.map((item) => ({ ...item, status: normalizeStatus(item.status) })) : [],
     threads: Array.isArray(parsed.threads) ? parsed.threads.map((item) => ({ ...item, status: normalizeStatus(item.status) })) : [],
     adRequests: Array.isArray(parsed.adRequests) ? parsed.adRequests.map((item) => ({ ...item, priority: adPriority(item.priority), status: normalizeAdRequestStatus(item.status) })) : [],
@@ -1312,6 +1317,18 @@ async function initDb() {
       created_at timestamptz NOT NULL DEFAULT now()
     );
 
+    CREATE TABLE IF NOT EXISTS link_vacancy_applications (
+      id uuid PRIMARY KEY,
+      vacancy_id uuid NOT NULL REFERENCES link_vacancies(id) ON DELETE CASCADE,
+      resume_id uuid REFERENCES link_resumes(id) ON DELETE SET NULL,
+      candidate_id uuid NOT NULL REFERENCES link_users(id) ON DELETE CASCADE,
+      company_id uuid NOT NULL REFERENCES link_users(id) ON DELETE CASCADE,
+      status text NOT NULL DEFAULT 'new',
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now(),
+      UNIQUE (vacancy_id, candidate_id)
+    );
+
     CREATE TABLE IF NOT EXISTS link_ad_requests (
       id uuid PRIMARY KEY,
       requester_name text NOT NULL,
@@ -1395,6 +1412,8 @@ async function initDb() {
     ALTER TABLE link_resumes ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'published';
     ALTER TABLE link_resumes ADD COLUMN IF NOT EXISTS category text DEFAULT '';
     ALTER TABLE link_vacancies ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'published';
+    ALTER TABLE link_vacancy_applications ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'new';
+    ALTER TABLE link_vacancy_applications ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
     ALTER TABLE link_ad_requests ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'pending';
     ALTER TABLE link_ad_requests ADD COLUMN IF NOT EXISTS priority integer NOT NULL DEFAULT 1;
     ALTER TABLE link_ad_campaigns ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'published';
@@ -1403,6 +1422,11 @@ async function initDb() {
 
     UPDATE link_ad_requests SET priority = GREATEST(1, LEAST(10, COALESCE(priority, 1)));
     UPDATE link_ad_campaigns SET priority = GREATEST(1, LEAST(10, COALESCE(priority, 1)));
+
+    CREATE INDEX IF NOT EXISTS link_vacancy_applications_company_idx
+      ON link_vacancy_applications (company_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS link_vacancy_applications_candidate_idx
+      ON link_vacancy_applications (candidate_id, created_at DESC);
 
     INSERT INTO link_ad_campaigns
       (id, title, advertiser, body, target_url, priority, media_data, media_type, media_name, status, created_at, updated_at)
@@ -1520,7 +1544,7 @@ function publicAuthor(user) {
 
 function publicResume(item, authUser = null) {
   const ownerId = item.userId || item.user_id || "";
-  const canSeePrivate = isAdminUser(authUser);
+  const canSeePrivate = isAdminUser(authUser) || Boolean(authUser?.id && authUser.id === ownerId);
   const resume = {
     ...item,
     userId: ownerId,
@@ -1553,6 +1577,82 @@ function publicResume(item, authUser = null) {
     resume.attachment_data = "";
   }
   return resume;
+}
+
+function publicVacancyApplication(item = {}) {
+  return {
+    id: text(item.id, 80),
+    vacancyId: text(item.vacancyId || item.vacancy_id, 80),
+    resumeId: text(item.resumeId || item.resume_id, 80),
+    candidateId: text(item.candidateId || item.candidate_id, 80),
+    companyId: text(item.companyId || item.company_id, 80),
+    status: text(item.status, 40) || "new",
+    vacancyTitle: text(item.vacancyTitle || item.vacancy_title, 160),
+    vacancyCompany: text(item.vacancyCompany || item.vacancy_company, 160),
+    vacancyCity: text(item.vacancyCity || item.vacancy_city, 80),
+    candidateName: text(item.candidateName || item.candidate_name, 140),
+    candidateHeadline: text(item.candidateHeadline || item.candidate_headline, 180),
+    candidateCategory: text(item.candidateCategory || item.candidate_category, 80),
+    candidateCity: text(item.candidateCity || item.candidate_city, 80),
+    candidateAvailability: availabilityDisplay(item.candidateAvailability || item.candidate_availability),
+    createdAt: item.createdAt || item.created_at || null,
+    updatedAt: item.updatedAt || item.updated_at || null,
+  };
+}
+
+function latestPublishedResumeForUserData(data, userId) {
+  return (data.resumes || [])
+    .filter((item) => item.userId === userId && normalizeStatus(item.status) === "published")
+    .sort((a, b) => Date.parse(b.updatedAt || b.createdAt || 0) - Date.parse(a.updatedAt || a.createdAt || 0))[0] || null;
+}
+
+function vacancyApplicationFromData(data, item) {
+  const vacancy = (data.vacancies || []).find((entry) => entry.id === item.vacancyId) || {};
+  const candidate = (data.users || []).find((entry) => entry.id === item.candidateId) || {};
+  const storedResume = (data.resumes || []).find((entry) => entry.id === item.resumeId);
+  const resume = storedResume || latestPublishedResumeForUserData(data, item.candidateId) || {};
+  return publicVacancyApplication({
+    ...item,
+    resumeId: resume.id || item.resumeId || "",
+    vacancyTitle: vacancy.title || "",
+    vacancyCompany: vacancy.company || "",
+    vacancyCity: vacancy.city || "",
+    candidateName: resume.fullName || candidate.displayName || candidate.email || "Candidato",
+    candidateHeadline: resume.headline || "",
+    candidateCategory: resume.category || "",
+    candidateCity: resume.city || candidate.city || "",
+    candidateAvailability: resume.availability || "",
+  });
+}
+
+function profileMissingForApplication(user) {
+  const missing = [];
+  if (!text(user?.displayName || user?.display_name, 120)) missing.push("nombre");
+  if (!text(user?.phone, 80)) missing.push("telefono");
+  if (!text(user?.city, 80)) missing.push("ciudad");
+  return missing;
+}
+
+function resumeMissingForApplication(resume) {
+  const missing = [];
+  if (!resume) return ["hoja de vida publicada"];
+  if (!text(resume.fullName || resume.full_name, 140)) missing.push("nombre en la HV");
+  if (!text(resume.headline, 160)) missing.push("perfil profesional");
+  if (!text(resume.city, 80)) missing.push("ciudad en la HV");
+  if (!text(resume.phone, 80) && !text(resume.email, 160)) missing.push("telefono o correo en la HV");
+  return missing;
+}
+
+function assertCandidateCanApply(user, resume) {
+  if (user.accountType !== "person") fail(403, "Solo una persona natural registrada puede inscribirse a vacantes.");
+  const profileMissing = profileMissingForApplication(user);
+  if (profileMissing.length) {
+    fail(400, `Actualiza tu cuenta antes de inscribirte. Falta: ${profileMissing.join(", ")}.`);
+  }
+  const resumeMissing = resumeMissingForApplication(resume);
+  if (resumeMissing.length) {
+    fail(400, `Actualiza y publica tu hoja de vida antes de inscribirte. Falta: ${resumeMissing.join(", ")}.`);
+  }
 }
 
 async function createSession(userId) {
@@ -1890,6 +1990,7 @@ async function logoutUser(req) {
 async function readData(authUser = null) {
   if (dbReady) {
     const authUserId = authUser?.id || null;
+    const authIsAdmin = isAdminUser(authUser);
     const [
       news,
       products,
@@ -1897,6 +1998,7 @@ async function readData(authUser = null) {
       messages,
       resumes,
       vacancies,
+      vacancyApplications,
       settings,
       activeAds,
     ] = await Promise.all([
@@ -1934,11 +2036,34 @@ async function readData(authUser = null) {
         [authUserId],
       ),
       pool.query(
-        `SELECT id, company, title, city, salary, contact, description, requirements, status, created_at AS "createdAt"
+        `SELECT id, user_id AS "userId", company, title, city, salary, contact, description, requirements, status, created_at AS "createdAt"
          FROM link_vacancies
          WHERE status = 'published' OR ($1::uuid IS NOT NULL AND user_id = $1::uuid)
          ORDER BY created_at DESC LIMIT 100`,
         [authUserId],
+      ),
+      pool.query(
+        `SELECT a.id, a.vacancy_id AS "vacancyId", COALESCE(a.resume_id, r.id) AS "resumeId",
+                a.candidate_id AS "candidateId", a.company_id AS "companyId", a.status,
+                a.created_at AS "createdAt", a.updated_at AS "updatedAt",
+                v.title AS "vacancyTitle", v.company AS "vacancyCompany", v.city AS "vacancyCity",
+                COALESCE(NULLIF(r.full_name, ''), u.display_name, u.email, 'Candidato') AS "candidateName",
+                r.headline AS "candidateHeadline", r.category AS "candidateCategory",
+                COALESCE(NULLIF(r.city, ''), u.city) AS "candidateCity",
+                r.availability AS "candidateAvailability"
+         FROM link_vacancy_applications a
+         JOIN link_vacancies v ON v.id = a.vacancy_id
+         LEFT JOIN link_users u ON u.id = a.candidate_id
+         LEFT JOIN LATERAL (
+           SELECT id, full_name, headline, category, city, availability
+           FROM link_resumes rr
+           WHERE rr.user_id = a.candidate_id AND rr.is_public = true AND rr.status = 'published'
+           ORDER BY rr.updated_at DESC
+           LIMIT 1
+         ) r ON true
+         WHERE (($1::uuid IS NOT NULL AND (a.company_id = $1::uuid OR a.candidate_id = $1::uuid)) OR $2::boolean)
+         ORDER BY a.created_at DESC LIMIT 200`,
+        [authUserId, authIsAdmin],
       ),
       readSettings(),
       readActiveAdCampaigns(),
@@ -1956,6 +2081,7 @@ async function readData(authUser = null) {
       jobs: [],
       resumes: resumes.rows.map((item) => publicResume(item, authUser)),
       vacancies: vacancies.rows,
+      vacancyApplications: vacancyApplications.rows.map(publicVacancyApplication),
       products: products.rows.map(publicProduct),
       threads: threads.rows.map((thread) => ({ ...thread, messages: messagesByThread.get(thread.id) || [] })),
       currentUser: authUser,
@@ -1970,11 +2096,13 @@ async function readData(authUser = null) {
   const visibleAuthor = (item) => normalizeStatus(item.status) === "published" || (authUser?.id && item.authorId === authUser.id);
   const visibleOwner = (item) => normalizeStatus(item.status) === "published" || (authUser?.id && item.userId === authUser.id);
   const activeAds = await readActiveAdCampaigns();
+  const visibleApplication = (item) => authUser && (isAdminUser(authUser) || item.companyId === authUser.id || item.candidateId === authUser.id);
   return {
     news: data.news.filter(visibleAuthor),
     jobs: data.jobs,
     resumes: data.resumes.filter(visibleOwner).map((item) => publicResume(item, authUser)),
     vacancies: data.vacancies.filter(visibleOwner),
+    vacancyApplications: data.vacancyApplications.filter(visibleApplication).map((item) => vacancyApplicationFromData(data, item)),
     products: data.products.filter(visibleAuthor).map(publicProduct),
     threads: data.threads.filter(visibleAuthor),
     currentUser: authUser,
@@ -2263,6 +2391,136 @@ async function saveVacancy(body, user) {
   return { ...item, tokenBalance: user.tokenBalance };
 }
 
+async function updateProfile(body, user) {
+  const displayName = text(body.displayName, 120);
+  if (!displayName) fail(400, "Nombre requerido");
+  const next = {
+    displayName,
+    phone: text(body.phone, 80),
+    city: text(body.city, 80),
+    role: text(body.role, 120),
+    companyName: user.accountType === "company" ? text(body.companyName, 140) : "",
+    nit: user.accountType === "company" ? text(body.nit, 40) : "",
+  };
+
+  if (dbReady) {
+    const result = await pool.query(
+      `UPDATE link_users
+       SET display_name = $1, phone = $2, city = $3, role = $4, company_name = $5, nit = $6, updated_at = now()
+       WHERE id = $7
+       RETURNING id, email, account_type, display_name, phone, city, company_name, nit, role,
+                 is_admin, token_balance, status, last_seen_at, deactivated_at, created_at`,
+      [next.displayName, next.phone, next.city, next.role, next.companyName, next.nit, user.id],
+    );
+    return { user: sanitizeUser(result.rows[0]) };
+  }
+
+  const data = await readJsonData();
+  const found = data.users.find((item) => item.id === user.id);
+  if (!found) fail(404, "Usuario no encontrado");
+  Object.assign(found, next);
+  await writeJsonData(data);
+  return { user: sanitizeUser(found) };
+}
+
+async function applyToVacancy(vacancyId, user) {
+  const id = text(vacancyId, 80);
+  if (!isUuid(id)) fail(400, "Vacante no valida");
+
+  if (dbReady) {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const vacancyResult = await client.query(
+        `SELECT id, user_id AS "companyId", company, title, city, status
+         FROM link_vacancies
+         WHERE id = $1 AND status = 'published'
+         FOR SHARE`,
+        [id],
+      );
+      const vacancy = vacancyResult.rows[0];
+      if (!vacancy) fail(404, "Vacante no encontrada o no publicada");
+      if (vacancy.companyId === user.id) fail(400, "No puedes inscribirte a tu propia vacante");
+
+      const resumeResult = await client.query(
+        `SELECT id, user_id AS "userId", full_name AS "fullName", headline, category, city, phone, email, availability,
+                status, created_at AS "createdAt", updated_at AS "updatedAt"
+         FROM link_resumes
+         WHERE user_id = $1 AND is_public = true AND status = 'published'
+         ORDER BY updated_at DESC
+         LIMIT 1`,
+        [user.id],
+      );
+      const resume = resumeResult.rows[0] || null;
+      assertCandidateCanApply(user, resume);
+
+      const applicationId = randomUUID();
+      const inserted = await client.query(
+        `INSERT INTO link_vacancy_applications (id, vacancy_id, resume_id, candidate_id, company_id, status)
+         VALUES ($1, $2, $3, $4, $5, 'new')
+         ON CONFLICT (vacancy_id, candidate_id)
+         DO UPDATE SET resume_id = EXCLUDED.resume_id, status = 'new', updated_at = now()
+         RETURNING id, vacancy_id AS "vacancyId", resume_id AS "resumeId", candidate_id AS "candidateId",
+                   company_id AS "companyId", status, created_at AS "createdAt", updated_at AS "updatedAt"`,
+        [applicationId, vacancy.id, resume.id, user.id, vacancy.companyId],
+      );
+      await client.query("COMMIT");
+      return {
+        ok: true,
+        message: "Inscripcion enviada. La empresa vera tu perfil basico en su bandeja; tu HV y contacto quedan protegidos por tokens.",
+        application: publicVacancyApplication({
+          ...inserted.rows[0],
+          vacancyTitle: vacancy.title,
+          vacancyCompany: vacancy.company,
+          vacancyCity: vacancy.city,
+          candidateName: resume.fullName,
+          candidateHeadline: resume.headline,
+          candidateCategory: resume.category,
+          candidateCity: resume.city,
+          candidateAvailability: resume.availability,
+        }),
+      };
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  const data = await readJsonData();
+  const vacancy = data.vacancies.find((item) => item.id === id && normalizeStatus(item.status) === "published");
+  if (!vacancy) fail(404, "Vacante no encontrada o no publicada");
+  if (vacancy.userId === user.id) fail(400, "No puedes inscribirte a tu propia vacante");
+  const resume = latestPublishedResumeForUserData(data, user.id);
+  assertCandidateCanApply(user, resume);
+
+  let application = data.vacancyApplications.find((item) => item.vacancyId === id && item.candidateId === user.id);
+  if (application) {
+    application.resumeId = resume.id;
+    application.status = "new";
+    application.updatedAt = nowStamp();
+  } else {
+    application = {
+      id: randomUUID(),
+      vacancyId: id,
+      resumeId: resume.id,
+      candidateId: user.id,
+      companyId: vacancy.userId,
+      status: "new",
+      createdAt: nowStamp(),
+      updatedAt: nowStamp(),
+    };
+    data.vacancyApplications.unshift(application);
+  }
+  await writeJsonData(data);
+  return {
+    ok: true,
+    message: "Inscripcion enviada. La empresa vera tu perfil basico en su bandeja; tu HV y contacto quedan protegidos por tokens.",
+    application: vacancyApplicationFromData(data, application),
+  };
+}
+
 async function getResume(id) {
   if (dbReady) {
     const result = await pool.query(
@@ -2280,6 +2538,7 @@ async function getResume(id) {
 
 function resumeDownloadRequiresCharge(resume, user) {
   if (isAdminUser(user)) return false;
+  if (user.accountType === "person" && resume.userId === user.id) return false;
   if (user.accountType !== "company") fail(403, "La HV completa y descarga son solo para empresas registradas con tokens");
   return true;
 }
@@ -3576,6 +3835,11 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (req.method === "POST" && url.pathname === "/api/profile") {
+    json(res, 200, await updateProfile(await readBody(req), await requireUser(req)));
+    return;
+  }
+
   if (req.method === "POST" && url.pathname === "/api/resumes") {
     json(res, 201, await saveResume(await readBody(req), await requireUser(req)));
     return;
@@ -3583,6 +3847,12 @@ async function handleApi(req, res, url) {
 
   if (req.method === "POST" && url.pathname === "/api/vacancies") {
     json(res, 201, await saveVacancy(await readBody(req), await requireUser(req)));
+    return;
+  }
+
+  const vacancyApplyMatch = url.pathname.match(/^\/api\/vacancies\/([^/]+)\/apply$/);
+  if (req.method === "POST" && vacancyApplyMatch) {
+    json(res, 201, await applyToVacancy(vacancyApplyMatch[1], await requireUser(req)));
     return;
   }
 
