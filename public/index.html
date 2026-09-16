@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Link</title>
   <meta name="description" content="Link: aplicacion online para noticias, bolsa de empleo, compra/ventas, chat tecnico y administracion del sector.">
-  <meta name="theme-color" content="#ff6a00">
+  <meta name="theme-color" content="#000000">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v61">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v61">
-  <link rel="preload" href="/logolink.png?v=link-app-v61" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v62">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v62">
+  <link rel="preload" href="/logolink.png?v=link-app-v62" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -25,27 +25,29 @@
     .phone-status small{color:var(--red);font-weight:900}
     .phone-left{min-width:0;display:flex;align-items:center;gap:8px}
     .app-back{min-height:25px;padding:0 10px;color:var(--red);background:#fff;border:1px solid rgba(215,25,32,.2);border-radius:999px;font-size:11px;font-weight:950;box-shadow:0 6px 14px rgba(137,57,0,.12)}
-    .brand-row{width:100%;min-width:0;display:grid;grid-template-columns:92px minmax(0,1fr) auto;gap:16px;align-items:center;margin-bottom:16px}
+    .brand-row{width:100%;min-width:0;display:grid;grid-template-columns:116px minmax(0,1fr) auto;gap:18px;align-items:center;margin-bottom:16px}
     .brand-mark,.logo-card,.logo-hero,.login-logo{display:grid;place-items:center;overflow:hidden;background:radial-gradient(circle at 45% 32%,#3b230b 0%,#140d09 58%,#000 100%);border:3px solid #fff;border-radius:22px;box-shadow:0 16px 34px rgba(255,106,0,.34),0 0 0 1px rgba(255,255,255,.28)}
-    .brand-mark{width:92px;height:92px}
-    .brand-mark img,.logo-card img,.logo-hero img,.login-logo img,.product-logo img{width:100%;height:100%;object-fit:contain}
-    .brand-mark video,.logo-card video,.logo-hero video,.login-logo video{width:100%;height:100%;object-fit:contain}
+    .brand-mark{width:116px;height:116px}
+    .brand-mark img,.logo-card img,.login-logo img,.product-logo img{width:88%;height:88%;object-fit:contain}
+    .logo-hero img{width:92%;height:92%;object-fit:contain}
+    .brand-mark video,.logo-card video,.login-logo video{width:88%;height:88%;object-fit:contain}
+    .logo-hero video{width:92%;height:92%;object-fit:contain}
     .brand-copy{min-width:0}
     .brand-copy p{margin:0 0 2px;color:var(--red);font-size:11px;font-weight:900;text-transform:uppercase}
-    .brand-copy strong{display:block;margin:0;color:var(--ink);font-size:32px;line-height:1;font-weight:950}
+    .brand-copy strong{display:block;margin:0;color:var(--ink);font-size:38px;line-height:1;font-weight:950}
     .brand-copy span{display:block;margin-top:4px;color:var(--muted);font-size:12px;line-height:1.28}
     .header-actions{display:flex;flex-wrap:nowrap;justify-content:flex-end;gap:8px;min-width:0;max-width:100%}
     .header-action{min-height:38px;min-width:118px;display:grid;place-items:center;padding:4px 12px;color:#fff;background:linear-gradient(180deg,#ff9148,#ef5f00);border:0;border-radius:8px;box-shadow:0 7px 13px rgba(137,57,0,.24);font-size:12px;font-weight:850;letter-spacing:.2px;text-align:center}
     .header-action.secondary-action{background:linear-gradient(180deg,#ff9148,#ef5f00)}
     .header-action strong,.header-action small{display:block;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .header-action small{margin-top:2px;color:#fff9e8;font-size:10px;font-weight:950;line-height:1.1}
-    .tabs{display:flex;justify-content:space-around;align-items:flex-start;gap:10px;overflow-x:auto;padding:0 2px 2px;scrollbar-width:none}
+    .tabs{display:flex;justify-content:center;align-items:flex-start;gap:38px;overflow-x:auto;padding:0 2px 2px;scrollbar-width:none}
     .tabs::-webkit-scrollbar{display:none}
     .nav-toggle{display:none}
-    .menu-btn{flex:0 0 92px;min-width:0;display:grid;justify-items:center;align-content:start;gap:4px;min-height:78px;padding:6px 4px;color:#6f5b4c;background:transparent;border:0;border-radius:14px}
-    .menu-icon{width:50px;height:50px;display:grid;place-items:center;color:#ffffff;background:linear-gradient(180deg,#ff9b2a,#d71920);border-radius:14px;box-shadow:0 8px 16px rgba(215,25,32,.24);font-size:15px;font-weight:950}
-    .menu-icon svg{width:25px;height:25px;display:block}
-    .menu-btn span:last-child{max-width:86px;min-height:22px;overflow:hidden;font-size:10px;font-weight:900;line-height:1.08;text-align:center;white-space:normal}
+    .menu-btn{flex:0 0 118px;min-width:0;display:grid;justify-items:center;align-content:start;gap:6px;min-height:102px;padding:8px 6px;color:#6f5b4c;background:transparent;border:0;border-radius:16px}
+    .menu-icon{width:68px;height:68px;display:grid;place-items:center;color:#ffffff;background:linear-gradient(180deg,#ff9b2a,#d71920);border-radius:18px;box-shadow:0 10px 20px rgba(215,25,32,.26);font-size:17px;font-weight:950}
+    .menu-icon svg{width:32px;height:32px;display:block}
+    .menu-btn span:last-child{max-width:112px;min-height:28px;overflow:hidden;font-size:12px;font-weight:900;line-height:1.1;text-align:center;white-space:normal}
     .menu-btn.active{background:#ffffff;color:var(--red);box-shadow:inset 0 0 0 1px rgba(215,25,32,.16)}
     .menu-btn.active .menu-icon{background:linear-gradient(180deg,#1476ff,#0042b8)}
     .download-menu .menu-icon{background:linear-gradient(180deg,#ffd76a,#ff6a00);color:#241407}
@@ -353,7 +355,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v61";
+    const appBuild = "link-app-v62";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -635,7 +637,7 @@
     }
 
     function logoSrc() {
-      return state.settings?.logoUrl || state.settings?.logoData || "/logolink.png?v=link-app-v61";
+      return state.settings?.logoUrl || state.settings?.logoData || "/logolink.png?v=link-app-v62";
     }
 
     function logoImg(className, alt = "Link") {
