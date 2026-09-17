@@ -444,6 +444,10 @@ function isAdminUser(user) {
   return Boolean(user?.isAdmin || user?.is_admin || isAdminEmail(user?.email));
 }
 
+function isAdvisorUser(user) {
+  return Boolean(isAdminUser(user) || user?.isAdvisor || user?.is_advisor);
+}
+
 async function canRecoverAdminEmail(email) {
   if (isAdminEmail(email)) return true;
   if (dbReady) {
@@ -1198,6 +1202,7 @@ async function initDb() {
       nit text DEFAULT '',
       role text DEFAULT '',
       is_admin boolean NOT NULL DEFAULT false,
+      is_advisor boolean NOT NULL DEFAULT false,
       token_balance integer NOT NULL DEFAULT 0,
       status text NOT NULL DEFAULT 'active',
       last_seen_at timestamptz,
@@ -1395,6 +1400,7 @@ async function initDb() {
     );
 
     ALTER TABLE link_users ADD COLUMN IF NOT EXISTS is_admin boolean NOT NULL DEFAULT false;
+    ALTER TABLE link_users ADD COLUMN IF NOT EXISTS is_advisor boolean NOT NULL DEFAULT false;
     ALTER TABLE link_users ADD COLUMN IF NOT EXISTS token_balance integer NOT NULL DEFAULT 0;
     ALTER TABLE link_users ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'active';
     ALTER TABLE link_users ADD COLUMN IF NOT EXISTS last_seen_at timestamptz;
@@ -1508,6 +1514,7 @@ function sanitizeUser(user) {
     nit: user.nit || "",
     role: user.role || "",
     isAdmin: isAdminUser(user),
+    isAdvisor: isAdvisorUser(user),
     tokenBalance: intSetting(user.tokenBalance ?? user.token_balance, 0, 0, 1_000_000),
     status: normalizeUserStatus(user.status),
     createdAt,
@@ -1530,6 +1537,7 @@ function rowUser(row) {
     nit: row.nit || "",
     role: row.role || "",
     isAdmin: isAdminUser(row),
+    isAdvisor: isAdvisorUser(row),
     tokenBalance: intSetting(row.token_balance, 0, 0, 1_000_000),
     status: normalizeUserStatus(row.status),
     createdAt,
@@ -1680,7 +1688,7 @@ async function getAuthUser(req) {
   if (dbReady) {
     const result = await pool.query(
       `SELECT u.id, u.email, u.account_type, u.display_name, u.phone, u.city, u.company_name, u.nit, u.role,
-              u.is_admin, u.token_balance, u.status, u.last_seen_at, u.deactivated_at, u.created_at
+              u.is_admin, u.is_advisor, u.token_balance, u.status, u.last_seen_at, u.deactivated_at, u.created_at
        FROM link_sessions s
        JOIN link_users u ON u.id = s.user_id
        WHERE s.token_hash = $1 AND s.expires_at > now()`,
@@ -1714,6 +1722,12 @@ async function requireAdmin(req) {
   return user;
 }
 
+async function requireAdvisor(req) {
+  const user = await requireUser(req);
+  if (!isAdvisorUser(user)) fail(403, "Solo asesor o administrador");
+  return user;
+}
+
 async function registerUser(body) {
   const email = normalizeEmail(body.email);
   const password = String(body.password || "");
@@ -1737,6 +1751,7 @@ async function registerUser(body) {
     nit: accountType === "company" ? text(body.nit, 40) : "",
     role: text(body.role, 120),
     isAdmin: isAdminEmail(email),
+    isAdvisor: false,
     tokenBalance: initialTokens,
     status: "active",
     createdAt: nowStamp(),
@@ -1792,7 +1807,7 @@ async function loginUser(body) {
   let passwordHash;
   if (dbReady) {
     const result = await pool.query(
-      `SELECT id, email, password_hash, account_type, display_name, phone, city, company_name, nit, role, is_admin, token_balance,
+      `SELECT id, email, password_hash, account_type, display_name, phone, city, company_name, nit, role, is_admin, is_advisor, token_balance,
               status, last_seen_at, deactivated_at, created_at
        FROM link_users WHERE email = $1`,
       [email],
@@ -1933,7 +1948,7 @@ async function recoverAdminPassword(body) {
          last_seen_at = now(),
          updated_at = now()
        RETURNING id, email, account_type, display_name, phone, city, company_name, nit, role,
-                 is_admin, token_balance, status, last_seen_at, deactivated_at, created_at`,
+                 is_admin, is_advisor, token_balance, status, last_seen_at, deactivated_at, created_at`,
       [randomUUID(), email, passwordHash, displayName],
     );
     const user = rowUser(result.rows[0]);
@@ -1962,6 +1977,7 @@ async function recoverAdminPassword(body) {
       nit: "",
       role: "Administrador",
       isAdmin: true,
+      isAdvisor: true,
       status: "active",
       createdAt: nowStamp(),
       lastSeenAt: nowStamp(),
@@ -2409,7 +2425,7 @@ async function updateProfile(body, user) {
        SET display_name = $1, phone = $2, city = $3, role = $4, company_name = $5, nit = $6, updated_at = now()
        WHERE id = $7
        RETURNING id, email, account_type, display_name, phone, city, company_name, nit, role,
-                 is_admin, token_balance, status, last_seen_at, deactivated_at, created_at`,
+                 is_admin, is_advisor, token_balance, status, last_seen_at, deactivated_at, created_at`,
       [next.displayName, next.phone, next.city, next.role, next.companyName, next.nit, user.id],
     );
     return { user: sanitizeUser(result.rows[0]) };
@@ -2783,14 +2799,14 @@ async function readTokenRequestReceipt(id, authUser) {
     );
     const row = result.rows[0];
     if (!row) return null;
-    if (!isAdminUser(authUser) && row.userId !== authUser.id) return null;
+    if (!isAdvisorUser(authUser) && row.userId !== authUser.id) return null;
     const payload = mediaDataPayload(row.receiptData);
     return payload ? { ...payload, type: payload.type || row.receiptType || "application/octet-stream" } : null;
   }
   const data = await readJsonData();
   const item = data.tokenRequests.find((entry) => entry.id === cleanId);
   if (!item) return null;
-  if (!isAdminUser(authUser) && item.userId !== authUser.id) return null;
+  if (!isAdvisorUser(authUser) && item.userId !== authUser.id) return null;
   const payload = mediaDataPayload(item.receiptData);
   return payload ? { ...payload, type: payload.type || item.receiptType || "application/octet-stream" } : null;
 }
@@ -3109,7 +3125,7 @@ async function readAdminState() {
     const [users, recovery, news, products, threads, resumes, vacancies, adRequests, adCampaigns, tokenRequests, tokenTransactions] = await Promise.all([
       pool.query(
         `SELECT id, email, account_type AS "accountType", display_name AS "displayName", city, company_name AS "companyName",
-                role, is_admin AS "isAdmin", token_balance AS "tokenBalance", status, last_seen_at AS "lastSeenAt", deactivated_at AS "deactivatedAt",
+                role, is_admin AS "isAdmin", (is_advisor OR is_admin) AS "isAdvisor", token_balance AS "tokenBalance", status, last_seen_at AS "lastSeenAt", deactivated_at AS "deactivatedAt",
                 created_at AS "createdAt"
          FROM link_users ORDER BY display_name ASC, email ASC LIMIT 300`,
       ),
@@ -3241,6 +3257,105 @@ async function readAdminState() {
   };
 }
 
+async function readAdvisorState() {
+  if (dbReady) {
+    const [users, adRequests, tokenRequests, vacancyApplications, threads] = await Promise.all([
+      pool.query(
+        `SELECT id, email, account_type AS "accountType", display_name AS "displayName", phone, city,
+                company_name AS "companyName", role, is_admin AS "isAdmin", (is_advisor OR is_admin) AS "isAdvisor",
+                token_balance AS "tokenBalance", status, last_seen_at AS "lastSeenAt", created_at AS "createdAt"
+         FROM link_users
+         ORDER BY CASE WHEN status = 'active' THEN 0 ELSE 1 END, last_seen_at DESC NULLS LAST, created_at DESC
+         LIMIT 200`,
+      ),
+      pool.query(
+        `SELECT id, requester_name AS "requesterName", company, phone, email, city, target_url AS "targetUrl",
+                priority, message, media_name AS "mediaName", status, created_at AS "createdAt", resolved_at AS "resolvedAt"
+         FROM link_ad_requests
+         ORDER BY CASE WHEN status = 'pending' THEN 0 ELSE 1 END, priority DESC, created_at DESC LIMIT 200`,
+      ),
+      pool.query(
+        `SELECT r.id, r.user_id AS "userId", r.company, r.contact_name AS "contactName", r.phone, r.email,
+                r.amount_pesos AS "amountPesos", r.requested_tokens AS "requestedTokens",
+                r.receipt_name AS "receiptName", COALESCE(r.receipt_data, '') <> '' AS "hasReceipt",
+                r.status, r.admin_note AS "adminNote", r.created_at AS "createdAt", r.resolved_at AS "resolvedAt",
+                u.display_name AS "userName", u.email AS "userEmail"
+         FROM link_token_requests r
+         LEFT JOIN link_users u ON u.id = r.user_id
+         ORDER BY CASE WHEN r.status = 'pending' THEN 0 ELSE 1 END, r.created_at DESC LIMIT 200`,
+      ),
+      pool.query(
+        `SELECT a.id, a.vacancy_id AS "vacancyId", COALESCE(a.resume_id, r.id) AS "resumeId",
+                a.candidate_id AS "candidateId", a.company_id AS "companyId", a.status,
+                a.created_at AS "createdAt", a.updated_at AS "updatedAt",
+                v.title AS "vacancyTitle", v.company AS "vacancyCompany", v.city AS "vacancyCity",
+                COALESCE(NULLIF(r.full_name, ''), u.display_name, u.email, 'Candidato') AS "candidateName",
+                r.headline AS "candidateHeadline", r.category AS "candidateCategory",
+                COALESCE(NULLIF(r.city, ''), u.city) AS "candidateCity",
+                r.availability AS "candidateAvailability"
+         FROM link_vacancy_applications a
+         JOIN link_vacancies v ON v.id = a.vacancy_id
+         LEFT JOIN link_users u ON u.id = a.candidate_id
+         LEFT JOIN LATERAL (
+           SELECT id, full_name, headline, category, city, availability
+           FROM link_resumes rr
+           WHERE rr.user_id = a.candidate_id AND rr.is_public = true AND rr.status = 'published'
+           ORDER BY rr.updated_at DESC
+           LIMIT 1
+         ) r ON true
+         ORDER BY a.created_at DESC LIMIT 300`,
+      ),
+      pool.query(
+        `SELECT t.id, t.name, t.topic, t.status, t.created_at AS "createdAt",
+                u.display_name AS author, u.email AS "authorEmail",
+                COUNT(m.id)::int AS "messageCount", MAX(m.created_at) AS "lastMessageAt"
+         FROM link_threads t
+         LEFT JOIN link_users u ON u.id = t.author_id
+         LEFT JOIN link_messages m ON m.thread_id = t.id
+         GROUP BY t.id, u.display_name, u.email
+         ORDER BY MAX(m.created_at) DESC NULLS LAST, t.created_at DESC LIMIT 100`,
+      ),
+    ]);
+    return {
+      users: users.rows,
+      adRequests: adRequests.rows.map(publicAdRequest),
+      tokenRequests: tokenRequests.rows.map(publicTokenRequest),
+      vacancyApplications: vacancyApplications.rows.map(publicVacancyApplication),
+      threads: threads.rows,
+      storage: storageInfo(),
+    };
+  }
+
+  const data = await readJsonData();
+  const users = data.users
+    .map((item) => sanitizeUser(item))
+    .sort((a, b) => Date.parse(b.lastSeenAt || b.createdAt || 0) - Date.parse(a.lastSeenAt || a.createdAt || 0));
+  const vacancyApplications = data.vacancyApplications
+    .map((item) => vacancyApplicationFromData(data, item))
+    .sort((a, b) => Date.parse(b.createdAt || 0) - Date.parse(a.createdAt || 0));
+  return {
+    users,
+    adRequests: data.adRequests.map(publicAdRequest),
+    tokenRequests: data.tokenRequests.map((item) => publicTokenRequest({
+      ...item,
+      userName: adminLabelUser(users, item.userId),
+      userEmail: users.find((user) => user.id === item.userId)?.email || "",
+    })),
+    vacancyApplications,
+    threads: data.threads.map((item) => ({
+      id: item.id,
+      name: item.name,
+      topic: item.topic,
+      status: normalizeStatus(item.status),
+      createdAt: item.createdAt || null,
+      author: adminLabelUser(users, item.authorId),
+      messageCount: Array.isArray(item.messages) ? item.messages.length : 0,
+      lastMessageAt: Array.isArray(item.messages) && item.messages.length ? item.messages[item.messages.length - 1].createdAt : item.createdAt || null,
+    })),
+    storage: storageInfo(),
+  };
+}
+
 async function moderateContent(body) {
   const type = text(body.type, 40);
   const id = text(body.id, 80);
@@ -3302,6 +3417,22 @@ async function moderateUser(body, admin) {
       if (!result.rowCount) fail(404, "Usuario no encontrado");
       return { ok: true, status: "active" };
     }
+    if (action === "make-advisor") {
+      const result = await pool.query(
+        "UPDATE link_users SET is_advisor = true, updated_at = now() WHERE id = $1",
+        [id],
+      );
+      if (!result.rowCount) fail(404, "Usuario no encontrado");
+      return { ok: true, isAdvisor: true };
+    }
+    if (action === "remove-advisor") {
+      const result = await pool.query(
+        "UPDATE link_users SET is_advisor = false, updated_at = now() WHERE id = $1",
+        [id],
+      );
+      if (!result.rowCount) fail(404, "Usuario no encontrado");
+      return { ok: true, isAdvisor: false };
+    }
     fail(400, "Accion de usuario no permitida");
   }
 
@@ -3325,6 +3456,16 @@ async function moderateUser(body, admin) {
     data.users[index].deactivatedAt = null;
     await writeJsonData(data);
     return { ok: true, status: "active" };
+  }
+  if (action === "make-advisor") {
+    data.users[index].isAdvisor = true;
+    await writeJsonData(data);
+    return { ok: true, isAdvisor: true };
+  }
+  if (action === "remove-advisor") {
+    data.users[index].isAdvisor = false;
+    await writeJsonData(data);
+    return { ok: true, isAdvisor: false };
   }
   fail(400, "Accion de usuario no permitida");
 }
@@ -3732,6 +3873,12 @@ async function handleApi(req, res, url) {
   if (req.method === "GET" && url.pathname === "/api/admin/state") {
     await requireAdmin(req);
     json(res, 200, await readAdminState());
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/advisor/state") {
+    await requireAdvisor(req);
+    json(res, 200, await readAdvisorState());
     return;
   }
 

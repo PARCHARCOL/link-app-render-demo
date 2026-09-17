@@ -9,9 +9,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v63">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v63">
-  <link rel="preload" href="/logolink.png?v=link-app-v63" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v64">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v64">
+  <link rel="preload" href="/logolink.png?v=link-app-v64" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -305,6 +305,8 @@
     let updateAvailable = false;
     let adminState = null;
     let adminLoading = false;
+    let advisorState = null;
+    let advisorLoading = false;
     let adRotationIndex = 0;
     let adRotationTimer = null;
     let adRotationSignature = "";
@@ -355,7 +357,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v63";
+    const appBuild = "link-app-v64";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -449,6 +451,10 @@
       return Boolean(user()?.isAdmin);
     }
 
+    function isAdvisor() {
+      return Boolean(user()?.isAdmin || user()?.isAdvisor);
+    }
+
     function isTechnician() {
       const role = String(user()?.role || "").toLowerCase();
       return role.includes("tecnico") || role.includes("técnico");
@@ -462,7 +468,7 @@
     }
 
     function validTab(tab) {
-      return ["inicio", "empleos", "marketplace", "mensajes", "cuenta", "admin"].includes(tab);
+      return ["inicio", "empleos", "marketplace", "mensajes", "cuenta", "asesor", "admin"].includes(tab);
     }
 
     function appHistoryState(tab = active, extra = {}) {
@@ -638,7 +644,7 @@
     }
 
     function logoSrc() {
-      return state.settings?.logoUrl || state.settings?.logoData || "/logolink.png?v=link-app-v63";
+      return state.settings?.logoUrl || state.settings?.logoData || "/logolink.png?v=link-app-v64";
     }
 
     function logoImg(className, alt = "Link") {
@@ -1078,6 +1084,7 @@
 
     function menuItems() {
       const items = [...mainTabs];
+      if (isAdvisor()) items.push({ key: "asesor", label: "Asesores" });
       if (isAdmin()) items.push({ key: "admin", label: "Admin" });
       return items;
     }
@@ -1089,6 +1096,7 @@
         marketplace: `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 4h10l2 4v11a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V8l2-4Zm.25 6A3.25 3.25 0 0 0 12 12.87A3.25 3.25 0 0 0 16.75 10H17v8H7v-8h.25ZM8.2 6l-.75 2H11V6H8.2Zm4.8 0v2h3.55l-.75-2H13Z"/></svg>`,
         mensajes: `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v7A2.5 2.5 0 0 1 17.5 15H10l-4.4 4.15A1 1 0 0 1 4 18.42V5.5Zm4 2.25a1 1 0 0 0 0 2h8a1 1 0 1 0 0-2H8Zm0 4a1 1 0 1 0 0 2h5.5a1 1 0 1 0 0-2H8Z"/></svg>`,
         cuenta: `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 12a4.25 4.25 0 1 0 0-8.5 4.25 4.25 0 0 0 0 8.5Zm0 2c-4.1 0-7.5 2.05-7.5 4.6 0 .77.63 1.4 1.4 1.4h12.2c.77 0 1.4-.63 1.4-1.4 0-2.55-3.4-4.6-7.5-4.6Z"/></svg>`,
+        asesor: `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5 4.5A2.5 2.5 0 0 1 7.5 2h9A2.5 2.5 0 0 1 19 4.5v15a1 1 0 0 1-1.55.83L12 16.7l-5.45 3.63A1 1 0 0 1 5 19.5v-15Zm7 2.25a2.75 2.75 0 1 0 0 5.5 2.75 2.75 0 0 0 0-5.5Zm0 7c-2.18 0-4 .94-4 2.1 0 .36.29.65.65.65h6.7c.36 0 .65-.29.65-.65 0-1.16-1.82-2.1-4-2.1Z"/></svg>`,
         admin: `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2 5 5v5.4c0 4.25 2.98 8.22 7 9.6 4.02-1.38 7-5.35 7-9.6V5l-7-3Zm1 5v4.2l3.25 1.95-1 1.64L11 12.25V7h2Z"/></svg>`,
         descargar: `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M11 4a1 1 0 0 1 2 0v8.15l2.28-2.28a1 1 0 1 1 1.41 1.41l-4 4a1 1 0 0 1-1.41 0l-4-4a1 1 0 1 1 1.41-1.41L11 12.18V4Zm-5 13a1 1 0 0 1 1 1v1h10v-1a1 1 0 1 1 2 0v2a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1Z"/></svg>`,
       };
@@ -1096,6 +1104,7 @@
     }
 
     function renderTabs() {
+      if (active === "asesor" && !isAdvisor()) active = "inicio";
       if (active === "admin" && !isAdmin()) active = "inicio";
       nav.innerHTML = `${menuItems().map((tab) => `
         <button class="menu-btn ${active === tab.key ? "active" : ""}" data-tab="${tab.key}" type="button">
@@ -1161,8 +1170,15 @@
       if (current.isAdmin) {
         return `<div class="module-actions">
           <button class="primary" data-go-tab="admin" type="button">Abrir Admin</button>
+          <button class="secondary" data-go-tab="asesor" type="button">Bandeja asesores</button>
           <button class="secondary" data-account-flow="brand" type="button">Cambiar logo</button>
           <button class="secondary" data-account-flow="token-review" type="button">Soportes de consignacion</button>
+        </div>`;
+      }
+      if (current.isAdvisor) {
+        return `<div class="module-actions">
+          <button class="primary" data-go-tab="asesor" type="button">Bandeja asesores</button>
+          <button class="secondary" data-go-tab="mensajes" type="button">Chat tecnico</button>
         </div>`;
       }
       if (current.accountType === "company") {
@@ -1857,10 +1873,15 @@
       return `<div class="admin-row">
         <div>
           <h3>${esc(item.displayName || item.email)}</h3>
-          <p>${esc(item.email)} | ${esc(item.accountType)}${item.role ? ` | ${esc(item.role)}` : ""}${item.accountType === "company" ? ` | ${esc(tokensLabel(item.tokenBalance))}` : ""}${item.isAdmin ? " | Admin" : ""}</p>
+          <p>${esc(item.email)} | ${esc(item.accountType)}${item.role ? ` | ${esc(item.role)}` : ""}${item.accountType === "company" ? ` | ${esc(tokensLabel(item.tokenBalance))}` : ""}${item.isAdmin ? " | Admin" : ""}${item.isAdvisor ? " | Asesor" : ""}</p>
           <p>${userStatusBadge(item.status)} ${esc(inactivityText(item))}</p>
         </div>
         <div class="admin-actions">
+          ${item.isAdmin
+            ? ""
+            : item.isAdvisor
+            ? `<button class="secondary" data-user-action="remove-advisor" data-id="${esc(item.id)}" type="button">Quitar asesor</button>`
+            : `<button class="secondary" data-user-action="make-advisor" data-id="${esc(item.id)}" type="button">Hacer asesor</button>`}
           ${inactive
             ? `<button class="secondary" data-user-action="activate" data-id="${esc(item.id)}" type="button">Activar</button>`
             : `<button class="secondary" data-user-action="deactivate" data-id="${esc(item.id)}" type="button">Dar de baja</button>`}
@@ -2091,6 +2112,112 @@
         <summary>Movimientos de tokens (${items.length})</summary>
         <div class="form admin-list">${items.length ? items.map((item) => adminTokenRow(item)).join("") : empty("No hay movimientos de tokens.")}</div>
       </details>`;
+    }
+
+    function advisorKpis() {
+      const pendingTokens = pendingCount(advisorState?.tokenRequests || []);
+      const pendingAds = pendingCount(advisorState?.adRequests || []);
+      const applications = advisorState?.vacancyApplications?.length || 0;
+      const activeUsers = (advisorState?.users || []).filter((item) => item.status !== "inactive").length;
+      return `<div class="admin-kpis">
+        <div class="admin-kpi"><strong>${pendingTokens}</strong><span>Recargas pendientes</span></div>
+        <div class="admin-kpi"><strong>${pendingAds}</strong><span>Pautas pendientes</span></div>
+        <div class="admin-kpi"><strong>${applications}</strong><span>Candidatos recibidos</span></div>
+        <div class="admin-kpi"><strong>${activeUsers}</strong><span>Usuarios activos</span></div>
+      </div>`;
+    }
+
+    function advisorTokenRow(item) {
+      return `<div class="admin-row">
+        <div>
+          <h3>${esc(tokensLabel(item.requestedTokens))} | ${esc(moneyLabel(item.amountPesos))} | ${esc(item.company || item.userName || item.userEmail || "Empresa")}</h3>
+          <p>${statusBadge(item.status)} ${esc(dateTimeLabel(item.createdAt))}</p>
+          <p>${esc(item.contactName || "")}${item.phone ? ` | ${esc(item.phone)}` : ""}${item.email ? ` | ${esc(item.email)}` : ""}</p>
+          ${item.adminNote ? `<p>${esc(item.adminNote)}</p>` : ""}
+        </div>
+        <div class="admin-actions">
+          ${item.receiptUrl ? `<button class="secondary" data-token-request-receipt="${esc(item.id)}" type="button">Ver soporte</button>` : ""}
+          ${isAdmin() && item.status === "pending" ? `<button class="primary" data-token-request-action="approve" data-id="${esc(item.id)}" type="button">Aprobar</button>` : ""}
+        </div>
+      </div>`;
+    }
+
+    function advisorAdRow(item) {
+      return `<div class="admin-row">
+        <div>
+          <h3>${esc(item.company || item.requesterName || "Solicitud de pauta")}</h3>
+          <p>${esc(item.requesterName || "")} | ${esc(item.phone || "")} | ${esc(item.email || "")} | ${esc(item.city || "")} | Prioridad ${esc(priorityValue(item.priority))}/10</p>
+          <p>${esc(item.message || "Sin mensaje")} ${statusBadge(item.status)}</p>
+        </div>
+        <div class="admin-actions">
+          ${isAdmin() && item.status === "pending" ? `<button class="primary" data-ad-request-action="approve" data-id="${esc(item.id)}" type="button">Aprobar</button>` : ""}
+        </div>
+      </div>`;
+    }
+
+    function advisorCandidateRow(item) {
+      return `<div class="admin-row">
+        <div>
+          <h3>${esc(item.candidateName || "Candidato")}</h3>
+          <p><strong>${esc(item.vacancyTitle || "Vacante")}</strong> | ${esc(item.vacancyCompany || "Empresa")} | ${esc(dateTimeLabel(item.createdAt))}</p>
+          <p>${esc(item.candidateHeadline || "Perfil pendiente")} ${item.candidateCity ? `| ${esc(item.candidateCity)}` : ""}</p>
+          <p><span class="pill">Contacto protegido</span> <span class="pill">HV completa solo con tokens de empresa</span></p>
+        </div>
+      </div>`;
+    }
+
+    function advisorUserRow(item) {
+      return `<div class="admin-row">
+        <div>
+          <h3>${esc(item.displayName || item.email)}</h3>
+          <p>${esc(item.email)}${item.phone ? ` | ${esc(item.phone)}` : ""}${item.city ? ` | ${esc(item.city)}` : ""}</p>
+          <p>${esc(item.accountType)}${item.companyName ? ` | ${esc(item.companyName)}` : ""}${item.accountType === "company" ? ` | ${esc(tokensLabel(item.tokenBalance))}` : ""}${item.isAdmin ? " | Admin" : ""}${item.isAdvisor ? " | Asesor" : ""}</p>
+          <p>${userStatusBadge(item.status)} ${esc(inactivityText(item))}</p>
+        </div>
+      </div>`;
+    }
+
+    function advisorThreadRow(item) {
+      return `<div class="admin-row">
+        <div>
+          <h3>${esc(item.topic || item.name || "Chat tecnico")}</h3>
+          <p>${esc(item.author || item.authorEmail || item.name || "Usuario")} | ${esc(dateTimeLabel(item.lastMessageAt || item.createdAt))} | ${esc(item.messageCount || 0)} mensajes ${statusBadge(item.status)}</p>
+        </div>
+      </div>`;
+    }
+
+    function advisorSection(title, items, renderer, emptyText, open = true) {
+      return `<details class="editor" ${open ? "open" : ""}>
+        <summary>${esc(title)} (${items.length})</summary>
+        <div class="form admin-list">${items.length ? items.map(renderer).join("") : empty(emptyText)}</div>
+      </details>`;
+    }
+
+    function renderAsesor() {
+      if (!user()) {
+        return `<section class="screen">${hero("Asesores", "Bandeja operativa para usuarios, recargas, pautas y chat tecnico.")}${accountPanel()}</section>`;
+      }
+      if (!isAdvisor()) {
+        return `<section class="screen">${hero("Asesores", "Bandeja operativa para usuarios, recargas, pautas y chat tecnico.")}${locked("Tu cuenta no tiene permisos de asesor.")}</section>`;
+      }
+      if (!advisorState && !advisorLoading) loadAdvisorState();
+      const tokens = advisorState?.tokenRequests || [];
+      const ads = advisorState?.adRequests || [];
+      const candidates = advisorState?.vacancyApplications || [];
+      const users = advisorState?.users || [];
+      const threads = advisorState?.threads || [];
+      const body = advisorState ? `<div class="admin-grid">
+        ${advisorKpis()}
+        ${advisorSection("Recargas de tokens", tokens, advisorTokenRow, "No hay solicitudes de recarga.")}
+        ${advisorSection("Solicitudes de pauta", ads, advisorAdRow, "No hay solicitudes de pauta.")}
+        ${advisorSection("Candidatos a vacantes", candidates, advisorCandidateRow, "No hay candidatos inscritos.")}
+        ${advisorSection("Chat tecnico", threads, advisorThreadRow, "No hay conversaciones tecnicas.")}
+        ${advisorSection("Usuarios", users, advisorUserRow, "No hay usuarios registrados.", false)}
+      </div>` : empty("Cargando bandeja de asesores.");
+      return `<section class="screen">${hero("Asesores", "Bandeja operativa de soporte sin quitar funciones de Admin.")}
+        ${formError()}
+        ${body}
+      </section>`;
     }
 
     function renderAdmin() {
@@ -2737,6 +2864,7 @@
             accountMessage = data.message || "Clave actualizada.";
             applyState(await api.state());
             adminState = null;
+            advisorState = null;
             navigateTab("admin");
             return;
           }
@@ -2756,6 +2884,7 @@
         accountMessage = "";
         applyState(await api.state());
         adminState = null;
+        advisorState = null;
         render();
       } catch (error) {
         showError(error);
@@ -2767,6 +2896,7 @@
       sessionToken = "";
       localStorage.removeItem(authKey);
       adminState = null;
+      advisorState = null;
       tokenRechargeOpen = false;
       editingAdCampaignId = "";
       pendingAdminJump = "";
@@ -2927,10 +3057,23 @@
       }
     }
 
+    async function loadAdvisorState() {
+      advisorLoading = true;
+      try {
+        advisorState = await api.get("/api/advisor/state");
+      } catch (error) {
+        advisorState = { error: error.message, users: [], tokenRequests: [], adRequests: [], vacancyApplications: [], threads: [] };
+      } finally {
+        advisorLoading = false;
+        if (active === "asesor") render();
+      }
+    }
+
     async function moderate(type, id, action) {
       try {
         await api.post("/api/admin/moderate", { type, id, action });
         adminState = await api.get("/api/admin/state");
+        if (isAdvisor()) advisorState = await api.get("/api/advisor/state").catch(() => advisorState);
         applyState(await api.state());
         render();
       } catch (error) {
@@ -2940,10 +3083,11 @@
 
     async function moderateUser(id, action) {
       try {
-        const labels = { activate: "activar", deactivate: "dar de baja", delete: "eliminar" };
+        const labels = { activate: "activar", deactivate: "dar de baja", delete: "eliminar", "make-advisor": "hacer asesor", "remove-advisor": "quitar asesor" };
         if (!window.confirm(`Desea ${labels[action] || "modificar"} este usuario?`)) return;
         await api.post("/api/admin/users", { id, action });
         adminState = await api.get("/api/admin/state");
+        if (isAdvisor()) advisorState = await api.get("/api/advisor/state").catch(() => advisorState);
         applyState(await api.state());
         render();
       } catch (error) {
@@ -3024,6 +3168,7 @@
         const payload = Object.fromEntries(new FormData(form).entries());
         await api.post("/api/admin/tokens/load", payload);
         adminState = await api.get("/api/admin/state");
+        if (isAdvisor()) advisorState = await api.get("/api/advisor/state").catch(() => advisorState);
         applyState(await api.state());
         render();
         showNotice("Tokens cargados a la empresa.");
@@ -3038,6 +3183,7 @@
         if (!window.confirm(`Desea ${labels[action] || "procesar esta solicitud"}?`)) return;
         await api.post("/api/admin/token-requests", { id, action });
         adminState = await api.get("/api/admin/state");
+        if (isAdvisor()) advisorState = await api.get("/api/advisor/state").catch(() => advisorState);
         applyState(await api.state());
         render();
         showNotice(action === "approve" ? "Recarga aprobada y tokens cargados." : "Solicitud procesada.");
@@ -3066,6 +3212,7 @@
       try {
         const result = await api.post("/api/admin/ad-requests", { id, action });
         adminState = await api.get("/api/admin/state");
+        if (isAdvisor()) advisorState = await api.get("/api/advisor/state").catch(() => advisorState);
         applyState(await api.state());
         render();
         showNotice(result.status === "approved" ? "Pauta aprobada y publicada en el banner." : "Solicitud de pauta procesada.");
@@ -3083,6 +3230,7 @@
       if (active === "marketplace") content.innerHTML = renderMarketplace();
       if (active === "mensajes") content.innerHTML = renderMensajes();
       if (active === "cuenta") content.innerHTML = renderCuenta();
+      if (active === "asesor") content.innerHTML = renderAsesor();
       if (active === "admin") content.innerHTML = renderAdmin();
       renderMediaViewer();
       bindForms();
