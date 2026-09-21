@@ -3752,7 +3752,7 @@ function sendMedia(res, req, media) {
   const total = media.buffer.length;
   const headers = {
     "content-type": media.type || "application/octet-stream",
-    "cache-control": "public, max-age=3600",
+    "cache-control": "public, max-age=31536000, immutable",
     "accept-ranges": "bytes",
   };
   const range = req.headers.range || "";
