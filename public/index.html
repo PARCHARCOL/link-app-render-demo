@@ -9,9 +9,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v64">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v64">
-  <link rel="preload" href="/logolink.png?v=link-app-v64" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v65">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v65">
+  <link rel="preload" href="/logolink.png?v=link-app-v65" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -357,7 +357,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v64";
+    const appBuild = "link-app-v65";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -644,7 +644,7 @@
     }
 
     function logoSrc() {
-      return state.settings?.logoUrl || state.settings?.logoData || "/logolink.png?v=link-app-v64";
+      return state.settings?.logoUrl || state.settings?.logoData || "/logolink.png?v=link-app-v65";
     }
 
     function logoImg(className, alt = "Link") {
@@ -652,7 +652,7 @@
       const isVideo = /^video\//i.test(state.settings?.logoType || "") || /^data:video\//i.test(src);
       return `<div class="${className}">${
         isVideo
-          ? `<video src="${esc(src)}" muted autoplay loop playsinline aria-label="${esc(alt)}"></video>`
+          ? `<video src="${esc(src)}" poster="/logolink.png?v=link-app-v65" preload="auto" muted autoplay loop playsinline aria-label="${esc(alt)}"></video>`
           : `<img src="${esc(src)}" alt="${esc(alt)}">`
       }</div>`;
     }
