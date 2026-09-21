@@ -305,7 +305,7 @@ function adMediaUrl(item) {
   const id = text(item.id, 80);
   if (!id) return "";
   const version = item.updatedAt || item.updated_at || item.createdAt || item.created_at || id;
-  return `/api/ad-campaigns/${encodeURIComponent(id)}/media?v=${encodeURIComponent(String(version))}`;
+  return `/api/media-files/${encodeURIComponent(id)}?v=${encodeURIComponent(String(version))}`;
 }
 
 function publicAdCampaign(item) {
@@ -3814,7 +3814,9 @@ async function handleApi(req, res, url) {
     return;
   }
 
-  const adMediaMatch = url.pathname.match(/^\/api\/ad-campaigns\/([^/]+)\/media$/);
+  const adMediaMatch = url.pathname.match(/^\/api\/media-files\/([^/]+)$/)
+    || url.pathname.match(/^\/api\/promo-media\/([^/]+)$/)
+    || url.pathname.match(/^\/api\/ad-campaigns\/([^/]+)\/media$/);
   if ((req.method === "GET" || req.method === "HEAD") && adMediaMatch) {
     const media = await readAdCampaignMedia(decodeURIComponent(adMediaMatch[1]));
     if (!media) {
