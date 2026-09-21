@@ -9,9 +9,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v65">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v65">
-  <link rel="preload" href="/logolink.png?v=link-app-v65" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v66">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v66">
+  <link rel="preload" href="/icon-512.png?v=link-app-v66" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -26,12 +26,16 @@
     .phone-left{min-width:0;display:flex;align-items:center;gap:8px}
     .app-back{min-height:25px;padding:0 10px;color:var(--red);background:#fff;border:1px solid rgba(215,25,32,.2);border-radius:999px;font-size:11px;font-weight:950;box-shadow:0 6px 14px rgba(137,57,0,.12)}
     .brand-row{width:100%;min-width:0;display:grid;grid-template-columns:116px minmax(0,1fr) auto;gap:18px;align-items:center;margin-bottom:16px}
-    .brand-mark,.logo-card,.logo-hero,.login-logo{display:grid;place-items:center;overflow:hidden;background:radial-gradient(circle at 45% 32%,#3b230b 0%,#140d09 58%,#000 100%);border:3px solid #fff;border-radius:22px;box-shadow:0 16px 34px rgba(255,106,0,.34),0 0 0 1px rgba(255,255,255,.28)}
+    .brand-mark,.logo-card,.logo-hero,.login-logo{position:relative;display:grid;place-items:center;overflow:hidden;background:radial-gradient(circle at 45% 32%,#3b230b 0%,#140d09 58%,#000 100%);border:3px solid #fff;border-radius:22px;box-shadow:0 16px 34px rgba(255,106,0,.34),0 0 0 1px rgba(255,255,255,.28)}
     .brand-mark{width:116px;height:116px}
     .brand-mark img,.logo-card img,.login-logo img,.product-logo img{width:88%;height:88%;object-fit:contain}
     .logo-hero img{width:92%;height:92%;object-fit:contain}
     .brand-mark video,.logo-card video,.login-logo video{width:88%;height:88%;object-fit:contain}
     .logo-hero video{width:92%;height:92%;object-fit:contain}
+    .logo-media-fallback,.logo-media-content{position:absolute;inset:0;margin:auto}
+    .logo-media-fallback{z-index:0;opacity:1}
+    .logo-media-content{z-index:1;opacity:0;transition:opacity .16s ease}
+    .logo-media-content.is-ready{opacity:1}
     .brand-copy{min-width:0}
     .brand-copy p{margin:0 0 2px;color:var(--red);font-size:11px;font-weight:900;text-transform:uppercase}
     .brand-copy strong{display:block;margin:0;color:var(--ink);font-size:38px;line-height:1;font-weight:950}
@@ -84,9 +88,13 @@
     .ad-banner{grid-column:2;grid-row:2;position:relative;isolation:isolate;min-height:0;align-self:stretch;display:grid;grid-template-columns:1fr;align-content:end;margin:14px 16px 16px 0;padding:0 14px;overflow:hidden;color:#fff;background:#fff7ea;border:1px solid rgba(255,106,0,.58);border-radius:18px;box-shadow:0 16px 34px rgba(35,8,0,.18)}
     .ad-banner::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(0,0,0,.12) 0%,rgba(0,0,0,.18) 38%,rgba(0,0,0,.9) 100%)}
     .ad-media{position:absolute;inset:0;z-index:-2;display:grid;place-items:center;width:auto;height:auto;overflow:hidden;background:radial-gradient(circle at 50% 35%,rgba(255,179,70,.4),transparent 0 20%,transparent 42%),linear-gradient(160deg,#120500 0%,#4c1102 43%,#d71920 100%)}
-    .ad-media::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.12),transparent 34%,rgba(0,0,0,.44));pointer-events:none}
-    .ad-media-bg{position:absolute;inset:-18px;z-index:0;width:calc(100% + 36px);height:calc(100% + 36px);object-fit:cover;filter:blur(14px) brightness(.58) saturate(1.12);transform:scale(1.04);opacity:.95}
-    .ad-media-main{position:absolute;inset:0;z-index:1;width:100%;height:100%;object-fit:contain;filter:saturate(1.06) brightness(.9)}
+    .ad-media::before{content:"";position:absolute;inset:0;z-index:3;background:linear-gradient(180deg,rgba(0,0,0,.12),transparent 34%,rgba(0,0,0,.44));pointer-events:none}
+    .ad-media-fallback{position:absolute;inset:0;z-index:0;width:100%;height:100%;padding:14%;object-fit:contain;background:#090302;opacity:1;transition:opacity .18s ease}
+    .ad-media-bg{position:absolute;inset:-18px;z-index:1;width:calc(100% + 36px);height:calc(100% + 36px);object-fit:cover;filter:blur(14px) brightness(.58) saturate(1.12);transform:scale(1.04);opacity:0;transition:opacity .18s ease}
+    .ad-media-main{position:absolute;inset:0;z-index:2;width:100%;height:100%;object-fit:contain;filter:saturate(1.06) brightness(.9);opacity:0;transition:opacity .18s ease}
+    .ad-media.is-ready .ad-media-fallback{opacity:0}
+    .ad-media.is-ready .ad-media-bg{opacity:.95}
+    .ad-media.is-ready .ad-media-main{opacity:1}
     .ad-media img,.ad-media video{display:block}
     .ad-media.ad-placeholder{background:radial-gradient(circle at 78% 55%,rgba(255,190,89,.45),transparent 0 18%,transparent 36%),linear-gradient(135deg,#0b0503 0%,#5a1604 42%,#d71920 100%)}
     .ad-copy{grid-column:1/-1;position:relative;z-index:1;min-width:0;max-width:100%;display:grid;align-content:end;padding:18px 0;text-shadow:0 2px 10px rgba(0,0,0,.65)}
@@ -357,7 +365,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v65";
+    const appBuild = "link-app-v66";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -644,16 +652,18 @@
     }
 
     function logoSrc() {
-      return state.settings?.logoUrl || state.settings?.logoData || "/logolink.png?v=link-app-v65";
+      return state.settings?.logoUrl || state.settings?.logoData || "/icon-512.png?v=link-app-v66";
     }
 
     function logoImg(className, alt = "Link") {
       const src = logoSrc();
       const isVideo = /^video\//i.test(state.settings?.logoType || "") || /^data:video\//i.test(src);
-      return `<div class="${className}">${
+      return `<div class="${className}">
+        <img class="logo-media-fallback" src="/icon-512.png?v=link-app-v66" alt="${esc(alt)}">
+        ${
         isVideo
-          ? `<video src="${esc(src)}" poster="/logolink.png?v=link-app-v65" preload="auto" muted autoplay loop playsinline aria-label="${esc(alt)}"></video>`
-          : `<img src="${esc(src)}" alt="${esc(alt)}">`
+          ? `<video class="logo-media-content" src="${esc(src)}" preload="auto" muted autoplay loop playsinline aria-label="${esc(alt)}" onloadeddata="if(this.videoWidth>8&&this.videoHeight>8)this.classList.add('is-ready')" oncanplay="if(this.videoWidth>8&&this.videoHeight>8)this.classList.add('is-ready')"></video>`
+          : `<img class="logo-media-content" src="${esc(src)}" alt="${esc(alt)}" onload="if(this.naturalWidth>8&&this.naturalHeight>8)this.classList.add('is-ready')">`
       }</div>`;
     }
 
@@ -837,9 +847,9 @@
       const src = ad?.mediaUrl || ad?.mediaData || "";
       if (!src) return `<div class="ad-media ad-placeholder" aria-hidden="true"></div>`;
       if (String(ad.mediaType || "").startsWith("video/")) {
-        return `<div class="ad-media"><video class="ad-media-bg" src="${esc(src)}" muted autoplay loop playsinline preload="metadata" aria-hidden="true"></video><video class="ad-media-main" data-ad-main-video="1" src="${esc(src)}" ${adMuted ? "muted" : ""} autoplay loop playsinline preload="metadata"></video></div>`;
+        return `<div class="ad-media"><img class="ad-media-fallback" src="/icon-512.png?v=link-app-v66" alt=""><video class="ad-media-bg" src="${esc(src)}" muted autoplay loop playsinline preload="auto" aria-hidden="true"></video><video class="ad-media-main" data-ad-main-video="1" src="${esc(src)}" ${adMuted ? "muted" : ""} autoplay loop playsinline preload="auto"></video></div>`;
       }
-      return `<div class="ad-media"><img class="ad-media-bg" src="${esc(src)}" alt="" aria-hidden="true"><img class="ad-media-main" src="${esc(src)}" alt="${esc(ad.title || "Pauta")}"></div>`;
+      return `<div class="ad-media"><img class="ad-media-fallback" src="/icon-512.png?v=link-app-v66" alt=""><img class="ad-media-bg" src="${esc(src)}" alt="" aria-hidden="true"><img class="ad-media-main" src="${esc(src)}" alt="${esc(ad.title || "Pauta")}"></div>`;
     }
 
     function renderMediaViewer() {
@@ -942,6 +952,32 @@
       }
     }
 
+    function syncAdMediaReady() {
+      adBanner.classList.remove("ad-media-ready", "ad-media-failed");
+      const frame = adBanner.querySelector(".ad-media:not(.ad-placeholder)");
+      const media = frame?.querySelector("[data-ad-main-video], .ad-media-main");
+      if (!frame || !media) return;
+      const ready = () => {
+        frame.classList.add("is-ready");
+        adBanner.classList.add("ad-media-ready");
+      };
+      const failed = () => adBanner.classList.add("ad-media-failed");
+      if (media instanceof HTMLVideoElement) {
+        if (media.readyState >= 2) ready();
+        else {
+          media.addEventListener("loadeddata", ready, { once: true });
+          media.addEventListener("canplay", ready, { once: true });
+          media.addEventListener("error", failed, { once: true });
+        }
+        return;
+      }
+      if (media.complete && media.naturalWidth) ready();
+      else {
+        media.addEventListener("load", ready, { once: true });
+        media.addEventListener("error", failed, { once: true });
+      }
+    }
+
     function clearAdRotationTimer() {
       if (adRotationTimer) window.clearTimeout(adRotationTimer);
       adRotationTimer = null;
@@ -1033,6 +1069,7 @@
           <button class="secondary" data-open-ad-request="1" type="button">Pautar aqui</button>
         </div>`;
       bindAdBannerActions();
+      syncAdMediaReady();
       syncAdMediaFrame();
       scheduleAdRotation(ad, ads);
     }
