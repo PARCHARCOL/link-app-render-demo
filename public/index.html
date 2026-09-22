@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v70">
-  <link rel="icon" href="/icon-192.png?v=link-app-v70" type="image/png">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v70">
-  <link rel="preload" href="/icon-512.png?v=link-app-v70" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v71">
+  <link rel="icon" href="/icon-192.png?v=link-app-v71" type="image/png">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v71">
+  <link rel="preload" href="/icon-512.png?v=link-app-v71" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -373,7 +373,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v70";
+    const appBuild = "link-app-v71";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -666,14 +666,14 @@
     }
 
     function logoSrc() {
-      return state.settings?.logoUrl || state.settings?.logoData || "/icon-512.png?v=link-app-v70";
+      return state.settings?.logoUrl || state.settings?.logoData || "/icon-512.png?v=link-app-v71";
     }
 
     function logoImg(className, alt = "Link") {
       const src = logoSrc();
       const isVideo = /^video\//i.test(state.settings?.logoType || "") || /^data:video\//i.test(src);
       return `<div class="${className}">
-        <img class="logo-media-fallback" src="/icon-512.png?v=link-app-v70" alt="${esc(alt)}">
+        <img class="logo-media-fallback" src="/icon-512.png?v=link-app-v71" alt="${esc(alt)}">
         ${
         isVideo
           ? `<video class="logo-media-content" src="${esc(src)}" preload="auto" muted autoplay loop playsinline aria-label="${esc(alt)}" onloadeddata="if(this.videoWidth>8&&this.videoHeight>8)this.classList.add('is-ready')" oncanplay="if(this.videoWidth>8&&this.videoHeight>8)this.classList.add('is-ready')"></video>`
@@ -861,9 +861,9 @@
       const src = ad?.mediaUrl || ad?.mediaData || "";
       if (!src) return `<div class="feature-media feature-placeholder" aria-hidden="true"></div>`;
       if (String(ad.mediaType || "").startsWith("video/")) {
-        return `<div class="feature-media"><img class="feature-media-fallback" src="/icon-512.png?v=link-app-v70" alt=""><canvas class="feature-media-bg" width="320" height="180" aria-hidden="true"></canvas><video class="feature-media-main" data-feature-main-video="1" src="${esc(src)}" ${adMuted ? "muted" : ""} autoplay loop playsinline preload="auto"></video></div>`;
+        return `<div class="feature-media"><img class="feature-media-fallback" src="/icon-512.png?v=link-app-v71" alt=""><canvas class="feature-media-bg" width="320" height="180" aria-hidden="true"></canvas><video class="feature-media-main" data-feature-main-video="1" src="${esc(src)}" ${adMuted ? "muted" : ""} autoplay loop playsinline preload="auto"></video></div>`;
       }
-      return `<div class="feature-media"><img class="feature-media-fallback" src="/icon-512.png?v=link-app-v70" alt=""><img class="feature-media-bg" src="${esc(src)}" alt="" aria-hidden="true"><img class="feature-media-main" src="${esc(src)}" alt="${esc(ad.title || "Pauta")}"></div>`;
+      return `<div class="feature-media"><img class="feature-media-fallback" src="/icon-512.png?v=link-app-v71" alt=""><img class="feature-media-bg" src="${esc(src)}" alt="" aria-hidden="true"><img class="feature-media-main" src="${esc(src)}" alt="${esc(ad.title || "Pauta")}"></div>`;
     }
 
     function renderMediaViewer() {
@@ -3151,23 +3151,28 @@
         if (!ok) return;
       }
       const popup = window.open("", "_blank");
-      if (popup) {
-        popup.document.write("<!doctype html><html lang=\"es\"><meta charset=\"utf-8\"><title>Link</title><body><p>Cargando hoja de vida...</p></body></html>");
-        popup.document.close();
+      if (!popup) {
+        showError(new Error("El navegador bloqueo la ventana. Permite ventanas emergentes e intenta de nuevo; no se descontaron tokens."));
+        return;
       }
+      popup.document.write("<!doctype html><html lang=\"es\"><meta charset=\"utf-8\"><title>Link</title><body><p>Cargando hoja de vida...</p></body></html>");
+      popup.document.close();
       try {
         clearError();
         const data = await api.post(`/api/resumes/${encodeURIComponent(id)}/download`, {});
-        if (!popup) throw new Error("El navegador bloqueo la ventana. Permite ventanas emergentes e intenta de nuevo.");
         popup.document.open();
         popup.document.write(data.html || "");
         popup.document.close();
-        applyState(await api.state());
-        render();
         const afterBalance = Number(data.tokenBalance ?? user()?.tokenBalance ?? beforeBalance);
         showNotice(requiresTokens ? `Se descontaron ${tokensLabel(cost)}. Saldo actual: ${tokensLabel(afterBalance)}.` : "HV completa abierta.");
+        try {
+          applyState(await api.state());
+          render();
+        } catch {
+          // The CV is already delivered; a failed refresh must not close it.
+        }
       } catch (error) {
-        if (popup) popup.close();
+        popup.close();
         showError(error);
       }
     }
