@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v69">
-  <link rel="icon" href="/icon-192.png?v=link-app-v69" type="image/png">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v69">
-  <link rel="preload" href="/icon-512.png?v=link-app-v69" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v70">
+  <link rel="icon" href="/icon-192.png?v=link-app-v70" type="image/png">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v70">
+  <link rel="preload" href="/icon-512.png?v=link-app-v70" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -96,6 +96,7 @@
     .feature-media.is-ready .feature-media-fallback{opacity:0}
     .feature-media.is-ready .feature-media-bg{opacity:.95}
     .feature-media.is-ready .feature-media-main{opacity:1}
+    .feature-media.feature-pending{visibility:hidden}
     .feature-media img,.feature-media video,.feature-media canvas{display:block}
     .feature-media.feature-placeholder{background:radial-gradient(circle at 78% 55%,rgba(255,190,89,.45),transparent 0 18%,transparent 36%),linear-gradient(135deg,#0b0503 0%,#5a1604 42%,#d71920 100%)}
     .feature-copy{grid-column:1/-1;position:relative;z-index:1;min-width:0;max-width:100%;display:grid;align-content:end;padding:18px 0;text-shadow:0 2px 10px rgba(0,0,0,.65)}
@@ -324,6 +325,8 @@
     let adRotationTimer = null;
     let adRotationSignature = "";
     let adRenderedKey = "";
+    let adTransitionTimer = null;
+    let adTransitionId = 0;
     let adMuted = true;
     let menuButtonsCollapsed = false;
     let appHistoryReady = false;
@@ -370,7 +373,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v69";
+    const appBuild = "link-app-v70";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -663,14 +666,14 @@
     }
 
     function logoSrc() {
-      return state.settings?.logoUrl || state.settings?.logoData || "/icon-512.png?v=link-app-v69";
+      return state.settings?.logoUrl || state.settings?.logoData || "/icon-512.png?v=link-app-v70";
     }
 
     function logoImg(className, alt = "Link") {
       const src = logoSrc();
       const isVideo = /^video\//i.test(state.settings?.logoType || "") || /^data:video\//i.test(src);
       return `<div class="${className}">
-        <img class="logo-media-fallback" src="/icon-512.png?v=link-app-v69" alt="${esc(alt)}">
+        <img class="logo-media-fallback" src="/icon-512.png?v=link-app-v70" alt="${esc(alt)}">
         ${
         isVideo
           ? `<video class="logo-media-content" src="${esc(src)}" preload="auto" muted autoplay loop playsinline aria-label="${esc(alt)}" onloadeddata="if(this.videoWidth>8&&this.videoHeight>8)this.classList.add('is-ready')" oncanplay="if(this.videoWidth>8&&this.videoHeight>8)this.classList.add('is-ready')"></video>`
@@ -858,9 +861,9 @@
       const src = ad?.mediaUrl || ad?.mediaData || "";
       if (!src) return `<div class="feature-media feature-placeholder" aria-hidden="true"></div>`;
       if (String(ad.mediaType || "").startsWith("video/")) {
-        return `<div class="feature-media"><img class="feature-media-fallback" src="/icon-512.png?v=link-app-v69" alt=""><canvas class="feature-media-bg" width="320" height="180" aria-hidden="true"></canvas><video class="feature-media-main" data-feature-main-video="1" src="${esc(src)}" ${adMuted ? "muted" : ""} autoplay loop playsinline preload="auto"></video></div>`;
+        return `<div class="feature-media"><img class="feature-media-fallback" src="/icon-512.png?v=link-app-v70" alt=""><canvas class="feature-media-bg" width="320" height="180" aria-hidden="true"></canvas><video class="feature-media-main" data-feature-main-video="1" src="${esc(src)}" ${adMuted ? "muted" : ""} autoplay loop playsinline preload="auto"></video></div>`;
       }
-      return `<div class="feature-media"><img class="feature-media-fallback" src="/icon-512.png?v=link-app-v69" alt=""><img class="feature-media-bg" src="${esc(src)}" alt="" aria-hidden="true"><img class="feature-media-main" src="${esc(src)}" alt="${esc(ad.title || "Pauta")}"></div>`;
+      return `<div class="feature-media"><img class="feature-media-fallback" src="/icon-512.png?v=link-app-v70" alt=""><img class="feature-media-bg" src="${esc(src)}" alt="" aria-hidden="true"><img class="feature-media-main" src="${esc(src)}" alt="${esc(ad.title || "Pauta")}"></div>`;
     }
 
     function renderMediaViewer() {
@@ -1097,15 +1100,79 @@
       adRenderedKey = renderKey;
       const title = ad?.title || "Tu publicidad aqui";
       const subtitle = ad?.body || ad?.advertiser || "Pauta visible en todas las ventanas de Link.";
-      adBanner.classList.toggle("feature-has-media", Boolean(ad?.mediaUrl || ad?.mediaData));
-      adBanner.innerHTML = `
-        ${adMedia(ad)}
-        <div class="feature-copy"><strong>${esc(title)}</strong><span>${esc(subtitle)}</span></div>
+      const details = `<div class="feature-copy"><strong>${esc(title)}</strong><span>${esc(subtitle)}</span></div>
         <div class="feature-actions">
           ${String(ad?.mediaType || "").startsWith("video/") ? `<button class="secondary" data-feature-sound="1" type="button">${adMuted ? "Sonido" : "Silenciar"}</button>` : ""}
           ${ad?.targetUrl ? `<a class="mini-btn" href="${esc(ad.targetUrl)}" target="_blank" rel="noopener noreferrer">Ver oferta</a>` : ""}
           <button class="secondary" data-open-feature-request="1" type="button">Pautar aqui</button>
         </div>`;
+      adTransitionId += 1;
+      const transitionId = adTransitionId;
+      if (adTransitionTimer) window.clearTimeout(adTransitionTimer);
+      adTransitionTimer = null;
+      adBanner.querySelector(".feature-pending")?.remove();
+      const previous = adBanner.querySelector(".feature-media");
+      if (previous && (ad?.mediaUrl || ad?.mediaData)) {
+        // Keep the previous frame visible while the next campaign loads.
+        clearAdRotationTimer();
+        const holder = document.createElement("div");
+        holder.innerHTML = adMedia(ad);
+        const frame = holder.firstElementChild;
+        const media = frame?.querySelector("[data-feature-main-video], .feature-media-main");
+        if (frame && media) {
+          frame.classList.add("feature-pending");
+          if (media instanceof HTMLVideoElement) {
+            media.autoplay = false;
+            media.removeAttribute("autoplay");
+          }
+          adBanner.append(frame);
+          let settled = false;
+          const commit = () => {
+            if (settled || transitionId !== adTransitionId) return;
+            settled = true;
+            if (adTransitionTimer) window.clearTimeout(adTransitionTimer);
+            adTransitionTimer = null;
+            previous.remove();
+            adBanner.querySelector(".feature-copy")?.remove();
+            adBanner.querySelector(".feature-actions")?.remove();
+            frame.classList.remove("feature-pending");
+            adBanner.insertAdjacentHTML("beforeend", details);
+            adBanner.classList.toggle("feature-has-media", true);
+            bindAdBannerActions();
+            syncAdMediaReady();
+            syncAdMediaFrame();
+            scheduleAdRotation(ad, ads);
+          };
+          const skip = () => {
+            if (settled || transitionId !== adTransitionId) return;
+            settled = true;
+            if (adTransitionTimer) window.clearTimeout(adTransitionTimer);
+            adTransitionTimer = null;
+            frame.remove();
+            if (uniqueAdCount(ads) > 1) advanceAdBanner();
+            else {
+              adRenderedKey = "";
+              adTransitionTimer = window.setTimeout(renderAdBanner, 5000);
+            }
+          };
+          adTransitionTimer = window.setTimeout(skip, 12000);
+          if (media instanceof HTMLVideoElement) {
+            media.addEventListener("loadeddata", commit, { once: true });
+            media.addEventListener("error", skip, { once: true });
+            if (media.readyState >= 2) commit();
+            else media.load();
+          } else {
+            media.addEventListener("load", commit, { once: true });
+            media.addEventListener("error", skip, { once: true });
+            if (media.complete && media.naturalWidth) commit();
+          }
+          return;
+        }
+      }
+      adBanner.classList.toggle("feature-has-media", Boolean(ad?.mediaUrl || ad?.mediaData));
+      adBanner.innerHTML = `
+        ${adMedia(ad)}
+        ${details}`;
       bindAdBannerActions();
       syncAdMediaReady();
       syncAdMediaFrame();
