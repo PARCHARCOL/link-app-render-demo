@@ -172,6 +172,62 @@ test("registration, vacancy applications, private CVs, tokens, and advisor acces
   await api(`/api/resumes/${resume.id}/download`, { token: company.token, body: {}, status: 402 });
   assert.equal((await api("/api/me", { token: company.token })).user.tokenBalance, 0);
 
+  await api("/api/admin/learning-materials", {
+    body: { kind: "programas", title: "Programa sin admin", fileName: "demo.zip", fileData: "data:application/zip;base64,UEsDBAoAAAAA" },
+    status: 401,
+  });
+  const program = await api("/api/admin/learning-materials", {
+    token: admin.token,
+    status: 201,
+    body: { kind: "programas", title: "Herramienta de prueba", description: "Instalador para casinos", fileName: "herramienta.zip", fileData: "data:application/zip;base64,UEsDBAoAAAAA", tokenCost: 5, status: "published" },
+  });
+  assert.equal(program.status, "published");
+  assert.equal(program.tokenCost, 5);
+  await api("/api/admin/learning-materials", {
+    token: admin.token,
+    status: 400,
+    body: { kind: "programas", title: "Formato rechazado", fileName: "demo.pdf", fileData: "data:application/pdf;base64,dGVzdA==" },
+  });
+  await api("/api/admin/learning-materials", {
+    token: company.token,
+    status: 403,
+    body: { kind: "programas", title: "Sin permiso", fileName: "demo.zip", fileData: "data:application/zip;base64,UEsDBAoAAAAA" },
+  });
+  const training = await api("/api/admin/learning-materials", {
+    token: admin.token,
+    status: 201,
+    body: { kind: "capacitaciones", title: "Induccion de prueba", fileName: "induccion.pdf", fileData: "data:application/pdf;base64,SG9sYQ==", tokenCost: 3, status: "published" },
+  });
+  const catalog = await api("/api/state");
+  assert.deepEqual(catalog.learningMaterials.map((item) => item.id), [training.id, program.id]);
+  assert.equal("mediaData" in catalog.learningMaterials[0], false);
+  assert.equal("fileData" in catalog.learningMaterials[0], false);
+  await api(`/api/learning-materials/${program.id}/download`, { body: {}, status: 401 });
+  await api(`/api/learning-materials/${program.id}/download`, { token: candidate.token, body: {}, status: 403 });
+  await api("/api/admin/tokens/load", {
+    token: admin.token,
+    body: { userId: company.user.id, amount: 10, note: "learning material test" },
+  });
+  const programDownload = await fetch(`${base}/api/learning-materials/${program.id}/download`, {
+    method: "POST", headers: { authorization: `Bearer ${company.token}`, "content-type": "application/json" }, body: "{}",
+  });
+  assert.equal(programDownload.status, 200);
+  assert.equal(programDownload.headers.get("content-type"), "application/zip");
+  assert.match(programDownload.headers.get("content-disposition"), /attachment/);
+  assert.equal(programDownload.headers.get("x-link-token-balance"), "5");
+  assert.deepEqual(Buffer.from(await programDownload.arrayBuffer()), Buffer.from("UEsDBAoAAAAA", "base64"));
+  const trainingDownload = await fetch(`${base}/api/learning-materials/${training.id}/download`, {
+    method: "POST", headers: { authorization: `Bearer ${company.token}`, "content-type": "application/json" }, body: "{}",
+  });
+  assert.equal(trainingDownload.status, 200);
+  assert.equal(trainingDownload.headers.get("content-type"), "application/pdf");
+  assert.equal(trainingDownload.headers.get("x-link-token-balance"), "2");
+  await api(`/api/learning-materials/${program.id}/download`, { token: company.token, body: {}, status: 402 });
+  assert.equal((await api("/api/me", { token: company.token })).user.tokenBalance, 2);
+  const learningAdminState = await api("/api/admin/state", { token: admin.token });
+  assert.ok(learningAdminState.content.learningMaterials.some((item) => item.id === program.id));
+  assert.ok(learningAdminState.tokenTransactions.some((item) => item.kind === "learning_download" && item.referenceId === training.id));
+
   const imageData = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/lXcAAAAASUVORK5CYII=";
   const lowAd = await api("/api/admin/ad-campaigns", {
     token: admin.token,

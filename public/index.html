@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v71">
-  <link rel="icon" href="/icon-192.png?v=link-app-v71" type="image/png">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v71">
-  <link rel="preload" href="/icon-512.png?v=link-app-v71" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v72">
+  <link rel="icon" href="/icon-192.png?v=link-app-v72" type="image/png">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v72">
+  <link rel="preload" href="/icon-512.png?v=link-app-v72" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -312,6 +312,7 @@
     let adRequestOpen = false;
     let tokenRechargeOpen = false;
     let editingAdCampaignId = "";
+    let editingLearningMaterialId = "";
     let pendingAdminJump = "";
     let installPromptEvent = null;
     let installMessage = "";
@@ -373,12 +374,14 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v71";
+    const appBuild = "link-app-v72";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
       { key: "empleos", label: "Bolsa de Empleo" },
       { key: "marketplace", label: "Compra/Ventas" },
+      { key: "programas", label: "Programas" },
+      { key: "capacitaciones", label: "Capacitaciones" },
       { key: "mensajes", label: "Chat Tecnico" },
     ];
 
@@ -426,6 +429,7 @@
         vacancies: [],
         vacancyApplications: [],
         products: [],
+        learningMaterials: [],
         threads: [],
         officialNews: [],
         officialNewsUpdatedAt: null,
@@ -490,7 +494,7 @@
     }
 
     function validTab(tab) {
-      return ["inicio", "empleos", "marketplace", "mensajes", "cuenta", "asesor", "admin"].includes(tab);
+      return ["inicio", "empleos", "marketplace", "programas", "capacitaciones", "mensajes", "cuenta", "asesor", "admin"].includes(tab);
     }
 
     function appHistoryState(tab = active, extra = {}) {
@@ -528,6 +532,7 @@
     function protectedMessage(tab) {
       if (tab === "empleos") return "Para subir o descargar una hoja de vida debe registrarse o ingresar.";
       if (tab === "marketplace") return "Para publicar ventas, subir fotos o videos en Compra/Ventas debe registrarse o ingresar.";
+      if (tab === "programas" || tab === "capacitaciones") return "Para descargar materiales con tokens necesita una cuenta de empresa.";
       if (tab === "mensajes") return "Para escribir, responder o participar en el Chat Tecnico debe registrarse o ingresar.";
       return "Para usar esta opcion debe registrarse o ingresar.";
     }
@@ -666,14 +671,14 @@
     }
 
     function logoSrc() {
-      return state.settings?.logoUrl || state.settings?.logoData || "/icon-512.png?v=link-app-v71";
+      return state.settings?.logoUrl || state.settings?.logoData || "/icon-512.png?v=link-app-v72";
     }
 
     function logoImg(className, alt = "Link") {
       const src = logoSrc();
       const isVideo = /^video\//i.test(state.settings?.logoType || "") || /^data:video\//i.test(src);
       return `<div class="${className}">
-        <img class="logo-media-fallback" src="/icon-512.png?v=link-app-v71" alt="${esc(alt)}">
+        <img class="logo-media-fallback" src="/icon-512.png?v=link-app-v72" alt="${esc(alt)}">
         ${
         isVideo
           ? `<video class="logo-media-content" src="${esc(src)}" preload="auto" muted autoplay loop playsinline aria-label="${esc(alt)}" onloadeddata="if(this.videoWidth>8&&this.videoHeight>8)this.classList.add('is-ready')" oncanplay="if(this.videoWidth>8&&this.videoHeight>8)this.classList.add('is-ready')"></video>`
@@ -861,9 +866,9 @@
       const src = ad?.mediaUrl || ad?.mediaData || "";
       if (!src) return `<div class="feature-media feature-placeholder" aria-hidden="true"></div>`;
       if (String(ad.mediaType || "").startsWith("video/")) {
-        return `<div class="feature-media"><img class="feature-media-fallback" src="/icon-512.png?v=link-app-v71" alt=""><canvas class="feature-media-bg" width="320" height="180" aria-hidden="true"></canvas><video class="feature-media-main" data-feature-main-video="1" src="${esc(src)}" ${adMuted ? "muted" : ""} autoplay loop playsinline preload="auto"></video></div>`;
+        return `<div class="feature-media"><img class="feature-media-fallback" src="/icon-512.png?v=link-app-v72" alt=""><canvas class="feature-media-bg" width="320" height="180" aria-hidden="true"></canvas><video class="feature-media-main" data-feature-main-video="1" src="${esc(src)}" ${adMuted ? "muted" : ""} autoplay loop playsinline preload="auto"></video></div>`;
       }
-      return `<div class="feature-media"><img class="feature-media-fallback" src="/icon-512.png?v=link-app-v71" alt=""><img class="feature-media-bg" src="${esc(src)}" alt="" aria-hidden="true"><img class="feature-media-main" src="${esc(src)}" alt="${esc(ad.title || "Pauta")}"></div>`;
+      return `<div class="feature-media"><img class="feature-media-fallback" src="/icon-512.png?v=link-app-v72" alt=""><img class="feature-media-bg" src="${esc(src)}" alt="" aria-hidden="true"><img class="feature-media-main" src="${esc(src)}" alt="${esc(ad.title || "Pauta")}"></div>`;
     }
 
     function renderMediaViewer() {
@@ -1236,6 +1241,8 @@
         inicio: `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19a1 1 0 0 1 1 1v14.5A2.5 2.5 0 0 1 17.5 21H6.75A2.75 2.75 0 0 1 4 18.25V5.5Zm3 1v9h10v-9H7Zm0 11.25a.75.75 0 0 0 .75.75H17.5a1 1 0 0 0 1-1H7.75a.75.75 0 0 0-.75.75Z"/></svg>`,
         empleos: `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9 4h6a2 2 0 0 1 2 2v2h2.5A1.5 1.5 0 0 1 21 9.5v8A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5v-8A1.5 1.5 0 0 1 4.5 8H7V6a2 2 0 0 1 2-2Zm0 4h6V6H9v2Zm3 7.5a3.5 3.5 0 0 0 3.35-2.5h3.15v4.5a.5.5 0 0 1-.5.5H6a.5.5 0 0 1-.5-.5V13h3.15A3.5 3.5 0 0 0 12 15.5Z"/></svg>`,
         marketplace: `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 4h10l2 4v11a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V8l2-4Zm.25 6A3.25 3.25 0 0 0 12 12.87A3.25 3.25 0 0 0 16.75 10H17v8H7v-8h.25ZM8.2 6l-.75 2H11V6H8.2Zm4.8 0v2h3.55l-.75-2H13Z"/></svg>`,
+        programas: `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 3h8l5 5v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h1Zm7 2v4h4l-4-4ZM8 12v2h8v-2H8Zm0 4v2h8v-2H8Z"/></svg>`,
+        capacitaciones: `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3 2 8l10 5 8-4v6h2V8L12 3Zm-6 9.3V16c0 2.1 2.7 4 6 4s6-1.9 6-4v-3.7l-6 3-6-3Z"/></svg>`,
         mensajes: `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v7A2.5 2.5 0 0 1 17.5 15H10l-4.4 4.15A1 1 0 0 1 4 18.42V5.5Zm4 2.25a1 1 0 0 0 0 2h8a1 1 0 1 0 0-2H8Zm0 4a1 1 0 1 0 0 2h5.5a1 1 0 1 0 0-2H8Z"/></svg>`,
         cuenta: `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 12a4.25 4.25 0 1 0 0-8.5 4.25 4.25 0 0 0 0 8.5Zm0 2c-4.1 0-7.5 2.05-7.5 4.6 0 .77.63 1.4 1.4 1.4h12.2c.77 0 1.4-.63 1.4-1.4 0-2.55-3.4-4.6-7.5-4.6Z"/></svg>`,
         asesor: `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5 4.5A2.5 2.5 0 0 1 7.5 2h9A2.5 2.5 0 0 1 19 4.5v15a1 1 0 0 1-1.55.83L12 16.7l-5.45 3.63A1 1 0 0 1 5 19.5v-15Zm7 2.25a2.75 2.75 0 1 0 0 5.5 2.75 2.75 0 0 0 0-5.5Zm0 7c-2.18 0-4 .94-4 2.1 0 .36.29.65.65.65h6.7c.36 0 .65-.29.65-.65 0-1.16-1.82-2.1-4-2.1Z"/></svg>`,
@@ -1933,6 +1940,41 @@
       </section>`;
     }
 
+    function renderLearningCatalog(kind) {
+      const current = user();
+      const isPrograms = kind === "programas";
+      const title = isPrograms ? "Programas" : "Capacitaciones";
+      const subtitle = isPrograms
+        ? "Instaladores y herramientas disponibles para empresas del sector."
+        : "Videos, presentaciones y documentos de formacion para empresas.";
+      const items = (state.learningMaterials || []).filter((item) => item.kind === kind && item.status === "published");
+      const company = current?.accountType === "company";
+      const canDownload = Boolean(company || current?.isAdmin);
+      const balance = Number(current?.tokenBalance || 0);
+      const rows = items.length ? items.map((item) => {
+        const cost = Number(item.tokenCost || 0);
+        const action = canDownload
+          ? company && balance < cost
+            ? `<button class="secondary" data-open-token-recharge="1" type="button">Recargar tokens</button>`
+            : `<button class="mini-btn" data-learning-download="${esc(item.id)}" type="button">Descargar${cost ? ` (${esc(tokensLabel(cost))})` : " gratis"}</button>`
+          : current
+            ? `<button class="secondary" type="button" disabled>Solo cuentas de empresa</button>`
+            : `<button class="mini-btn" data-protected-tab="${kind}" data-protected-mode="register" type="button">Ingresar como empresa</button>`;
+        return `<article class="card">
+          <div class="topline"><span>${esc(item.fileName || "Archivo")}</span><strong>${esc(tokensLabel(cost))}</strong></div>
+          <h3>${esc(item.title)}</h3>
+          ${item.description ? `<p>${esc(item.description)}</p>` : ""}
+          <div class="action-row">${action}</div>
+        </article>`;
+      }).join("") : empty(isPrograms ? "Aun no hay programas publicados." : "Aun no hay materiales de capacitacion publicados.");
+      const accountNote = company
+        ? `<p class="notice"><strong>Saldo disponible: ${esc(tokensLabel(balance))}</strong> | El costo se muestra en cada material.</p>`
+        : current?.isAdmin
+          ? `<p class="notice">Admin puede descargar los archivos sin descontar tokens.</p>`
+          : `<p class="notice">La descarga es exclusiva para cuentas de empresa y descuenta los tokens indicados en cada material.</p>`;
+      return `<section class="screen">${hero(title, subtitle)}${formError()}${accountNote}<div class="section-title"><h2>${esc(title)} disponibles</h2><small>${items.length}</small></div><div class="stack">${rows}</div></section>`;
+    }
+
     function threadCard(thread, compact = false) {
       const messages = Array.isArray(thread.messages) ? thread.messages : [];
       const first = messages[0] || { author: thread.name, text: "" };
@@ -2260,6 +2302,48 @@
       </details>`;
     }
 
+    function renderLearningMaterialForm(item = null) {
+      const isEdit = Boolean(item);
+      const kind = item?.kind || "programas";
+      const status = item?.status || "pending";
+      return `<form class="form" data-action="/api/admin/learning-materials" id="learningMaterialForm">
+        ${isEdit ? `<input name="id" type="hidden" value="${esc(item.id)}">` : ""}
+        <select name="kind" required>
+          <option value="programas" ${kind === "programas" ? "selected" : ""}>Programas / instaladores</option>
+          <option value="capacitaciones" ${kind === "capacitaciones" ? "selected" : ""}>Capacitaciones</option>
+        </select>
+        <input name="title" placeholder="Nombre del programa o material" value="${esc(item?.title || "")}" required>
+        <textarea name="description" placeholder="Descripcion, version, requisitos o contenido">${esc(item?.description || "")}</textarea>
+        <div class="split">
+          <label>Tokens por descarga<input name="tokenCost" type="number" min="1" max="100000" step="1" value="${esc(item?.tokenCost ?? 1)}" required></label>
+          <select name="status">
+            <option value="pending" ${status === "pending" ? "selected" : ""}>Pendiente de revision</option>
+            <option value="published" ${status === "published" ? "selected" : ""}>Publicado</option>
+            <option value="hidden" ${status === "hidden" ? "selected" : ""}>Oculto</option>
+          </select>
+        </div>
+        <label class="file-field">
+          <span>${isEdit ? "Reemplazar archivo (opcional)" : "Archivo para descargar"}</span>
+          <input name="resourceFile" type="file" accept=".exe,.msi,.zip,.7z,.rar,.mp4,.m4v,.mov,.webm,.pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx" ${isEdit ? "" : "required"}>
+          <small data-file-status="resourceFile">${isEdit ? `Actual: ${esc(item.fileName || "archivo")}. Si no seleccionas otro, se conserva. Para cambiar entre Programa y Capacitacion, reemplaza el archivo.` : "Programas: EXE, MSI o ZIP/7Z/RAR. Capacitaciones: video, PDF, PowerPoint, Word, Excel o ZIP. Maximo 20 MB."}</small>
+        </label>
+        <button class="primary" type="submit">${isEdit ? "Guardar cambios" : "Guardar material"}</button>
+        ${isEdit ? `<button class="secondary" data-edit-learning-material="" type="button">Cancelar edicion</button>` : ""}
+      </form>`;
+    }
+
+    function learningMaterialAdminRow(item) {
+      const editing = editingLearningMaterialId === item.id;
+      const label = item.kind === "programas" ? "Programa" : "Capacitacion";
+      return `<div class="admin-row"><div><h3>${esc(item.title)}</h3><p>${esc(label)} | ${esc(item.fileName || "Sin archivo")} | ${esc(tokensLabel(item.tokenCost))} por descarga | ${statusBadge(item.status)}</p>${item.description ? `<p>${esc(item.description)}</p>` : ""}</div><div class="admin-actions"><button class="secondary" data-edit-learning-material="${esc(item.id)}" type="button">Editar</button>${item.status === "published" ? `<button class="secondary" data-admin-action="hide" data-type="learningMaterials" data-id="${esc(item.id)}" type="button">Ocultar</button>` : `<button class="primary" data-admin-action="publish" data-type="learningMaterials" data-id="${esc(item.id)}" type="button">Publicar</button>`}<button class="danger-btn" data-admin-action="delete" data-type="learningMaterials" data-id="${esc(item.id)}" type="button">Eliminar</button></div></div>${editing ? renderLearningMaterialForm(item) : ""}`;
+    }
+
+    function renderLearningMaterialsAdminPanel() {
+      const items = adminState?.content?.learningMaterials || [];
+      const editing = items.find((item) => item.id === editingLearningMaterialId) || null;
+      return `<details class="editor" open id="admin-learning-materials"><summary>Programas y capacitaciones (${items.length})</summary><div class="form"><p class="field-note">Admin carga cada archivo y define el cobro en tokens. Los materiales quedan privados hasta que los publiques. Descarga limitada a cuentas de empresa.</p></div>${!editing ? renderLearningMaterialForm() : ""}<div class="form admin-list">${items.length ? items.map(learningMaterialAdminRow).join("") : empty("Aun no se han cargado programas ni capacitaciones.")}</div></details>`;
+    }
+
     function advisorKpis() {
       const pendingTokens = pendingCount(advisorState?.tokenRequests || []);
       const pendingAds = pendingCount(advisorState?.adRequests || []);
@@ -2381,6 +2465,7 @@
         ${renderTokenAdminPanel()}
         ${renderAdvertisingAdminPanel()}
         ${renderAdCampaignsAdminPanel()}
+        ${renderLearningMaterialsAdminPanel()}
         ${renderTokenTransactions()}
         <div id="admin-content" class="admin-grid">
           ${renderAdminGroup("news", "Noticias internas")}
@@ -2568,6 +2653,15 @@
             } else {
               throw new Error("Solo se permiten imagenes o videos de pauta");
             }
+          } else if (key === "resourceFile") {
+            if (value.size > 20_000_000) throw new Error("El archivo debe pesar menos de 20 MB");
+            const ext = fileName(value).match(/\.[^.]+$/)?.[0] || "";
+            const programs = [".exe", ".msi", ".zip", ".7z", ".rar"];
+            const training = [".mp4", ".m4v", ".mov", ".webm", ".pdf", ".ppt", ".pptx", ".doc", ".docx", ".xls", ".xlsx", ".zip"];
+            const kind = form.querySelector('[name="kind"]')?.value || "";
+            if (!(kind === "programas" ? programs : training).includes(ext)) throw new Error(kind === "programas" ? "Programas acepta EXE, MSI, ZIP, 7Z o RAR" : "Formato no permitido para capacitaciones");
+            payload.fileName = value.name;
+            payload.fileData = await fileToDataUrl(value);
           } else if (key === "receiptFile") {
             const isPdf = /\.pdf$/i.test(fileName(value)) || /application\/pdf/i.test(fileMime(value, ""));
             const isReceiptImage = /image\/(?:png|jpe?g|webp)/i.test(fileMime(value, "")) || /\.(jpe?g|png|webp)$/i.test(fileName(value));
@@ -2711,6 +2805,16 @@
           }
         };
       });
+      document.querySelectorAll("[data-edit-learning-material]").forEach((button) => {
+        button.onclick = () => {
+          editingLearningMaterialId = button.dataset.editLearningMaterial || "";
+          render();
+          if (editingLearningMaterialId) window.setTimeout(() => document.getElementById("learningMaterialForm")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+        };
+      });
+      document.querySelectorAll("[data-learning-download]").forEach((button) => {
+        button.onclick = () => downloadLearningMaterial(button.dataset.learningDownload || "");
+      });
       document.querySelectorAll("[data-media-preview]").forEach((button) => {
         button.onclick = () => {
           openMediaPreview({
@@ -2814,7 +2918,7 @@
         form.onsubmit = async (event) => {
           event.preventDefault();
           const isProduct = form.dataset.action === "/api/products";
-          const hasAdMedia = form.dataset.action === "/api/ad-requests" || form.dataset.action === "/api/admin/ad-campaigns";
+          const hasAdMedia = form.dataset.action === "/api/ad-requests" || form.dataset.action === "/api/admin/ad-campaigns" || form.dataset.action === "/api/admin/learning-materials";
           await submitWithPayload(
             form,
             isProduct || hasAdMedia ? "Preparando foto o video..." : "Procesando...",
@@ -3075,6 +3179,7 @@
       if (path === "/api/token-requests") return "Solicitud de recarga enviada. Admin verificara el comprobante y activara los tokens.";
       if (path === "/api/profile") return "Datos actualizados correctamente.";
       if (path === "/api/admin/ad-campaigns") return pending ? "Campana publicitaria guardada pendiente." : "Campana publicitaria publicada.";
+      if (path === "/api/admin/learning-materials") return pending ? "Material guardado. Queda pendiente de publicacion." : "Programa o capacitacion guardado correctamente.";
       if (path === "/api/threads") return pending ? "Tema guardado. Queda pendiente de aprobacion por Admin." : "Tema publicado correctamente.";
       if (/^\/api\/threads\/[^/]+\/messages$/.test(path)) return "Respuesta guardada correctamente.";
       return pending ? "Guardado. Queda pendiente de aprobacion por Admin." : "Guardado correctamente.";
@@ -3097,6 +3202,7 @@
         }
         if (path === "/api/resumes" || path === "/api/vacancies") bolsaAction = "";
         if (path === "/api/admin/ad-campaigns") editingAdCampaignId = "";
+        if (path === "/api/admin/learning-materials") editingLearningMaterialId = "";
         render();
         showNotice(saveSuccessMessage(path, result));
       } catch (error) {
@@ -3173,6 +3279,59 @@
         }
       } catch (error) {
         popup.close();
+        showError(error);
+      }
+    }
+
+    async function downloadLearningMaterial(id) {
+      const current = user();
+      if (!current) {
+        confirmRegistration(active, "login");
+        return;
+      }
+      if (current.accountType !== "company" && !current.isAdmin) {
+        showError(new Error("Las descargas son exclusivas para cuentas de empresa."));
+        return;
+      }
+      const item = (state.learningMaterials || []).find((material) => material.id === id);
+      const cost = Number(item?.tokenCost || 0);
+      const beforeBalance = Number(current.tokenBalance || 0);
+      const needsTokens = current.accountType === "company" && cost > 0;
+      if (needsTokens && beforeBalance < cost) {
+        showError(new Error(`Saldo insuficiente. Necesitas ${tokensLabel(cost)} y tienes ${tokensLabel(beforeBalance)}.`));
+        return;
+      }
+      if (needsTokens && !window.confirm(`Se descontaran ${tokensLabel(cost)} para descargar este material. Deseas continuar?`)) return;
+      try {
+        clearError();
+        const response = await fetch(`/api/learning-materials/${encodeURIComponent(id)}/download`, {
+          method: "POST",
+          headers: { "content-type": "application/json", authorization: `Bearer ${sessionToken}` },
+          body: "{}",
+        });
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({}));
+          throw new Error(error.error || "No se pudo descargar el material");
+        }
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        const disposition = response.headers.get("content-disposition") || "";
+        const encodedName = disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+        const plainName = disposition.match(/filename="?([^";]+)"?/i)?.[1];
+        anchor.href = url;
+        anchor.download = encodedName ? decodeURIComponent(encodedName) : plainName || item?.fileName || "material-link";
+        document.body.append(anchor);
+        anchor.click();
+        anchor.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        const afterBalance = Number(response.headers.get("x-link-token-balance") ?? beforeBalance);
+        showNotice(needsTokens ? `Descarga iniciada. Se descontaron ${tokensLabel(cost)}. Saldo: ${tokensLabel(afterBalance)}.` : "Descarga iniciada.");
+        try {
+          applyState(await api.state());
+          render();
+        } catch {}
+      } catch (error) {
         showError(error);
       }
     }
@@ -3379,6 +3538,8 @@
       if (active === "inicio") content.innerHTML = renderInicio();
       if (active === "empleos") content.innerHTML = renderBolsa();
       if (active === "marketplace") content.innerHTML = renderMarketplace();
+      if (active === "programas") content.innerHTML = renderLearningCatalog("programas");
+      if (active === "capacitaciones") content.innerHTML = renderLearningCatalog("capacitaciones");
       if (active === "mensajes") content.innerHTML = renderMensajes();
       if (active === "cuenta") content.innerHTML = renderCuenta();
       if (active === "asesor") content.innerHTML = renderAsesor();

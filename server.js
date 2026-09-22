@@ -44,6 +44,7 @@ const emptyData = {
   vacancies: [],
   vacancyApplications: [],
   products: [],
+  learningMaterials: [],
   threads: [],
   passwordRecoveryRequests: [],
   adRequests: [],
@@ -442,6 +443,68 @@ function isAdminEmail(value) {
 
 function isAdminUser(user) {
   return Boolean(user?.isAdmin || user?.is_admin || isAdminEmail(user?.email));
+}
+
+const learningMaterialTypes = {
+  programas: {
+    extensions: new Set([".exe", ".msi", ".zip", ".7z", ".rar"]),
+    label: "Programa",
+  },
+  capacitaciones: {
+    extensions: new Set([".mp4", ".m4v", ".mov", ".webm", ".pdf", ".ppt", ".pptx", ".doc", ".docx", ".xls", ".xlsx", ".zip"]),
+    label: "Capacitacion",
+  },
+};
+const learningMimeTypes = {
+  ".mp4": "video/mp4",
+  ".m4v": "video/mp4",
+  ".mov": "video/quicktime",
+  ".webm": "video/webm",
+  ".pdf": "application/pdf",
+  ".ppt": "application/vnd.ms-powerpoint",
+  ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  ".doc": "application/msword",
+  ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ".xls": "application/vnd.ms-excel",
+  ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  ".exe": "application/octet-stream",
+  ".msi": "application/octet-stream",
+  ".zip": "application/zip",
+  ".7z": "application/x-7z-compressed",
+  ".rar": "application/vnd.rar",
+};
+const maxLearningMaterialDataChars = 29_000_000;
+
+function learningMaterialFile(body, kind) {
+  const type = learningMaterialTypes[kind];
+  if (!type) fail(400, "Tipo de material no valido");
+  const fileName = text(body.fileName, 180).replace(/[\\/\u0000-\u001f\u007f]/g, "_");
+  const extension = path.extname(fileName).toLowerCase();
+  if (!type.extensions.has(extension)) {
+    fail(400, kind === "programas"
+      ? "El instalador debe ser EXE, MSI, ZIP, 7Z o RAR"
+      : "Capacitaciones: use video MP4/MOV/WEBM, PDF, Office o ZIP");
+  }
+  const mediaData = dataText(body.fileData, maxLearningMaterialDataChars);
+  if (!mediaData) fail(400, "Seleccione un archivo valido");
+  const dataUri = mediaData.match(/^data:([^;,]+);base64,([a-z0-9+/=\r\n]+)$/i);
+  if (!dataUri || !Buffer.from(dataUri[2], "base64").length) fail(400, "El archivo seleccionado no es valido");
+  return { fileName, mediaType: learningMimeTypes[extension], mediaData };
+}
+
+function publicLearningMaterial(item = {}) {
+  return {
+    id: text(item.id, 80),
+    kind: text(item.kind, 40),
+    title: text(item.title, 140),
+    description: text(item.description, 1200),
+    fileName: text(item.fileName || item.file_name, 180),
+    mediaType: text(item.mediaType || item.media_type, 120),
+    tokenCost: intSetting(item.tokenCost ?? item.token_cost, 1, 1, 100_000),
+    status: normalizeStatus(item.status),
+    createdAt: item.createdAt || item.created_at || null,
+    updatedAt: item.updatedAt || item.updated_at || null,
+  };
 }
 
 function isAdvisorUser(user) {
@@ -1117,6 +1180,9 @@ function normalizeData(parsed = {}) {
       status: text(item.status, 40) || "new",
     })) : [],
     products: Array.isArray(parsed.products) ? parsed.products.map((item) => ({ ...item, status: normalizeStatus(item.status) })) : [],
+    learningMaterials: Array.isArray(parsed.learningMaterials)
+      ? parsed.learningMaterials.map((item) => ({ ...item, status: normalizeStatus(item.status), tokenCost: intSetting(item.tokenCost ?? item.token_cost, 1, 1, 100_000) }))
+      : [],
     threads: Array.isArray(parsed.threads) ? parsed.threads.map((item) => ({ ...item, status: normalizeStatus(item.status) })) : [],
     adRequests: Array.isArray(parsed.adRequests) ? parsed.adRequests.map((item) => ({ ...item, priority: adPriority(item.priority), status: normalizeAdRequestStatus(item.status) })) : [],
     adCampaigns: Array.isArray(parsed.adCampaigns) ? parsed.adCampaigns.map((item) => ({ ...item, priority: adPriority(item.priority), status: normalizeStatus(item.status) })) : [],
@@ -1262,6 +1328,21 @@ async function initDb() {
       media_name text DEFAULT '',
       status text NOT NULL DEFAULT 'published',
       created_at timestamptz NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS link_learning_materials (
+      id uuid PRIMARY KEY,
+      kind text NOT NULL CHECK (kind IN ('programas', 'capacitaciones')),
+      title text NOT NULL,
+      description text NOT NULL DEFAULT '',
+      file_name text NOT NULL,
+      media_type text NOT NULL,
+      media_data text NOT NULL,
+      token_cost integer NOT NULL DEFAULT 1 CHECK (token_cost >= 1),
+      status text NOT NULL DEFAULT 'published',
+      created_by uuid REFERENCES link_users(id) ON DELETE SET NULL,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now()
     );
 
     CREATE TABLE IF NOT EXISTS link_threads (
@@ -1414,6 +1495,9 @@ async function initDb() {
     ALTER TABLE link_products ADD COLUMN IF NOT EXISTS media_data text DEFAULT '';
     ALTER TABLE link_products ADD COLUMN IF NOT EXISTS media_type text DEFAULT '';
     ALTER TABLE link_products ADD COLUMN IF NOT EXISTS media_name text DEFAULT '';
+    ALTER TABLE link_learning_materials ADD COLUMN IF NOT EXISTS token_cost integer NOT NULL DEFAULT 1;
+    CREATE INDEX IF NOT EXISTS link_learning_materials_catalog_idx
+      ON link_learning_materials (kind, status, created_at DESC);
     ALTER TABLE link_threads ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'published';
     ALTER TABLE link_resumes ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'published';
     ALTER TABLE link_resumes ADD COLUMN IF NOT EXISTS category text DEFAULT '';
@@ -2015,6 +2099,7 @@ async function readData(authUser = null) {
       resumes,
       vacancies,
       vacancyApplications,
+      learningMaterials,
       settings,
       activeAds,
     ] = await Promise.all([
@@ -2081,6 +2166,12 @@ async function readData(authUser = null) {
          ORDER BY a.created_at DESC LIMIT 200`,
         [authUserId, authIsAdmin],
       ),
+      pool.query(
+        `SELECT id, kind, title, description, file_name AS "fileName", media_type AS "mediaType",
+                token_cost AS "tokenCost", status, created_at AS "createdAt", updated_at AS "updatedAt"
+         FROM link_learning_materials WHERE status = 'published'
+         ORDER BY created_at DESC LIMIT 100`,
+      ),
       readSettings(),
       readActiveAdCampaigns(),
     ]);
@@ -2099,6 +2190,7 @@ async function readData(authUser = null) {
       vacancies: vacancies.rows,
       vacancyApplications: vacancyApplications.rows.map(publicVacancyApplication),
       products: products.rows.map(publicProduct),
+      learningMaterials: learningMaterials.rows.map(publicLearningMaterial),
       threads: threads.rows.map((thread) => ({ ...thread, messages: messagesByThread.get(thread.id) || [] })),
       currentUser: authUser,
       storage: storageInfo(),
@@ -2120,6 +2212,9 @@ async function readData(authUser = null) {
     vacancies: data.vacancies.filter(visibleOwner),
     vacancyApplications: data.vacancyApplications.filter(visibleApplication).map((item) => vacancyApplicationFromData(data, item)),
     products: data.products.filter(visibleAuthor).map(publicProduct),
+    learningMaterials: data.learningMaterials
+      .filter((item) => normalizeStatus(item.status) === "published")
+      .map(publicLearningMaterial),
     threads: data.threads.filter(visibleAuthor),
     currentUser: authUser,
     storage: storageInfo(),
@@ -2205,6 +2300,144 @@ async function saveProduct(body, user) {
     await writeJsonData(data);
   }
   return item;
+}
+
+async function saveLearningMaterial(body, admin) {
+  const id = text(body.id, 80);
+  const isUpdate = Boolean(id);
+  if (isUpdate && !isUuid(id)) fail(400, "Material de descarga no valido");
+  const kind = text(body.kind, 40);
+  if (!learningMaterialTypes[kind]) fail(400, "Seleccione Programas o Capacitaciones");
+  const title = text(body.title, 140);
+  if (!title) fail(400, "El titulo es requerido");
+  const tokenCost = intSetting(body.tokenCost, 1, 1, 100_000);
+  const hasFile = Boolean(String(body.fileData || "").trim());
+  if (!hasFile && !isUpdate) fail(400, "Seleccione el archivo para publicar");
+  const file = hasFile ? learningMaterialFile(body, kind) : null;
+  const status = adCampaignStatus(body.status);
+  const description = text(body.description, 1200);
+  const itemId = id || randomUUID();
+
+  if (dbReady) {
+    if (isUpdate) {
+      const previous = await pool.query("SELECT kind, file_name FROM link_learning_materials WHERE id = $1", [itemId]);
+      if (!previous.rowCount) fail(404, "Material no encontrado");
+      const currentExtension = path.extname(previous.rows[0].file_name || "").toLowerCase();
+      if (!hasFile && !learningMaterialTypes[kind].extensions.has(currentExtension)) {
+        fail(400, "El formato del archivo actual no corresponde al tipo seleccionado. Reemplace el archivo para cambiar el tipo.");
+      }
+      const result = await pool.query(
+        `UPDATE link_learning_materials
+         SET kind = $1, title = $2, description = $3,
+             file_name = CASE WHEN $4 THEN $5 ELSE file_name END,
+             media_type = CASE WHEN $4 THEN $6 ELSE media_type END,
+             media_data = CASE WHEN $4 THEN $7 ELSE media_data END,
+             token_cost = $8, status = $9, updated_at = now()
+         WHERE id = $10
+         RETURNING id, kind, title, description, file_name AS "fileName", media_type AS "mediaType",
+                   token_cost AS "tokenCost", status, created_at AS "createdAt", updated_at AS "updatedAt"`,
+        [kind, title, description, hasFile, file?.fileName || "", file?.mediaType || "", file?.mediaData || "", tokenCost, status, itemId],
+      );
+      if (!result.rowCount) fail(404, "Material no encontrado");
+      return publicLearningMaterial(result.rows[0]);
+    }
+    if (!hasFile) fail(400, "Seleccione el archivo para publicar");
+    const result = await pool.query(
+      `INSERT INTO link_learning_materials
+       (id, kind, title, description, file_name, media_type, media_data, token_cost, status, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       RETURNING id, kind, title, description, file_name AS "fileName", media_type AS "mediaType",
+                 token_cost AS "tokenCost", status, created_at AS "createdAt", updated_at AS "updatedAt"`,
+      [itemId, kind, title, description, file.fileName, file.mediaType, file.mediaData, tokenCost, status, admin.id],
+    );
+    return publicLearningMaterial(result.rows[0]);
+  }
+
+  const data = await readJsonData();
+  if (isUpdate) {
+    const index = data.learningMaterials.findIndex((entry) => entry.id === itemId);
+    if (index < 0) fail(404, "Material no encontrado");
+    const current = data.learningMaterials[index];
+    const currentExtension = path.extname(current.fileName || "").toLowerCase();
+    if (!hasFile && !learningMaterialTypes[kind].extensions.has(currentExtension)) {
+      fail(400, "El formato del archivo actual no corresponde al tipo seleccionado. Reemplace el archivo para cambiar el tipo.");
+    }
+    data.learningMaterials[index] = {
+      ...current,
+      kind,
+      title,
+      description,
+      tokenCost,
+      status,
+      updatedAt: nowStamp(),
+      ...(hasFile ? file : {}),
+    };
+  } else {
+    if (!hasFile) fail(400, "Seleccione el archivo para publicar");
+    data.learningMaterials.unshift({
+      id: itemId,
+      kind,
+      title,
+      description,
+      ...file,
+      tokenCost,
+      status,
+      createdBy: admin.id,
+      createdAt: nowStamp(),
+      updatedAt: nowStamp(),
+    });
+  }
+  await writeJsonData(data);
+  return publicLearningMaterial(data.learningMaterials.find((entry) => entry.id === itemId));
+}
+
+async function downloadLearningMaterial(id, user) {
+  if (!isAdminUser(user) && user.accountType !== "company") {
+    fail(403, "Las descargas con tokens son exclusivas para cuentas de empresa.");
+  }
+  const cleanId = text(id, 80);
+  if (!isUuid(cleanId)) fail(404, "Material no encontrado o no publicado");
+  let material;
+  let balance = Number(user.tokenBalance || 0);
+  if (dbReady) {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const result = await client.query(
+        `SELECT id, kind, title, file_name AS "fileName", media_type AS "mediaType", media_data AS "mediaData",
+                token_cost AS "tokenCost", status
+         FROM link_learning_materials WHERE id = $1 FOR SHARE`,
+        [cleanId],
+      );
+      material = result.rows[0];
+      if (!material || normalizeStatus(material.status) !== "published") fail(404, "Material no encontrado o no publicado");
+      if (!mediaDataPayload(material.mediaData)?.buffer.length) fail(404, "El archivo ya no esta disponible");
+      const charge = await chargeTokensWithClient(
+        client, user, intSetting(material.tokenCost, 1, 1, 100_000), "learning_download", cleanId,
+        `Descarga ${learningMaterialTypes[material.kind]?.label || "material"}: ${material.title}`,
+      );
+      balance = charge.balance;
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
+  } else {
+    const data = await readJsonData();
+    material = data.learningMaterials.find((entry) => entry.id === cleanId && normalizeStatus(entry.status) === "published");
+    if (!material) fail(404, "Material no encontrado o no publicado");
+    if (!mediaDataPayload(material.mediaData)?.buffer.length) fail(404, "El archivo ya no esta disponible");
+    const charge = chargeTokensInData(
+      data, user, intSetting(material.tokenCost, 1, 1, 100_000), "learning_download", cleanId,
+      `Descarga ${learningMaterialTypes[material.kind]?.label || "material"}: ${material.title}`,
+    );
+    balance = charge.balance;
+    await writeJsonData(data);
+  }
+  const payload = mediaDataPayload(material.mediaData);
+  return { material, buffer: payload.buffer, mediaType: material.mediaType || learningMimeTypes[path.extname(material.fileName).toLowerCase()] || "application/octet-stream", balance };
 }
 
 async function saveThread(body, user) {
@@ -3101,6 +3334,7 @@ async function moderateAdRequest(body) {
 const moderationTargets = {
   news: { table: "link_news", collection: "news" },
   products: { table: "link_products", collection: "products" },
+  learningMaterials: { table: "link_learning_materials", collection: "learningMaterials" },
   threads: { table: "link_threads", collection: "threads" },
   resumes: { table: "link_resumes", collection: "resumes" },
   vacancies: { table: "link_vacancies", collection: "vacancies" },
@@ -3122,7 +3356,7 @@ function statusFromAction(action) {
 async function readAdminState() {
   const settings = await readSettings();
   if (dbReady) {
-    const [users, recovery, news, products, threads, resumes, vacancies, adRequests, adCampaigns, tokenRequests, tokenTransactions] = await Promise.all([
+    const [users, recovery, news, products, learningMaterials, threads, resumes, vacancies, adRequests, adCampaigns, tokenRequests, tokenTransactions] = await Promise.all([
       pool.query(
         `SELECT id, email, account_type AS "accountType", display_name AS "displayName", city, company_name AS "companyName",
                 role, is_admin AS "isAdmin", (is_advisor OR is_admin) AS "isAdvisor", token_balance AS "tokenBalance", status, last_seen_at AS "lastSeenAt", deactivated_at AS "deactivatedAt",
@@ -3146,6 +3380,11 @@ async function readAdminState() {
         `SELECT p.id, p.name AS title, p.condition AS category, p.status, p.created_at AS "createdAt", u.display_name AS author
          FROM link_products p LEFT JOIN link_users u ON u.id = p.author_id
          ORDER BY p.created_at DESC LIMIT 200`,
+      ),
+      pool.query(
+        `SELECT id, kind, title, description, file_name AS "fileName", media_type AS "mediaType",
+                token_cost AS "tokenCost", status, created_at AS "createdAt", updated_at AS "updatedAt"
+         FROM link_learning_materials ORDER BY created_at DESC LIMIT 200`,
       ),
       pool.query(
         `SELECT t.id, t.topic AS title, 'Chat tecnico' AS category, t.status, t.created_at AS "createdAt", u.display_name AS author
@@ -3201,6 +3440,7 @@ async function readAdminState() {
       content: {
         news: news.rows,
         products: products.rows,
+        learningMaterials: learningMaterials.rows.map(publicLearningMaterial),
         threads: threads.rows,
         resumes: resumes.rows,
         vacancies: vacancies.rows,
@@ -3241,6 +3481,7 @@ async function readAdminState() {
     content: {
       news: summarize(data.news, "title", "category"),
       products: summarize(data.products, "name", "condition"),
+      learningMaterials: data.learningMaterials.map(publicLearningMaterial),
       threads: summarize(data.threads, "topic", "name"),
       resumes: summarize(data.resumes, "fullName", "headline"),
       vacancies: summarize(data.vacancies, "title", "company"),
@@ -3932,6 +4173,12 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (req.method === "POST" && url.pathname === "/api/admin/learning-materials") {
+    const admin = await requireAdmin(req);
+    json(res, 201, await saveLearningMaterial(await readBody(req), admin));
+    return;
+  }
+
   if (req.method === "POST" && url.pathname === "/api/admin/ad-requests") {
     await requireAdmin(req);
     json(res, 200, await moderateAdRequest(await readBody(req)));
@@ -4023,6 +4270,22 @@ async function handleApi(req, res, url) {
   const resumeDownloadMatch = url.pathname.match(/^\/api\/resumes\/([^/]+)\/download$/);
   if (req.method === "POST" && resumeDownloadMatch) {
     json(res, 200, await downloadResume(resumeDownloadMatch[1], await requireUser(req)));
+    return;
+  }
+
+  const learningDownloadMatch = url.pathname.match(/^\/api\/learning-materials\/([^/]+)\/download$/);
+  if (req.method === "POST" && learningDownloadMatch) {
+    const result = await downloadLearningMaterial(decodeURIComponent(learningDownloadMatch[1]), await requireUser(req));
+    const safeName = result.material.fileName.replace(/[^a-z0-9._-]/gi, "_");
+    res.writeHead(200, {
+      "content-type": result.mediaType,
+      "content-length": result.buffer.length,
+      "content-disposition": `attachment; filename="${safeName}"; filename*=UTF-8''${encodeURIComponent(result.material.fileName)}`,
+      "cache-control": "no-store",
+      "x-content-type-options": "nosniff",
+      "x-link-token-balance": String(result.balance),
+    });
+    res.end(result.buffer);
     return;
   }
 
