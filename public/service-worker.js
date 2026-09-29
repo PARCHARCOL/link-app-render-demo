@@ -1,9 +1,10 @@
-const CACHE_NAME = "link-app-v74";
+const CACHE_NAME = "link-app-v75";
 const CORE_ASSETS = [
   "/manifest.webmanifest",
   "/logolink.png",
   "/icon-192.png",
   "/icon-512.png",
+  "/fonts/unifrakturcook.woff2",
 ];
 
 self.addEventListener("install", (event) => {
