@@ -71,6 +71,7 @@ const officialSources = [
       "https://www.coljuegos.gov.co/",
       "https://www.coljuegos.gov.co/publicaciones/noticias/index.php",
       "https://www.coljuegos.gov.co/publicaciones/noticias/?tema=300014",
+      "https://www.coljuegos.gov.co/publicaciones/noticias/?tema=300010",
       "https://www.coljuegos.gov.co/publicaciones/307383/atencion-servicios-restablecidos/",
       "https://www.coljuegos.gov.co/publicaciones/306362/seccion-pqrsd/",
       "https://www.coljuegos.gov.co/publicaciones/306312/canales-de-atencion/index.php",
@@ -148,6 +149,13 @@ const officialSources = [
 ];
 
 const casinoKeywords = [
+  "juego responsable",
+  "juegos responsables",
+  "responsabilidad en el juego",
+  "prevencion de la ludopatia",
+  "prevencion de conductas de riesgo al apostar",
+  "autoexclusion",
+  "juega bien",
   "juegos localizados",
   "juego localizado",
   "juegos de suerte y azar localizados",
