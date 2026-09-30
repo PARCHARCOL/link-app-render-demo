@@ -871,11 +871,42 @@ function officialYearPriority(item) {
   return 1;
 }
 
+function isResponsibleGamingItem(item) {
+  const content = normalizeText(`${item.title || ""} ${item.summary || ""} ${(item.matchedKeywords || []).join(" ")}`);
+  return /\b(juego responsable|juegos responsables|juega bien|autoexclusion|ludopatia|conductas de riesgo al apostar)\b/.test(content);
+}
+
 function officialSourcePriority(item) {
-  if (item.entity === "GAT Events") return 30;
   if (["Coljuegos", "UIAF", "DIAN", "Supersalud"].includes(item.entity)) return 20;
   if (["Fecoljuegos", "Cornazar"].includes(item.entity)) return 10;
+  if (item.entity === "GAT Events") return 5;
   return 0;
+}
+
+function diversifyOfficialItems(items, limit = 18) {
+  const sourceOrder = ["Coljuegos", "Fecoljuegos", "UIAF", "DIAN", "Supersalud", "Cornazar", "GAT Events"];
+  const buckets = new Map(sourceOrder.map((entity) => [entity, items.filter((item) => item.entity === entity)]));
+  const selected = [];
+  const selectedIds = new Set();
+  const firstResponsible = items.find(isResponsibleGamingItem);
+  if (firstResponsible) {
+    selected.push(firstResponsible);
+    selectedIds.add(firstResponsible.id);
+  }
+
+  let added = true;
+  while (selected.length < limit && added) {
+    added = false;
+    for (const entity of sourceOrder) {
+      if (selected.length >= limit) break;
+      const next = buckets.get(entity)?.find((item) => !selectedIds.has(item.id));
+      if (!next) continue;
+      selected.push(next);
+      selectedIds.add(next.id);
+      added = true;
+    }
+  }
+  return selected;
 }
 
 function cleanSummary(value) {
@@ -1136,14 +1167,16 @@ async function refreshOfficialNews() {
 
   const rankedItems = [...byKey.values()]
     .sort((a, b) =>
-      officialYearPriority(b) - officialYearPriority(a)
+      Number(isResponsibleGamingItem(b)) - Number(isResponsibleGamingItem(a))
+      || officialYearPriority(b) - officialYearPriority(a)
       || officialSourcePriority(b) - officialSourcePriority(a)
       || b.score - a.score
       || officialItemYear(b) - officialItemYear(a)
     );
   const recentItems = rankedItems.filter(isRecentOfficialItem);
 
-  officialNewsCache.items = recentItems.slice(0, 18).map(({ score, ...item }) => item);
+  officialNewsCache.items = diversifyOfficialItems(recentItems)
+    .map(({ score, ...item }) => item);
   officialNewsCache.updatedAt = nowStamp();
   officialNewsCache.error = officialNewsCache.items.length === 0
     ? "No se encontraron publicaciones recientes en las fuentes autorizadas."
