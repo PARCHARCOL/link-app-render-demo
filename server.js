@@ -26,6 +26,7 @@ const databaseUrl = databaseEnvEntries[0]?.[1] || "";
 const requirePostgresStorage = process.env.NODE_ENV === "production";
 const officialNewsTtlMs = Number(process.env.OFFICIAL_NEWS_TTL_MS || 10 * 60 * 1000);
 const officialNewsTimeoutMs = Number(process.env.OFFICIAL_NEWS_TIMEOUT_MS || 12_000);
+const officialNewsMaxAgeMs = 30 * 24 * 60 * 60 * 1000;
 const bodyLimitBytes = Number(process.env.BODY_LIMIT_BYTES || 30_000_000);
 const sessionDays = Number(process.env.SESSION_DAYS || 30);
 const defaultAdminEmails = "jhonsilvadiaz@gmail.com";
@@ -853,22 +854,83 @@ function candidateScore(candidate) {
   return score;
 }
 
-function officialItemYear(item) {
-  const years = `${item.title || ""} ${item.summary || ""} ${item.url || ""} ${item.sourceUrl || ""}`.match(/\b20\d{2}\b/g) || [];
-  return years.length ? Math.max(...years.map((year) => Number(year))) : new Date().getFullYear();
+function parsedNewsDate(value) {
+  const input = decodeEntities(String(value || ""));
+  const iso = input.match(/\b(20\d{2})[-/](\d{1,2})[-/](\d{1,2})\b/);
+  if (iso) return new Date(Date.UTC(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]), 12));
+
+  const numeric = input.match(/\b(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})\b/);
+  if (numeric) {
+    const year = Number(numeric[3].length === 2 ? `20${numeric[3]}` : numeric[3]);
+    return new Date(Date.UTC(year, Number(numeric[2]) - 1, Number(numeric[1]), 12));
+  }
+
+  const months = {
+    enero: 0, ene: 0, january: 0, jan: 0,
+    febrero: 1, feb: 1, february: 1,
+    marzo: 2, mar: 2, march: 2,
+    abril: 3, abr: 3, april: 3, apr: 3,
+    mayo: 4, may: 4,
+    junio: 5, jun: 5, june: 5,
+    julio: 6, jul: 6, july: 6,
+    agosto: 7, ago: 7, august: 7, aug: 7,
+    septiembre: 8, setiembre: 8, sep: 8, sept: 8, september: 8,
+    octubre: 9, oct: 9, october: 9,
+    noviembre: 10, nov: 10, november: 10,
+    diciembre: 11, dic: 11, december: 11, dec: 11,
+  };
+  const normalized = normalizeText(input);
+  const monthNames = Object.keys(months).join("|");
+  const dayFirst = normalized.match(new RegExp(`\\b(\\d{1,2})\\s*(?:de\\s*)?(${monthNames})\\.?[,\\s-]*(?:de\\s*)?(\\d{2,4})\\b`));
+  const monthFirst = normalized.match(new RegExp(`\\b(${monthNames})\\s+(\\d{1,2}),?\\s+(\\d{2,4})\\b`));
+  const match = dayFirst
+    ? { day: dayFirst[1], month: dayFirst[2], year: dayFirst[3] }
+    : monthFirst
+      ? { day: monthFirst[2], month: monthFirst[1], year: monthFirst[3] }
+      : null;
+  if (!match) return null;
+  const year = Number(match.year.length === 2 ? `20${match.year}` : match.year);
+  return new Date(Date.UTC(year, months[match.month], Number(match.day), 12));
 }
 
-function isRecentOfficialItem(item) {
-  return officialItemYear(item) >= new Date().getFullYear() - 1;
+function extractPublishedAt(markup, { allowTime = true, allowVisibleDate = true } = {}) {
+  const candidates = [];
+  for (const match of String(markup || "").matchAll(/<meta\b[^>]*>/gi)) {
+    const tag = match[0];
+    const key = tag.match(/(?:property|name|itemprop)=["']([^"']+)["']/i)?.[1] || "";
+    if (!/^(article:published_time|datepublished|pubdate|publication_date)$/i.test(key)) continue;
+    const value = tag.match(/content=["']([^"']+)["']/i)?.[1];
+    if (value) candidates.push(value);
+  }
+  if (allowTime) {
+    for (const match of String(markup || "").matchAll(/<time\b[^>]*>/gi)) {
+      const tag = match[0];
+      if (/class=["'][^"']*(modified|updated)[^"']*["']/i.test(tag)) continue;
+      const value = tag.match(/datetime=["']([^"']+)["']/i)?.[1];
+      if (value) candidates.push(value);
+    }
+  }
+  for (const match of String(markup || "").matchAll(/["']datePublished["']\s*:\s*["']([^"']+)["']/gi)) {
+    candidates.push(match[1]);
+  }
+  if (allowVisibleDate) {
+    for (const match of String(markup || "").matchAll(/<(?:span|div|p)\b[^>]*class=["'][^"']*(?:date|published)[^"']*["'][^>]*>([\s\S]*?)<\/(?:span|div|p)>/gi)) {
+      if (/class=["'][^"']*(modified|updated)[^"']*["']/i.test(match[0])) continue;
+      candidates.push(htmlToText(match[1], 180));
+    }
+  }
+  for (const candidate of candidates) {
+    const date = parsedNewsDate(candidate);
+    if (date && Number.isFinite(date.getTime()) && date.getUTCFullYear() >= 2000) return date.toISOString();
+  }
+  return null;
 }
 
-function officialYearPriority(item) {
-  const current = new Date().getFullYear();
-  const year = officialItemYear(item);
-  if (year === current) return 4;
-  if (year === current + 1) return 3;
-  if (year === current - 1) return 2;
-  return 1;
+function isRecentOfficialItem(item, now = Date.now()) {
+  const published = Date.parse(item.publishedAt || "");
+  return Number.isFinite(published)
+    && published <= now + 24 * 60 * 60 * 1000
+    && published >= now - officialNewsMaxAgeMs;
 }
 
 function isResponsibleGamingItem(item) {
@@ -884,26 +946,18 @@ function officialSourcePriority(item) {
 }
 
 function diversifyOfficialItems(items, limit = 18) {
-  const sourceOrder = ["Coljuegos", "Fecoljuegos", "UIAF", "DIAN", "Supersalud", "Cornazar", "GAT Events"];
-  const buckets = new Map(sourceOrder.map((entity) => [entity, items.filter((item) => item.entity === entity)]));
   const selected = [];
   const selectedIds = new Set();
-  const firstResponsible = items.find(isResponsibleGamingItem);
-  if (firstResponsible) {
-    selected.push(firstResponsible);
-    selectedIds.add(firstResponsible.id);
-  }
-
-  let added = true;
-  while (selected.length < limit && added) {
-    added = false;
-    for (const entity of sourceOrder) {
+  const counts = new Map();
+  for (let perSourceLimit = 1; selected.length < limit && perSourceLimit <= items.length; perSourceLimit += 1) {
+    for (const item of items) {
       if (selected.length >= limit) break;
-      const next = buckets.get(entity)?.find((item) => !selectedIds.has(item.id));
-      if (!next) continue;
-      selected.push(next);
-      selectedIds.add(next.id);
-      added = true;
+      if (selectedIds.has(item.id)) continue;
+      const count = counts.get(item.entity) || 0;
+      if (count >= perSourceLimit) continue;
+      selected.push(item);
+      selectedIds.add(item.id);
+      counts.set(item.entity, count + 1);
     }
   }
   return selected;
@@ -1063,6 +1117,10 @@ function extractOfficialCandidates(source, sourceUrl, html) {
   const pageText = htmlToText(html, 2600);
   const pageTitle = inferOfficialTitle(pageText, extractPageTitle(html), sourceUrl);
   const pageImageUrl = extractMetaImage(html, sourceUrl) || imageFromFragment(html.slice(0, 8000), sourceUrl);
+  const publicationDateOptions = source.entity === "GAT Events"
+    ? { allowTime: false, allowVisibleDate: false }
+    : undefined;
+  const pagePublishedAt = extractPublishedAt(html, publicationDateOptions);
   if (!isListingSourceUrl(source, sourceUrl) && pageTitle && isLikelyContentTitle(pageTitle)) {
     candidates.push({
       entity: source.entity,
@@ -1071,6 +1129,7 @@ function extractOfficialCandidates(source, sourceUrl, html) {
       sourceUrl,
       context: pageText,
       imageUrl: pageImageUrl,
+      publishedAt: pagePublishedAt,
       kind: "page",
     });
   }
@@ -1090,6 +1149,7 @@ function extractOfficialCandidates(source, sourceUrl, html) {
     const end = Math.min(html.length, match.index + match[0].length + 900);
     const mediaStart = Math.max(0, match.index - 1200);
     const mediaEnd = Math.min(html.length, match.index + match[0].length + 1400);
+    const publishedAt = extractPublishedAt(html.slice(start, end), publicationDateOptions);
     const context = htmlToText(html.slice(start, end), 1200);
     const imageUrl = imageFromFragment(match[0], sourceUrl) || imageFromFragment(html.slice(mediaStart, mediaEnd), sourceUrl);
     candidates.push({
@@ -1099,6 +1159,7 @@ function extractOfficialCandidates(source, sourceUrl, html) {
       sourceUrl,
       context,
       imageUrl,
+      publishedAt,
       kind: "link",
     });
   }
@@ -1123,6 +1184,7 @@ async function scrapeOfficialSource(source, sourceUrl) {
         imageUrl: text(candidate.imageUrl, 600),
         url: candidate.url,
         sourceUrl: candidate.sourceUrl,
+        publishedAt: candidate.publishedAt,
         matchedKeywords: matchedKeywords.slice(0, 4),
         score,
         fetchedAt: nowStamp(),
@@ -1167,13 +1229,12 @@ async function refreshOfficialNews() {
 
   const rankedItems = [...byKey.values()]
     .sort((a, b) =>
-      Number(isResponsibleGamingItem(b)) - Number(isResponsibleGamingItem(a))
-      || officialYearPriority(b) - officialYearPriority(a)
+      Date.parse(b.publishedAt || "") - Date.parse(a.publishedAt || "")
+      || Number(isResponsibleGamingItem(b)) - Number(isResponsibleGamingItem(a))
       || officialSourcePriority(b) - officialSourcePriority(a)
       || b.score - a.score
-      || officialItemYear(b) - officialItemYear(a)
     );
-  const recentItems = rankedItems.filter(isRecentOfficialItem);
+  const recentItems = rankedItems.filter((item) => isRecentOfficialItem(item));
 
   officialNewsCache.items = diversifyOfficialItems(recentItems)
     .map(({ score, ...item }) => item);

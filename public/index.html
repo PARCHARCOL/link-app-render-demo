@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v77">
-  <link rel="icon" href="/icon-192.png?v=link-app-v77" type="image/png">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v77">
-  <link rel="preload" href="/icon-512.png?v=link-app-v77" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v78">
+  <link rel="icon" href="/icon-192.png?v=link-app-v78" type="image/png">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v78">
+  <link rel="preload" href="/icon-512.png?v=link-app-v78" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -136,6 +136,8 @@
     .lead-story:hover,.story-card:hover,.source-card:hover{border-color:var(--red)}
     .news-tag,.status-badge{display:inline-flex;align-items:center;min-height:22px;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:950}
     .news-tag{min-height:0;padding:0;color:#8d171b;background:transparent;border-radius:0;font-family:Inter,ui-sans-serif,system-ui,sans-serif;font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+    .news-byline{display:flex;align-items:baseline;flex-wrap:wrap;gap:8px}
+    .news-publication-date{color:var(--muted2);font-size:11px;font-weight:600}
     .status-badge{color:#7a3a00;background:#fff0cc;border:1px solid #ffd28a}
     .status-badge.published{color:#0d6730;background:#e7f8ee;border-color:#a7dfbd}
     .status-badge.hidden{color:#6f1720;background:#ffe8e7;border-color:#ffb6b4}
@@ -379,7 +381,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v77";
+    const appBuild = "link-app-v78";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -472,6 +474,11 @@
     function dateTimeLabel(value) {
       if (!value) return "Actualizando";
       return new Date(value).toLocaleString("es-CO", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+    }
+
+    function newsPublicationLabel(value) {
+      if (!value) return "";
+      return new Date(value).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" });
     }
 
     function user() {
@@ -1537,7 +1544,7 @@
             <div class="newspaper-masthead"><strong>Noticias</strong></div>
             <article class="lead-story ${item.imageUrl ? "has-image" : ""}">
               <div class="story-content">
-                <span class="news-tag">${esc(item.entity)}</span>
+                <div class="news-byline"><span class="news-tag">${esc(item.entity)}</span><time class="news-publication-date" datetime="${esc(item.publishedAt)}">Publicado ${esc(newsPublicationLabel(item.publishedAt))}</time></div>
                 <h2>${esc(item.title)}</h2>
                 ${item.summary ? `<p>${esc(item.summary)}</p>` : ""}
                 <div class="news-detail-actions">
@@ -1556,7 +1563,7 @@
         <div class="newspaper-masthead"><strong>Noticias</strong></div>
         <button class="lead-story ${lead.imageUrl ? "has-image" : ""}" data-official-news-url="${esc(lead.url)}" type="button">
           <div class="story-content">
-            <span class="news-tag">${esc(lead.entity)}</span>
+            <div class="news-byline"><span class="news-tag">${esc(lead.entity)}</span><time class="news-publication-date" datetime="${esc(lead.publishedAt)}">Publicado ${esc(newsPublicationLabel(lead.publishedAt))}</time></div>
             <h2>${esc(lead.title)}</h2>
             ${lead.summary ? `<p>${esc(lead.summary)}</p>` : ""}
             <span class="origin-link">Ver detalle</span>
@@ -1567,7 +1574,7 @@
           ${rest.map((item) => `<button class="story-card ${item.imageUrl ? "has-image" : ""}" data-official-news-url="${esc(item.url)}" type="button">
             ${newsImage(item)}
             <div class="story-content">
-              <span class="news-tag">${esc(item.entity)}</span>
+              <div class="news-byline"><span class="news-tag">${esc(item.entity)}</span><time class="news-publication-date" datetime="${esc(item.publishedAt)}">Publicado ${esc(newsPublicationLabel(item.publishedAt))}</time></div>
               <h3>${esc(item.title)}</h3>
               ${item.summary ? `<p>${esc(item.summary)}</p>` : ""}
               <span class="origin-link">Ver detalle</span>
