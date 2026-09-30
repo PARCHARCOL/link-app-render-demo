@@ -714,6 +714,24 @@ function imageFromFragment(html, base) {
   return "";
 }
 
+function extractNewsCard(html, anchorIndex) {
+  const prefix = html.slice(0, anchorIndex);
+  const cardStarts = [...prefix.matchAll(/<(div|article)\b[^>]*class=["'][^"']*(?:contentPubTema|news-card|post-card|article-card)[^"']*["'][^>]*>/gi)];
+  const card = cardStarts.at(-1);
+  if (!card) return html.slice(Math.max(0, anchorIndex - 700), Math.min(html.length, anchorIndex + 900));
+
+  const tagName = card[1];
+  const tokens = new RegExp(`<${tagName}\\b[^>]*>|<\\/${tagName}\\s*>`, "gi");
+  tokens.lastIndex = card.index;
+  let depth = 0;
+  let token;
+  while ((token = tokens.exec(html))) {
+    depth += token[0].startsWith(`</`) ? -1 : 1;
+    if (depth === 0) return html.slice(card.index, tokens.lastIndex);
+  }
+  return html.slice(card.index, Math.min(html.length, anchorIndex + 1800));
+}
+
 function extractMetaImage(html, base) {
   const metaPattern = /<meta\b[^>]*>/gi;
   let match;
@@ -818,6 +836,9 @@ function inferOfficialTitle(pageText, fallbackTitle, sourceUrl) {
 }
 
 function candidateScore(candidate) {
+  if (candidate.entity === "Coljuegos" && candidate.kind === "link" && isLikelyContentTitle(candidate.title)) {
+    return 1 + (candidate.url.includes("/publicaciones/") ? 2 : 0);
+  }
   if (candidate.entity === "GAT Events") {
     const normalized = normalizeText(`${candidate.title} ${candidate.context} ${candidate.url}`);
     if (!/\bgat\b/.test(normalized)) return -10;
@@ -914,9 +935,21 @@ function extractPublishedAt(markup, { allowTime = true, allowVisibleDate = true 
     candidates.push(match[1]);
   }
   if (allowVisibleDate) {
-    for (const match of String(markup || "").matchAll(/<(?:span|div|p)\b[^>]*class=["'][^"']*(?:date|published)[^"']*["'][^>]*>([\s\S]*?)<\/(?:span|div|p)>/gi)) {
+    for (const match of String(markup || "").matchAll(/<(span|div|p)\b[^>]*class=["'][^"']*(?:date|published)[^"']*["'][^>]*>/gi)) {
       if (/class=["'][^"']*(modified|updated)[^"']*["']/i.test(match[0])) continue;
-      candidates.push(htmlToText(match[1], 180));
+      const tagName = match[1];
+      const openingEnd = match.index + match[0].length;
+      const tokens = new RegExp(`<${tagName}\\b[^>]*>|<\\/${tagName}\\s*>`, "gi");
+      tokens.lastIndex = match.index;
+      let depth = 0;
+      let token;
+      while ((token = tokens.exec(markup))) {
+        depth += token[0].startsWith(`</`) ? -1 : 1;
+        if (depth === 0) {
+          candidates.push(htmlToText(String(markup).slice(openingEnd, token.index), 180));
+          break;
+        }
+      }
     }
   }
   for (const candidate of candidates) {
@@ -960,7 +993,7 @@ function diversifyOfficialItems(items, limit = 18) {
       counts.set(item.entity, count + 1);
     }
   }
-  return selected;
+  return selected.sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt));
 }
 
 function cleanSummary(value) {
@@ -1145,13 +1178,10 @@ function extractOfficialCandidates(source, sourceUrl, html) {
     const title = htmlToText(match[3], 180);
     if (!isLikelyContentTitle(title)) continue;
 
-    const start = Math.max(0, match.index - 700);
-    const end = Math.min(html.length, match.index + match[0].length + 900);
-    const mediaStart = Math.max(0, match.index - 1200);
-    const mediaEnd = Math.min(html.length, match.index + match[0].length + 1400);
-    const publishedAt = extractPublishedAt(html.slice(start, end), publicationDateOptions);
-    const context = htmlToText(html.slice(start, end), 1200);
-    const imageUrl = imageFromFragment(match[0], sourceUrl) || imageFromFragment(html.slice(mediaStart, mediaEnd), sourceUrl);
+    const card = extractNewsCard(html, match.index);
+    const publishedAt = extractPublishedAt(card, publicationDateOptions);
+    const context = htmlToText(card, 1800);
+    const imageUrl = imageFromFragment(match[0], sourceUrl) || imageFromFragment(card, sourceUrl);
     candidates.push({
       entity: source.entity,
       title,
@@ -1174,7 +1204,7 @@ async function scrapeOfficialSource(source, sourceUrl) {
       const combined = `${candidate.title} ${candidate.context} ${candidate.url}`;
       const matchedKeywords = matchedCasinoKeywords(combined);
       const score = candidateScore(candidate);
-      if (matchedKeywords.length === 0 || score < 1) return null;
+      if ((matchedKeywords.length === 0 && candidate.entity !== "Coljuegos") || score < 1) return null;
       const title = officialTitle(candidate);
       return {
         id: `${normalizeText(candidate.entity).replace(/\W+/g, "-")}-${hashId(candidate.url + title)}`,
@@ -1223,7 +1253,15 @@ async function refreshOfficialNews() {
       const canonicalUrl = String(item.url || "").replace(/^https?:\/\/www\./i, "https://");
       const key = normalizeText(`${item.entity}|${canonicalUrl}`);
       const current = byKey.get(key);
-      if (!current || item.score > current.score) byKey.set(key, item);
+      if (!current) {
+        byKey.set(key, item);
+        continue;
+      }
+      const preferred = item.score > current.score ? item : current;
+      const publishedAt = [current.publishedAt, item.publishedAt]
+        .filter(Boolean)
+        .sort((a, b) => Date.parse(b) - Date.parse(a))[0] || null;
+      byKey.set(key, { ...preferred, publishedAt });
     }
   }
 
