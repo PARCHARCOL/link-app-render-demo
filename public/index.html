@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v80">
-  <link rel="icon" href="/icon-192.png?v=link-app-v80" type="image/png">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v80">
-  <link rel="preload" href="/icon-512.png?v=link-app-v80" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v81">
+  <link rel="icon" href="/icon-192.png?v=link-app-v81" type="image/png">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v81">
+  <link rel="preload" href="/icon-512.png?v=link-app-v81" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -384,7 +384,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v80";
+    const appBuild = "link-app-v81";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -1812,9 +1812,9 @@
         </article>`).join("") : empty("Aun no hay vacantes aprobadas.");
       const personForm = editor("Subir hoja de vida", "/api/resumes", `
         <label class="file-field">
-          <span>Foto para publicar tu hoja de vida (obligatoria)</span>
-          <input name="photoFile" type="file" accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp" required>
-          <small data-file-status="photoFile">Sube una foto clara para que las empresas identifiquen tu perfil.</small>
+          <span>Foto para publicar tu hoja de vida (opcional)</span>
+          <input name="photoFile" type="file" accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp">
+          <small data-file-status="photoFile">Si no subes una foto, tu perfil mostrara un avatar neutro.</small>
         </label>
         <input name="fullName" placeholder="Nombre completo" required>
         <select name="category">

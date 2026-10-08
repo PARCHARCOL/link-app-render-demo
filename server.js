@@ -1881,7 +1881,6 @@ function resumeMissingForApplication(resume) {
   if (!text(resume.headline, 160)) missing.push("perfil profesional");
   if (!text(resume.city, 80)) missing.push("ciudad en la HV");
   if (!text(resume.phone, 80) && !text(resume.email, 160)) missing.push("telefono o correo en la HV");
-  if (!text(resume.photoData || resume.photo_data, 4_000_000)) missing.push("foto de perfil en la HV");
   return missing;
 }
 
@@ -2663,7 +2662,6 @@ async function saveResume(body, user) {
   const headline = text(body.headline, 160);
   if (!fullName || !headline) fail(400, "Nombre y perfil profesional son requeridos");
   const photoData = imageDataText(body.photoData, 4_000_000);
-  if (!photoData) fail(400, "La foto de perfil es obligatoria para publicar tu hoja de vida");
   const item = {
     id: randomUUID(),
     userId: user.id,

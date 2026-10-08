@@ -138,22 +138,17 @@ test("registration, vacancy applications, private CVs, tokens, and advisor acces
     token: candidate.token,
     body: { displayName: "Candidata Test", phone: "3000000000", city: "Medellin" },
   });
-  await api("/api/resumes", {
-    token: candidate.token,
-    status: 400,
-    body: { fullName: "Candidata Test", headline: "Operadora" },
-  });
   const resume = await api("/api/resumes", {
     token: candidate.token,
     status: 201,
     body: {
       fullName: "Candidata Test", headline: "Operadora", city: "Medellin",
       phone: "3000000000", documentId: "123456789", summary: "Experiencia privada",
-      photoData: "data:image/png;base64,dGVzdA==",
       attachmentName: "hoja-de-vida.pdf", attachmentData: "data:application/pdf;base64,dGVzdA==",
     },
   });
   assert.equal(resume.status, "pending");
+  assert.equal(resume.photoData, "");
   await api(`/api/vacancies/${vacancy.id}/apply`, { token: candidate.token, body: {}, status: 400 });
   await api("/api/admin/moderate", {
     token: admin.token,
