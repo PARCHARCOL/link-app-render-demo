@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v79">
-  <link rel="icon" href="/icon-192.png?v=link-app-v79" type="image/png">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v79">
-  <link rel="preload" href="/icon-512.png?v=link-app-v79" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v80">
+  <link rel="icon" href="/icon-192.png?v=link-app-v80" type="image/png">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v80">
+  <link rel="preload" href="/icon-512.png?v=link-app-v80" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -196,6 +196,9 @@
     .logo-admin-preview .brand-mark{width:72px;height:72px}
     .logo-admin-preview p{margin:0;color:var(--muted);font-size:12px;line-height:1.35}
     .profile-row{display:grid;grid-template-columns:56px 1fr;gap:11px;align-items:center}
+    .vacancy-company{display:flex;align-items:center;gap:10px;margin:8px 0}
+    .vacancy-company-logo{width:44px;height:44px;flex:0 0 44px;object-fit:contain;background:#fff;border:1px solid var(--line);border-radius:10px;padding:3px}
+    .company-logo-upload{grid-column:1/-1}
     .profile-photo{width:56px;height:64px;display:grid;place-items:center;overflow:hidden;background:#fff1e6;border:1px solid var(--line);border-radius:13px;color:var(--red);font-weight:950}
     .profile-photo img{width:100%;height:100%;object-fit:cover}
     .resume-card{display:grid;gap:12px}
@@ -381,7 +384,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v79";
+    const appBuild = "link-app-v80";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -1409,7 +1412,13 @@
               <div class="split">
                 <input name="companyName" placeholder="Razon social" value="${esc(current.companyName || "")}">
                 <input name="nit" placeholder="NIT" value="${esc(current.nit || "")}">
-              </div>` : "";
+              </div>
+              <label class="file-field company-logo-upload">
+                <span>Logo de la empresa ${current.companyLogoUrl ? "(opcional para reemplazar)" : "(obligatorio)"}</span>
+                ${current.companyLogoUrl ? `<img class="vacancy-company-logo" src="${esc(current.companyLogoUrl)}" alt="Logo actual de ${esc(current.companyName || current.displayName)}">` : ""}
+                <input name="companyLogoFile" type="file" accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp" ${current.companyLogoUrl ? "" : "required"}>
+                <small data-file-status="companyLogoFile">${current.companyLogoUrl ? "Elige una imagen solo si deseas cambiar el logo." : "Sube el logo para completar tu perfil de empresa."}</small>
+              </label>` : "";
         return `<div class="account-card">
             <div><strong>${esc(current.displayName)}</strong><span>${esc(type)} | ${esc(current.email)} | ${esc(state.storage?.mode === "postgres" ? "PostgreSQL" : "JSON local")}${current.isAdmin ? " | Admin" : ""}</span></div>
             <button class="secondary" type="button" id="logoutButton">Cerrar sesion</button>
@@ -1465,6 +1474,11 @@
             <div class="split" data-company-fields>
               <input name="companyName" placeholder="Razon social" autocomplete="off">
               <input name="nit" placeholder="NIT" autocomplete="off">
+              <label class="file-field company-logo-upload">
+                <span>Logo de la empresa (obligatorio)</span>
+                <input name="companyLogoFile" type="file" accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp" required>
+                <small data-file-status="companyLogoFile">Sube una imagen para identificar claramente tu empresa.</small>
+              </label>
             </div>
             <select name="role">
               <option value="">Cargo u oficio</option>
@@ -1786,7 +1800,7 @@
         <article class="card">
           <div class="topline"><span>${esc(item.city || "Sin ciudad")}</span><strong>${esc(dateLabel(item.createdAt))}</strong></div>
           <h3>${esc(item.title)}</h3>
-          <p><strong>${esc(item.company)}</strong></p>
+          <div class="vacancy-company">${item.companyLogoUrl ? `<img class="vacancy-company-logo" src="${esc(item.companyLogoUrl)}" alt="Logo de ${esc(item.company)}">` : ""}<strong>${esc(item.company)}</strong></div>
           ${item.description ? `<p>${esc(item.description)}</p>` : ""}
           ${item.requirements ? `<p>${esc(item.requirements)}</p>` : ""}
           <div class="meta">
@@ -1798,9 +1812,9 @@
         </article>`).join("") : empty("Aun no hay vacantes aprobadas.");
       const personForm = editor("Subir hoja de vida", "/api/resumes", `
         <label class="file-field">
-          <span>Foto de perfil (opcional)</span>
-          <input name="photoFile" type="file" accept="image/*,.jpg,.jpeg,.png,.webp">
-          <small data-file-status="photoFile">Toca aqui solo si quieres subir una foto.</small>
+          <span>Foto para publicar tu hoja de vida (obligatoria)</span>
+          <input name="photoFile" type="file" accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp" required>
+          <small data-file-status="photoFile">Sube una foto clara para que las empresas identifiquen tu perfil.</small>
         </label>
         <input name="fullName" placeholder="Nombre completo" required>
         <select name="category">
@@ -2625,7 +2639,15 @@
       for (const [key, value] of formData.entries()) {
         if (value instanceof File) {
           if (!value.name || value.size === 0) continue;
-          if (key === "photoFile") {
+          if (key === "companyLogoFile") {
+            if (!isImageFile(value) || !/^image\/(?:png|jpeg|webp)$/i.test(fileMime(value, ""))) {
+              throw new Error("El logo debe ser una imagen PNG, JPG o WebP");
+            }
+            if (value.size > 8_000_000) throw new Error("El logo debe pesar menos de 8 MB");
+            const imageFile = await optimizeImageFile(value, 900, 0.82);
+            if (imageFile.size > 3_000_000) throw new Error("El logo sigue muy pesado. Usa una imagen mas liviana");
+            payload.companyLogoData = await fileToDataUrl(imageFile);
+          } else if (key === "photoFile") {
             if (!isImageFile(value)) throw new Error("La foto debe ser una imagen");
             if (value.size > 8_000_000) throw new Error("La foto debe pesar menos de 8 MB");
             let imageFile = value;
@@ -2734,6 +2756,8 @@
         input.disabled = !isCompany;
         if (!isCompany) input.value = "";
       });
+      const logoInput = companyFields.querySelector('input[name="companyLogoFile"]');
+      if (logoInput) logoInput.required = isCompany;
     }
 
     function bindForms() {

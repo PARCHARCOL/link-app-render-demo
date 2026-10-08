@@ -79,19 +79,29 @@ test("registration, vacancy applications, private CVs, tokens, and advisor acces
     return result;
   }
 
-  async function register(email, accountType) {
+  async function register(email, accountType, extra = {}) {
     return api("/api/auth/register", {
       status: 201,
-      body: { email, accountType, password: "test-password-123", displayName: email.split("@")[0] },
+      body: { email, accountType, password: "test-password-123", displayName: email.split("@")[0], ...extra },
     });
   }
 
   const admin = await register("workflow-admin@example.test", "person");
-  const company = await register("workflow-company@example.test", "company");
+  await api("/api/auth/register", {
+    status: 400,
+    body: { email: "missing-logo@example.test", accountType: "company", password: "test-password-123", displayName: "Missing Logo" },
+  });
+  const company = await register("workflow-company@example.test", "company", {
+    companyLogoData: "data:image/png;base64,dGVzdA==",
+  });
   const candidate = await register("workflow-candidate@example.test", "person");
   const other = await register("workflow-other@example.test", "person");
   assert.equal(admin.user.isAdmin, true);
   assert.equal(company.user.tokenBalance, 5);
+  assert.equal(company.user.companyLogoUrl, `/api/companies/${company.user.id}/logo`);
+  const logoResponse = await fetch(`${base}${company.user.companyLogoUrl}`);
+  assert.equal(logoResponse.status, 200);
+  assert.equal(logoResponse.headers.get("content-type"), "image/png");
   assert.equal((await api("/api/auth/login", {
     body: { email: "workflow-candidate@example.test", password: "test-password-123" },
   })).user.id, candidate.user.id);
@@ -128,12 +138,18 @@ test("registration, vacancy applications, private CVs, tokens, and advisor acces
     token: candidate.token,
     body: { displayName: "Candidata Test", phone: "3000000000", city: "Medellin" },
   });
+  await api("/api/resumes", {
+    token: candidate.token,
+    status: 400,
+    body: { fullName: "Candidata Test", headline: "Operadora" },
+  });
   const resume = await api("/api/resumes", {
     token: candidate.token,
     status: 201,
     body: {
       fullName: "Candidata Test", headline: "Operadora", city: "Medellin",
       phone: "3000000000", documentId: "123456789", summary: "Experiencia privada",
+      photoData: "data:image/png;base64,dGVzdA==",
       attachmentName: "hoja-de-vida.pdf", attachmentData: "data:application/pdf;base64,dGVzdA==",
     },
   });

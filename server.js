@@ -275,6 +275,11 @@ function imageDataText(value, max) {
   return output;
 }
 
+function companyLogoUrl(user) {
+  const hasLogo = Boolean(user?.companyLogoData || user?.company_logo_data || user?.hasCompanyLogo || user?.has_company_logo);
+  return hasLogo && user?.id ? `/api/companies/${encodeURIComponent(user.id)}/logo` : "";
+}
+
 function mediaDataText(value, max) {
   const output = dataText(value, max);
   if (!output) return "";
@@ -1405,6 +1410,7 @@ async function initDb() {
       phone text DEFAULT '',
       city text DEFAULT '',
       company_name text DEFAULT '',
+      company_logo_data text DEFAULT '',
       nit text DEFAULT '',
       role text DEFAULT '',
       is_admin boolean NOT NULL DEFAULT false,
@@ -1621,6 +1627,7 @@ async function initDb() {
     );
 
     ALTER TABLE link_users ADD COLUMN IF NOT EXISTS is_admin boolean NOT NULL DEFAULT false;
+    ALTER TABLE link_users ADD COLUMN IF NOT EXISTS company_logo_data text DEFAULT '';
     ALTER TABLE link_users ADD COLUMN IF NOT EXISTS is_advisor boolean NOT NULL DEFAULT false;
     ALTER TABLE link_users ADD COLUMN IF NOT EXISTS token_balance integer NOT NULL DEFAULT 0;
     ALTER TABLE link_users ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'active';
@@ -1735,6 +1742,7 @@ function sanitizeUser(user) {
     phone: user.phone || "",
     city: user.city || "",
     companyName: user.companyName || user.company_name || "",
+    companyLogoUrl: companyLogoUrl(user),
     nit: user.nit || "",
     role: user.role || "",
     isAdmin: isAdminUser(user),
@@ -1758,6 +1766,7 @@ function rowUser(row) {
     phone: row.phone || "",
     city: row.city || "",
     companyName: row.company_name || "",
+    companyLogoUrl: companyLogoUrl(row),
     nit: row.nit || "",
     role: row.role || "",
     isAdmin: isAdminUser(row),
@@ -1872,6 +1881,7 @@ function resumeMissingForApplication(resume) {
   if (!text(resume.headline, 160)) missing.push("perfil profesional");
   if (!text(resume.city, 80)) missing.push("ciudad en la HV");
   if (!text(resume.phone, 80) && !text(resume.email, 160)) missing.push("telefono o correo en la HV");
+  if (!text(resume.photoData || resume.photo_data, 4_000_000)) missing.push("foto de perfil en la HV");
   return missing;
 }
 
@@ -1911,7 +1921,7 @@ async function getAuthUser(req) {
   const hashed = tokenHash(token);
   if (dbReady) {
     const result = await pool.query(
-      `SELECT u.id, u.email, u.account_type, u.display_name, u.phone, u.city, u.company_name, u.nit, u.role,
+      `SELECT u.id, u.email, u.account_type, u.display_name, u.phone, u.city, u.company_name, (u.company_logo_data <> '') AS has_company_logo, u.nit, u.role,
               u.is_admin, u.is_advisor, u.token_balance, u.status, u.last_seen_at, u.deactivated_at, u.created_at
        FROM link_sessions s
        JOIN link_users u ON u.id = s.user_id
@@ -1956,10 +1966,12 @@ async function registerUser(body) {
   const email = normalizeEmail(body.email);
   const password = String(body.password || "");
   const accountType = normalizeAccountType(body.accountType);
+  const companyLogoData = accountType === "company" ? imageDataText(body.companyLogoData, 4_500_000) : "";
   const displayName = text(body.displayName, 120) || text(body.companyName, 120);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) fail(400, "Correo invalido");
   if (password.length < 6) fail(400, "La clave debe tener minimo 6 caracteres");
   if (!displayName) fail(400, "Nombre requerido");
+  if (accountType === "company" && !companyLogoData) fail(400, "Sube el logo de tu empresa para completar el registro");
   const settings = await readSettings();
   const initialTokens = accountType === "company" ? settings.tokenTrialCompanyTokens : 0;
 
@@ -1972,6 +1984,7 @@ async function registerUser(body) {
     phone: text(body.phone, 80),
     city: text(body.city, 80),
     companyName: accountType === "company" ? text(body.companyName, 140) : "",
+    companyLogoData,
     nit: accountType === "company" ? text(body.nit, 40) : "",
     role: text(body.role, 120),
     isAdmin: isAdminEmail(email),
@@ -1987,9 +2000,9 @@ async function registerUser(body) {
     try {
       await pool.query(
         `INSERT INTO link_users
-         (id, email, password_hash, account_type, display_name, phone, city, company_name, nit, role, is_admin, token_balance, status, last_seen_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, now())`,
-        [user.id, user.email, user.passwordHash, user.accountType, user.displayName, user.phone, user.city, user.companyName, user.nit, user.role, user.isAdmin, user.tokenBalance, user.status],
+         (id, email, password_hash, account_type, display_name, phone, city, company_name, company_logo_data, nit, role, is_admin, token_balance, status, last_seen_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, now())`,
+        [user.id, user.email, user.passwordHash, user.accountType, user.displayName, user.phone, user.city, user.companyName, user.companyLogoData, user.nit, user.role, user.isAdmin, user.tokenBalance, user.status],
       );
       if (initialTokens > 0) {
         await pool.query(
@@ -2031,7 +2044,7 @@ async function loginUser(body) {
   let passwordHash;
   if (dbReady) {
     const result = await pool.query(
-      `SELECT id, email, password_hash, account_type, display_name, phone, city, company_name, nit, role, is_admin, is_advisor, token_balance,
+      `SELECT id, email, password_hash, account_type, display_name, phone, city, company_name, (company_logo_data <> '') AS has_company_logo, nit, role, is_admin, is_advisor, token_balance,
               status, last_seen_at, deactivated_at, created_at
        FROM link_users WHERE email = $1`,
       [email],
@@ -2277,10 +2290,13 @@ async function readData(authUser = null) {
         [authUserId],
       ),
       pool.query(
-        `SELECT id, user_id AS "userId", company, title, city, salary, contact, description, requirements, status, created_at AS "createdAt"
-         FROM link_vacancies
-         WHERE status = 'published' OR ($1::uuid IS NOT NULL AND user_id = $1::uuid)
-         ORDER BY created_at DESC LIMIT 100`,
+        `SELECT v.id, v.user_id AS "userId", v.company, v.title, v.city, v.salary, v.contact, v.description, v.requirements, v.status,
+                v.created_at AS "createdAt",
+                CASE WHEN u.company_logo_data <> '' THEN '/api/companies/' || u.id::text || '/logo' ELSE '' END AS "companyLogoUrl"
+         FROM link_vacancies v
+         LEFT JOIN link_users u ON u.id = v.user_id
+         WHERE v.status = 'published' OR ($1::uuid IS NOT NULL AND v.user_id = $1::uuid)
+         ORDER BY v.created_at DESC LIMIT 100`,
         [authUserId],
       ),
       pool.query(
@@ -2345,11 +2361,14 @@ async function readData(authUser = null) {
   const visibleOwner = (item) => normalizeStatus(item.status) === "published" || (authUser?.id && item.userId === authUser.id);
   const activeAds = await readActiveAdCampaigns();
   const visibleApplication = (item) => authUser && (isAdminUser(authUser) || item.companyId === authUser.id || item.candidateId === authUser.id);
+  const vacancies = data.vacancies
+    .filter(visibleOwner)
+    .map((item) => ({ ...item, companyLogoUrl: companyLogoUrl(data.users.find((account) => account.id === item.userId)) }));
   return {
     news: data.news.filter(visibleAuthor),
     jobs: data.jobs,
     resumes: data.resumes.filter(visibleOwner).map((item) => publicResume(item, authUser)),
-    vacancies: data.vacancies.filter(visibleOwner),
+    vacancies,
     vacancyApplications: data.vacancyApplications.filter(visibleApplication).map((item) => vacancyApplicationFromData(data, item)),
     products: data.products.filter(visibleAuthor).map(publicProduct),
     learningMaterials: data.learningMaterials
@@ -2643,6 +2662,8 @@ async function saveResume(body, user) {
   const fullName = text(body.fullName, 140) || user.displayName;
   const headline = text(body.headline, 160);
   if (!fullName || !headline) fail(400, "Nombre y perfil profesional son requeridos");
+  const photoData = imageDataText(body.photoData, 4_000_000);
+  if (!photoData) fail(400, "La foto de perfil es obligatoria para publicar tu hoja de vida");
   const item = {
     id: randomUUID(),
     userId: user.id,
@@ -2660,7 +2681,7 @@ async function saveResume(body, user) {
     education: text(body.education, 1600),
     skills: text(body.skills, 1000),
     referencesText: text(body.referencesText, 1000),
-    photoData: dataText(body.photoData, 4_000_000),
+    photoData,
     attachmentName: text(body.attachmentName, 160),
     attachmentData: dataText(body.attachmentData, 14_000_000),
     status: newContentStatus(user),
@@ -2736,6 +2757,7 @@ function chargeTokensInData(data, user, amount, kind, referenceId, note) {
 
 async function saveVacancy(body, user) {
   if (user.accountType !== "company") fail(403, "Solo empresa puede publicar vacantes");
+  if (!user.companyLogoUrl) fail(400, "Completa el logo de tu empresa en tu perfil antes de publicar vacantes");
   const company = text(body.company, 140) || user.companyName || user.displayName;
   const title = text(body.title, 140);
   if (!company || !title) fail(400, "Empresa y cargo son requeridos");
@@ -2745,6 +2767,7 @@ async function saveVacancy(body, user) {
     id: randomUUID(),
     userId: user.id,
     company,
+    companyLogoUrl: user.companyLogoUrl,
     title,
     city: text(body.city, 80) || user.city,
     salary: text(body.salary, 80),
@@ -2791,15 +2814,21 @@ async function updateProfile(body, user) {
     companyName: user.accountType === "company" ? text(body.companyName, 140) : "",
     nit: user.accountType === "company" ? text(body.nit, 40) : "",
   };
+  const uploadedCompanyLogo = imageDataText(body.companyLogoData, 4_500_000);
+  if (user.accountType === "company" && !uploadedCompanyLogo && !user.companyLogoUrl) {
+    fail(400, "Sube el logo de tu empresa para completar el perfil");
+  }
 
   if (dbReady) {
     const result = await pool.query(
       `UPDATE link_users
-       SET display_name = $1, phone = $2, city = $3, role = $4, company_name = $5, nit = $6, updated_at = now()
-       WHERE id = $7
-       RETURNING id, email, account_type, display_name, phone, city, company_name, nit, role,
+       SET display_name = $1, phone = $2, city = $3, role = $4, company_name = $5, nit = $6,
+           company_logo_data = CASE WHEN $7::text <> '' THEN $7::text ELSE company_logo_data END,
+           updated_at = now()
+       WHERE id = $8
+       RETURNING id, email, account_type, display_name, phone, city, company_name, (company_logo_data <> '') AS has_company_logo, nit, role,
                  is_admin, is_advisor, token_balance, status, last_seen_at, deactivated_at, created_at`,
-      [next.displayName, next.phone, next.city, next.role, next.companyName, next.nit, user.id],
+      [next.displayName, next.phone, next.city, next.role, next.companyName, next.nit, uploadedCompanyLogo, user.id],
     );
     return { user: sanitizeUser(result.rows[0]) };
   }
@@ -2808,6 +2837,7 @@ async function updateProfile(body, user) {
   const found = data.users.find((item) => item.id === user.id);
   if (!found) fail(404, "Usuario no encontrado");
   Object.assign(found, next);
+  if (uploadedCompanyLogo) found.companyLogoData = uploadedCompanyLogo;
   await writeJsonData(data);
   return { user: sanitizeUser(found) };
 }
@@ -2832,7 +2862,7 @@ async function applyToVacancy(vacancyId, user) {
       if (vacancy.companyId === user.id) fail(400, "No puedes inscribirte a tu propia vacante");
 
       const resumeResult = await client.query(
-        `SELECT id, user_id AS "userId", full_name AS "fullName", headline, category, city, phone, email, availability,
+        `SELECT id, user_id AS "userId", full_name AS "fullName", headline, category, city, phone, email, availability, photo_data AS "photoData",
                 status, created_at AS "createdAt", updated_at AS "updatedAt"
          FROM link_resumes
          WHERE user_id = $1 AND is_public = true AND status = 'published'
@@ -3498,7 +3528,8 @@ async function readAdminState() {
   if (dbReady) {
     const [users, recovery, news, products, learningMaterials, threads, resumes, vacancies, adRequests, adCampaigns, tokenRequests, tokenTransactions] = await Promise.all([
       pool.query(
-        `SELECT id, email, account_type AS "accountType", display_name AS "displayName", city, company_name AS "companyName",
+      `SELECT id, email, account_type AS "accountType", display_name AS "displayName", city, company_name AS "companyName",
+                (company_logo_data <> '') AS "hasCompanyLogo",
                 role, is_admin AS "isAdmin", (is_advisor OR is_admin) AS "isAdvisor", token_balance AS "tokenBalance", status, last_seen_at AS "lastSeenAt", deactivated_at AS "deactivatedAt",
                 created_at AS "createdAt"
          FROM link_users ORDER BY display_name ASC, email ASC LIMIT 300`,
@@ -3643,7 +3674,7 @@ async function readAdvisorState() {
     const [users, adRequests, tokenRequests, vacancyApplications, threads] = await Promise.all([
       pool.query(
         `SELECT id, email, account_type AS "accountType", display_name AS "displayName", phone, city,
-                company_name AS "companyName", role, is_admin AS "isAdmin", (is_advisor OR is_admin) AS "isAdvisor",
+                company_name AS "companyName", (company_logo_data <> '') AS "hasCompanyLogo", role, is_admin AS "isAdmin", (is_advisor OR is_admin) AS "isAdvisor",
                 token_balance AS "tokenBalance", status, last_seen_at AS "lastSeenAt", created_at AS "createdAt"
          FROM link_users
          ORDER BY CASE WHEN status = 'active' THEN 0 ELSE 1 END, last_seen_at DESC NULLS LAST, created_at DESC
@@ -4216,6 +4247,36 @@ async function handleApi(req, res, url) {
       return;
     }
     sendMedia(res, req, media);
+    return;
+  }
+
+  const companyLogoMatch = url.pathname.match(/^\/api\/companies\/([^/]+)\/logo$/);
+  if ((req.method === "GET" || req.method === "HEAD") && companyLogoMatch) {
+    const companyId = decodeURIComponent(companyLogoMatch[1]);
+    let logoData = "";
+    if (isUuid(companyId) && dbReady) {
+      const result = await pool.query(
+        "SELECT company_logo_data FROM link_users WHERE id = $1 AND account_type = 'company'",
+        [companyId],
+      );
+      logoData = result.rows[0]?.company_logo_data || "";
+    } else if (isUuid(companyId)) {
+      const data = await readJsonData();
+      logoData = data.users.find((item) => item.id === companyId && item.accountType === "company")?.companyLogoData || "";
+    }
+    const match = String(logoData).match(/^data:(image\/(?:png|jpe?g|webp));base64,([a-z0-9+/=]+)$/i);
+    if (!match) {
+      notFound(res);
+      return;
+    }
+    const image = Buffer.from(match[2], "base64");
+    res.writeHead(200, {
+      "content-type": match[1],
+      "content-length": image.length,
+      "cache-control": "public, max-age=3600",
+      "x-content-type-options": "nosniff",
+    });
+    res.end(req.method === "HEAD" ? undefined : image);
     return;
   }
 
