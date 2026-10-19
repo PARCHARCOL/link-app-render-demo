@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v83">
-  <link rel="icon" href="/icon-192.png?v=link-app-v83" type="image/png">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v83">
-  <link rel="preload" href="/icon-512.png?v=link-app-v83" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v84">
+  <link rel="icon" href="/icon-192.png?v=link-app-v84" type="image/png">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v84">
+  <link rel="preload" href="/icon-512.png?v=link-app-v84" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -65,13 +65,8 @@
     .screen::-webkit-scrollbar{display:block;width:10px}
     .screen::-webkit-scrollbar-track{background:rgba(115,94,80,.12);border-radius:8px}
     .screen::-webkit-scrollbar-thumb{background:rgba(215,25,32,.62);border:2px solid var(--paper);border-radius:8px}
-    .splash{height:100%;display:grid;align-content:center;justify-items:center;padding:34px;text-align:center;background:#000}
-    .logo-hero{width:224px;height:168px;margin-bottom:20px;border-radius:28px;box-shadow:0 22px 48px rgba(255,106,0,.44),0 0 0 1px rgba(255,255,255,.22)}
-    .splash h1{margin:0;color:#ffffff;font-size:44px;line-height:1;font-weight:950}
-    .splash p{max-width:300px;margin:12px 0 0;color:#f8dfcc;font-size:14px;line-height:1.45}
-    .loader{width:146px;height:5px;overflow:hidden;margin-top:24px;background:#2a1409;border-radius:999px}
-    .loader::after{content:"";display:block;width:44%;height:100%;background:linear-gradient(90deg,var(--red),var(--orange));border-radius:999px;animation:load 1.1s ease-in-out infinite}
-    @keyframes load{0%{transform:translateX(-110%)}100%{transform:translateX(260%)}}
+    .splash{height:100%;display:grid;place-items:center;padding:0;text-align:center;background:#000}
+    .splash .logo-hero{width:min(72vw,420px,70vh);height:min(72vw,420px,70vh);margin:0;border:0;border-radius:0;background:transparent;box-shadow:none}
     .hero{display:block;margin-bottom:13px}
     .logo-card{width:82px;height:72px;border-radius:18px}
     .hero-kicker{margin:0 0 3px;color:var(--red);font-size:11px;font-weight:950;text-transform:uppercase}
@@ -390,7 +385,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v83";
+    const appBuild = "link-app-v84";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -3609,7 +3604,7 @@
       renderHeader();
       renderTabs();
       renderAdBanner();
-      content.innerHTML = `<section class="screen splash">${logoImg("logo-hero")}<h1>Link</h1><p>Cargando publicaciones aprobadas.</p><div class="loader"></div></section>`;
+      content.innerHTML = `<section class="screen splash" aria-label="Link">${logoImg("logo-hero")}</section>`;
       try {
         applyState(await api.state());
       } catch {
