@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v87">
-  <link rel="icon" href="/icon-192.png?v=link-app-v87" type="image/png">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v87">
-  <link rel="preload" href="/icon-512.png?v=link-app-v87" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v92">
+  <link rel="icon" href="/icon-192.png?v=link-app-v92" type="image/png">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v92">
+  <link rel="preload" href="/icon-512.png?v=link-app-v92" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -345,7 +345,8 @@
     .app.dashboard-bento .media-viewer-card{background:#1a1f26;border-color:#46515d}
     .app.dashboard-bento .media-viewer-card img,.app.dashboard-bento .media-viewer-card video{background:#101419}
     .app.dashboard-bento :is(button,a,input,textarea,select,summary):focus-visible{outline:2px solid #ff956f;outline-offset:2px}
-    .home-classic{display:flex;justify-content:flex-end;margin:0 0 10px}
+    .home-classic{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 8px}
+    .home-classic>small{color:var(--muted);font-size:11px}
     .home-design-toggle{min-height:34px;padding:0 12px;color:#7b2b11;background:#fff;border:1px solid #efb194;border-radius:8px;font-size:12px;font-weight:850}
     .app.dashboard-bento .home-design-toggle{color:#fff;background:#252d35;border-color:#46515d}
     .home-bento-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin:0 0 14px}
@@ -401,10 +402,21 @@
     .home-panel-news .story-media{background:#e8e3db;border-color:#c9c1b6}
     .home-panel-news .origin-link{color:#9d171d}
     .home-panel-news .news-detail-actions .secondary{color:#171717;background:#fff;border-color:#aaa197}
-    @media(max-width:820px){.home-panel.home-panel-news{grid-column:1;padding:14px 12px}.home-panel-news .newspaper{gap:11px}.home-panel-news .newspaper-masthead{padding-bottom:9px}.home-panel-news .newspaper-masthead strong{font-size:34px}.home-panel-news .lead-story h2{font-size:27px}.home-panel-news .story-card h3{font-size:19px}}
+    .mobile-news-ad-slot{display:none}
+    .app.is-home-screen .phone-status{display:none}
+    .app.dashboard-bento .home-bento{padding-top:10px}
+    .home-news-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}
+    .app.dashboard-bento .home-news-actions .home-design-toggle{min-height:36px}
+    .home-classic .home-news-actions{flex:0 0 auto;flex-wrap:nowrap}
+    .home-classic>small{flex:1 1 auto;min-width:0}
+    .side-feature-panel.inline-news-ad{grid-column:1/-1;grid-row:auto;position:relative;width:100%;height:clamp(148px,24vw,210px);min-height:clamp(148px,24vw,210px);max-height:clamp(148px,24vw,210px);align-self:auto;margin:10px 0 4px;padding:0;border-radius:10px;box-shadow:0 8px 20px rgba(20,18,14,.16)}
+    .inline-news-ad .feature-media{border-radius:10px}
+    .inline-news-ad .feature-actions{bottom:8px}
+    .inline-news-ad .feature-actions .mini-btn,.inline-news-ad .feature-actions .secondary{min-height:34px;font-size:11px}
+    @media(max-width:820px){.home-panel.home-panel-news{grid-column:1;padding:14px 12px}.home-panel-news .home-panel-head{align-items:center;gap:8px}.home-panel-news .home-panel-head>small{flex:1 1 105px;min-width:80px;line-height:1.25}.home-panel-news .newspaper{gap:11px}.home-panel-news .newspaper-masthead{padding-bottom:9px}.home-panel-news .newspaper-masthead strong{font-size:34px}.home-panel-news .lead-story h2{font-size:27px}.home-panel-news .lead-story.has-image{grid-template-columns:minmax(0,1fr)}.home-panel-news .lead-story .story-content{order:0}.home-panel-news .lead-story .story-media{order:1;height:120px;min-height:120px;max-height:150px;border-left:0;border-top:1px solid #c9c1b6;border-bottom:0}.home-panel-news .story-card h3{font-size:19px}.app.dashboard-bento .brand-row{grid-template-columns:68px minmax(0,1fr) auto;gap:8px;margin-bottom:6px}.app.dashboard-bento .brand-mark{width:68px;height:68px}.app.dashboard-bento .brand-copy p{display:none}.app.dashboard-bento .brand-copy strong{font-size:26px}.app.dashboard-bento .header-actions{gap:5px}.app.dashboard-bento .header-action{min-width:68px;min-height:34px;padding:4px 7px;font-size:10px}.app.dashboard-bento .header-action strong,.app.dashboard-bento .header-action small{max-width:92px}.app.dashboard-bento .home-bento{padding-top:6px}.app.dashboard-bento .home-panel.home-panel-news{padding:12px 10px}.mobile-news-ad-slot{display:contents}.side-feature-panel.inline-news-ad{height:150px;min-height:150px;max-height:150px;margin:8px 0 2px}.inline-news-ad .feature-actions .mini-btn,.inline-news-ad .feature-actions .secondary{min-width:70px;min-height:29px;padding:0 8px;font-size:10px}.home-news-actions{gap:6px}.home-news-actions button{min-height:34px;padding:0 9px;font-size:11px}.home-news-actions .home-design-toggle{min-height:34px;padding:0 9px;font-size:11px}.home-classic{gap:6px}}
     @media(max-width:1000px){.home-bento-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.home-panel-wide{grid-column:span 2}}
     @media(max-width:820px){.home-bento-heading{align-items:flex-start}.home-bento-heading h1{font-size:22px}.home-bento-grid{grid-template-columns:minmax(0,1fr);gap:9px}.home-panel-wide{grid-column:auto}.home-panel{padding:12px}.home-vacancy{grid-template-columns:minmax(0,1fr)}.home-vacancy-actions{justify-content:flex-start}}
-    @media(max-width:380px){.home-bento-heading{display:grid}.home-bento-heading .home-design-toggle{justify-self:start}.home-vacancy-actions button{font-size:10px;padding:0 7px}}
+    @media(max-width:380px){.home-bento-heading{display:grid}.home-bento-heading .home-design-toggle{justify-self:start}.home-vacancy-actions button{font-size:10px;padding:0 7px}.home-panel-news .home-panel-head,.home-classic{align-items:flex-start}.home-panel-news .home-news-actions,.home-classic .home-news-actions{flex-wrap:wrap}}
   </style>
 </head>
 <body>
@@ -509,7 +521,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v87";
+    const appBuild = "link-app-v92";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -1658,8 +1670,13 @@
       `, adRequestOpen);
     }
 
-    function newsImage(item, eager = false) {
+    function newsImageUrl(item) {
       const src = String(item?.imageUrl || "").trim();
+      return /\/Bloques\/img\/(?:1200x400|400x400)\.gif(?:[?#].*)?$/i.test(src) ? "" : src;
+    }
+
+    function newsImage(item, eager = false) {
+      const src = newsImageUrl(item);
       if (!src) return "";
       return `<div class="story-media"><img src="${esc(src)}" alt="" loading="${eager ? "eager" : "lazy"}" decoding="async" referrerpolicy="no-referrer" onerror="this.closest('.story-media')?.remove()"></div>`;
     }
@@ -1676,7 +1693,7 @@
         } else {
           return `<div class="newspaper">
             <div class="newspaper-masthead"><strong>Noticias</strong></div>
-            <article class="lead-story ${item.imageUrl ? "has-image" : ""}">
+            <article class="lead-story ${newsImageUrl(item) ? "has-image" : ""}">
               <div class="story-content">
                 <div class="news-byline"><span class="news-tag">${esc(item.entity)}</span><time class="news-publication-date" datetime="${esc(item.publishedAt)}">Publicado ${esc(newsPublicationLabel(item.publishedAt))}</time></div>
                 <h2>${esc(item.title)}</h2>
@@ -1688,6 +1705,7 @@
               </div>
               ${newsImage(item, true)}
             </article>
+            <div class="mobile-news-ad-slot" aria-label="Publicidad"></div>
           </div>`;
         }
       }
@@ -1695,7 +1713,7 @@
       const rest = official.slice(1, 7);
       return `<div class="newspaper">
         <div class="newspaper-masthead"><strong>Noticias</strong></div>
-        <button class="lead-story ${lead.imageUrl ? "has-image" : ""}" data-official-news-url="${esc(lead.url)}" type="button">
+        <button class="lead-story ${newsImageUrl(lead) ? "has-image" : ""}" data-official-news-url="${esc(lead.url)}" type="button">
           <div class="story-content">
             <div class="news-byline"><span class="news-tag">${esc(lead.entity)}</span><time class="news-publication-date" datetime="${esc(lead.publishedAt)}">Publicado ${esc(newsPublicationLabel(lead.publishedAt))}</time></div>
             <h2>${esc(lead.title)}</h2>
@@ -1704,8 +1722,9 @@
           </div>
           ${newsImage(lead, true)}
         </button>
+        <div class="mobile-news-ad-slot" aria-label="Publicidad"></div>
         <div class="story-list">
-          ${rest.map((item) => `<button class="story-card ${item.imageUrl ? "has-image" : ""}" data-official-news-url="${esc(item.url)}" type="button">
+          ${rest.map((item) => `<button class="story-card ${newsImageUrl(item) ? "has-image" : ""}" data-official-news-url="${esc(item.url)}" type="button">
             ${newsImage(item)}
             <div class="story-content">
               <div class="news-byline"><span class="news-tag">${esc(item.entity)}</span><time class="news-publication-date" datetime="${esc(item.publishedAt)}">Publicado ${esc(newsPublicationLabel(item.publishedAt))}</time></div>
@@ -1770,14 +1789,18 @@
       </article>`;
     }
 
+    function syncAdBannerPlacement() {
+      const slot = content.querySelector(".mobile-news-ad-slot");
+      const inline = active === "inicio" && window.matchMedia("(max-width: 820px)").matches && slot;
+      const target = inline || document.querySelector(".app");
+      if (target && adBanner.parentElement !== target) target.append(adBanner);
+      adBanner.classList.toggle("inline-news-ad", Boolean(inline));
+    }
+
     function renderInicio() {
       if (homeBentoEnabled) return renderBentoInicio();
       const activity = recentActivityItems();
-      return `<section class="screen"><div class="home-classic"><button class="home-design-toggle" data-home-layout="bento" aria-pressed="false" type="button">Probar tema oscuro</button></div>${hero("Noticias", "Información reciente de reguladores, eventos y fuentes gremiales del sector de casinos y juegos localizados.")}
-        <div class="verify-row">
-          <div><strong>Fuentes verificadas</strong><span>${esc(state.officialNewsError || `Coljuegos, UIAF, Supersalud, DIAN, GAT Events, Fecoljuegos y fuentes sectoriales autorizadas. Última verificación: ${dateTimeLabel(state.officialNewsUpdatedAt)}`)}</span></div>
-          <button class="secondary" type="button" id="refreshOfficialButton">Verificar ahora</button>
-        </div>
+      return `<section class="screen home-classic-screen"><div class="home-classic"><small>${esc(dateTimeLabel(state.officialNewsUpdatedAt))}</small><div class="home-news-actions"><button class="secondary" type="button" id="refreshOfficialButton">Actualizar</button><button class="home-design-toggle" data-home-layout="bento" aria-pressed="false" type="button">Tema oscuro</button></div></div>
         ${renderOfficialNews()}
         <div class="section-title"><h2>Movimiento laboral y comunidad</h2><small>${activity.length}</small></div>
         <div class="activity-grid">${activity.length ? activity.map(activityCard).join("") : empty("Aun no hay publicaciones aprobadas.")}</div>
@@ -1801,11 +1824,10 @@
       const communityRows = community.length ? community.map((item) => `
         <article class="home-community-item"><h3>${esc(item.title)}</h3><p>${esc(item.category || "Comunidad Link")} · ${esc(dateLabel(item.createdAt))}</p></article>`).join("") : `<div class="home-empty">Aún no hay novedades de la comunidad.</div>`;
       return `<section class="screen home-bento">
-        <div class="home-bento-heading"><div><p>LINK / Panorama del gremio</p><h1>Tu sector, de un vistazo</h1><span>Empleo, MercaPlace y actualidad en un solo espacio.</span></div><button class="home-design-toggle" data-home-layout="classic" aria-pressed="true" type="button">Volver al tema claro</button></div>
         <div class="home-bento-grid">
+          <section class="home-panel home-panel-news"><header class="home-panel-head"><small>${esc(dateTimeLabel(state.officialNewsUpdatedAt))}</small><div class="home-news-actions"><button class="secondary" id="refreshOfficialButton" type="button">Actualizar</button><button class="home-design-toggle" data-home-layout="classic" aria-pressed="true" type="button">Tema claro</button></div></header>${renderOfficialNews()}</section>
           <section class="home-panel home-panel-wide"><header class="home-panel-head"><h2>Bolsa de empleo</h2><small>${vacancies.length} vacantes recientes</small></header><div class="home-short-list">${vacancyCards}</div><div class="action-row"><button class="primary" data-go-tab="empleos" type="button">Ver todas las vacantes</button></div></section>
           <section class="home-panel"><header class="home-panel-head"><h2>MercaPlace</h2><small>${products.length} publicaciones</small></header><div>${productRows}</div><div class="action-row"><button class="secondary" data-go-tab="marketplace" type="button">Explorar MercaPlace</button></div></section>
-          <section class="home-panel home-panel-news"><header class="home-panel-head"><small>Fuentes verificadas · ${esc(dateTimeLabel(state.officialNewsUpdatedAt))}</small><button class="secondary" id="refreshOfficialButton" type="button">Actualizar</button></header>${renderOfficialNews()}</section>
           <section class="home-panel"><header class="home-panel-head"><h2>Comunidad Link</h2><small>${community.length} novedades</small></header>${communityRows}<div class="action-row"><button class="secondary" data-go-tab="mensajes" type="button">Chat técnico</button></div></section>
         </div>
       </section>`;
@@ -3736,6 +3758,7 @@
 
     function render() {
       document.querySelector(".app")?.classList.toggle("dashboard-bento", homeBentoEnabled);
+      document.querySelector(".app")?.classList.toggle("is-home-screen", active === "inicio");
       document.querySelector(".stage")?.classList.toggle("dashboard-bento", homeBentoEnabled);
       renderHeader();
       renderTabs();
@@ -3749,6 +3772,7 @@
       if (active === "cuenta") content.innerHTML = renderCuenta();
       if (active === "asesor") content.innerHTML = renderAsesor();
       if (active === "admin") content.innerHTML = renderAdmin();
+      syncAdBannerPlacement();
       renderMediaViewer();
       bindForms();
       if (pendingAdminJump && active === "admin") {
@@ -3783,6 +3807,7 @@
     }
 
     window.addEventListener("resize", syncMenuButtons);
+    window.addEventListener("resize", syncAdBannerPlacement);
     window.addEventListener("pageshow", resumeAdBanner);
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) window.requestAnimationFrame(resumeAdBanner);
