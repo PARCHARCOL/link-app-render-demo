@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v99">
-  <link rel="icon" href="/icon-192.png?v=link-app-v99" type="image/png">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v99">
-  <link rel="preload" href="/icon-512.png?v=link-app-v99" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v100">
+  <link rel="icon" href="/icon-192.png?v=link-app-v100" type="image/png">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v100">
+  <link rel="preload" href="/icon-512.png?v=link-app-v100" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -402,6 +402,12 @@
     .home-shortcut-copy small{margin-top:4px;color:#aeb8c1;font-size:10px}
     .home-shortcut-copy .home-shortcut-label{margin:0 0 5px;color:#ff956f;font-size:10px;font-weight:900;text-transform:uppercase}
     .home-shortcut-count{position:absolute;right:8px;bottom:7px;color:#f2d486;font-size:9px;font-weight:850;white-space:nowrap}
+    .app:not(.dashboard-bento) .home-shortcut{color:#241a13;background:#fffaf5;border-color:#edc6a9;box-shadow:0 5px 14px rgba(110,57,23,.08)}
+    .app:not(.dashboard-bento) .home-shortcut-icon{color:#fff;background:linear-gradient(180deg,#ff9b2a,#d71920);border-color:#ed8b51}
+    .app:not(.dashboard-bento) .home-shortcut-market .home-shortcut-icon{background:#221810}
+    .app:not(.dashboard-bento) .home-shortcut-copy small{color:#755d4d}
+    .app:not(.dashboard-bento) .home-shortcut-copy .home-shortcut-label{color:#c93220}
+    .app:not(.dashboard-bento) .home-shortcut-count{color:#8a5210}
     .home-bento-grid{min-height:0;flex:1 1 auto}
     .home-panel-news{display:flex;height:100%;min-height:0;flex-direction:column;overflow:hidden}
     .home-panel-news .home-panel-head{margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid #b9b1a7}
@@ -538,7 +544,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v99";
+    const appBuild = "link-app-v100";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -1807,20 +1813,25 @@
     function renderInicio() {
       if (homeBentoEnabled) return renderBentoInicio();
       return `<section class="screen home-classic-screen"><div class="home-classic"><small>${esc(dateTimeLabel(state.officialNewsUpdatedAt))}</small><div class="home-news-actions"><button class="secondary" type="button" id="refreshOfficialButton">Actualizar</button><button class="home-design-toggle" data-home-layout="bento" aria-pressed="false" type="button">Tema oscuro</button></div></div>
+        ${renderHomeShortcuts()}
         ${renderOfficialNews()}
       </section>`;
     }
 
-    function renderBentoInicio() {
+    function renderHomeShortcuts() {
       const vacancies = (state.vacancies || []).filter((item) => item.status === "published").sort((a, b) => (Date.parse(b.createdAt || "") || 0) - (Date.parse(a.createdAt || "") || 0));
       const products = (state.products || []).filter((item) => item.status === "published").sort((a, b) => (Date.parse(b.createdAt || "") || 0) - (Date.parse(a.createdAt || "") || 0));
       const vacancy = vacancies[0];
       const product = products[0];
-      return `<section class="screen home-bento">
-        <div class="home-shortcuts" aria-label="Accesos destacados">
+      return `<div class="home-shortcuts" aria-label="Accesos destacados">
           <button class="home-shortcut home-shortcut-jobs" data-go-tab="empleos" type="button"><span class="home-shortcut-icon">${tabIcon("empleos")}</span><span class="home-shortcut-copy"><small class="home-shortcut-label">Bolsa de empleo</small><strong>${esc(vacancy?.title || "Ver vacantes")}</strong><small>${esc(vacancy ? [vacancy.company, vacancy.city].filter(Boolean).join(" · ") : "Oportunidades del sector")}</small></span><span class="home-shortcut-count">${vacancies.length} vacantes · Ver</span></button>
           <button class="home-shortcut home-shortcut-market" data-go-tab="marketplace" type="button"><span class="home-shortcut-icon">${(product?.mediaUrl || product?.mediaData) && !String(product.mediaType || "").startsWith("video/") ? `<img src="${esc(product.mediaUrl || product.mediaData)}" alt="">` : tabIcon("marketplace")}</span><span class="home-shortcut-copy"><small class="home-shortcut-label">MercaPlace</small><strong>${esc(product?.name || "Explorar productos")}</strong><small>${esc(product ? product.price : "Productos del sector")}</small></span><span class="home-shortcut-count">${products.length} productos · Ver</span></button>
-        </div>
+        </div>`;
+    }
+
+    function renderBentoInicio() {
+      return `<section class="screen home-bento">
+        ${renderHomeShortcuts()}
         <div class="home-bento-grid">
           <section class="home-panel home-panel-news"><header class="home-panel-head"><small>${esc(dateTimeLabel(state.officialNewsUpdatedAt))}</small><div class="home-news-actions"><button class="secondary" id="refreshOfficialButton" type="button">Actualizar</button><button class="home-design-toggle" data-home-layout="classic" aria-pressed="true" type="button">Tema claro</button></div></header>${renderOfficialNews()}</section>
         </div>
