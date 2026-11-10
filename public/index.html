@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v84">
-  <link rel="icon" href="/icon-192.png?v=link-app-v84" type="image/png">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v84">
-  <link rel="preload" href="/icon-512.png?v=link-app-v84" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v85">
+  <link rel="icon" href="/icon-192.png?v=link-app-v85" type="image/png">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v85">
+  <link rel="preload" href="/icon-512.png?v=link-app-v85" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -283,6 +283,75 @@
     @media (max-width:820px){.tabs{grid-template-columns:repeat(auto-fit,minmax(58px,1fr));justify-content:stretch;gap:4px;max-width:100%;overflow:visible;padding:0 max(4px,env(safe-area-inset-right)) 4px max(4px,env(safe-area-inset-left))}.menu-btn,.download-menu{width:100%;max-width:none;min-width:0;flex:initial;margin:0}.app-header .tabs{max-height:230px}.menu-btn span:last-child{width:100%;max-width:none}}
     @media (max-width:380px){.brand-row{grid-template-columns:68px minmax(0,1fr) auto}.brand-mark{width:68px;height:68px}.brand-copy strong{font-size:24px}.brand-copy span{font-size:10.5px}.header-action{min-width:64px;min-height:32px;padding:4px 6px;font-size:10px}.account-action{min-width:94px}.header-action strong,.header-action small{max-width:94px}.tabs{grid-template-columns:repeat(auto-fit,minmax(54px,1fr));gap:3px}.menu-icon{width:42px;height:42px}.menu-btn span:last-child{font-size:9px}.screen{padding-left:10px;padding-right:10px}.hero h1{font-size:24px}}
     @media (max-width:820px){.screen{scrollbar-width:none}.screen::-webkit-scrollbar{display:none}.stage{min-height:100vh;min-height:100svh}.app{height:100vh;height:100svh;min-height:100vh;min-height:100svh}.newspaper-masthead strong{font-size:34px}.side-feature-panel{box-sizing:border-box;margin-bottom:max(6px,env(safe-area-inset-bottom))}.feature-media-main{object-fit:contain!important;object-position:center center}}
+    .app.dashboard-bento{--ink:#f3f5f7;--muted:#b2bbc3;--muted2:#8d99a4;--line:#303943;--line2:#414c57;--paper:#12161a;--card:#1a1f26;--field:#20262d;--soft:#242b33;--bg:#101419;--shadow:0 24px 70px rgba(0,0,0,.42);background:#12161a;border-color:#303943;color:#f3f5f7}
+    .app.dashboard-bento .app-header{background:#171c22;border-color:#303943}
+    .app.dashboard-bento .phone-status,.app.dashboard-bento .brand-copy strong{color:#f3f5f7}
+    .app.dashboard-bento .brand-copy span{color:#aeb8c1}
+    .app.dashboard-bento .header-action{background:#ff5722;box-shadow:none}
+    .app.dashboard-bento .tabs{gap:10px}
+    .app.dashboard-bento .menu-btn{color:#d2d8dd}
+    .app.dashboard-bento .menu-icon{background:#252d35;box-shadow:none}
+    .app.dashboard-bento .menu-btn.active .menu-icon{background:#ff5722}
+    .app.dashboard-bento .menu-btn.active{color:#ff946f;background:#242a31;box-shadow:inset 0 0 0 1px #3b454f}
+    .app.dashboard-bento .download-menu .menu-icon{color:#f2d486;background:#3a3325}
+    .app.dashboard-bento .nav-toggle{color:#f3f5f7;background:#20262d;border-color:#39434d;box-shadow:none}
+    .app.dashboard-bento #content{background:#12161a}
+    .app.dashboard-bento #content .primary{color:#fff;background:#ff5722;border-color:#ff5722;box-shadow:none}
+    .app.dashboard-bento #content .secondary{color:#f3f5f7;background:#2b333c;border-color:#46515d;box-shadow:none}
+    .app.dashboard-bento .screen{scrollbar-color:#65717d #20262d}
+    .app.dashboard-bento .screen::-webkit-scrollbar-track{background:#20262d}
+    .app.dashboard-bento .screen::-webkit-scrollbar-thumb{background:#65717d;border-color:#12161a}
+    .app.dashboard-bento .side-feature-panel{background:#1a1f26;border-color:#8f7430;box-shadow:0 12px 34px rgba(0,0,0,.32)}
+    .app.dashboard-bento .side-feature-panel::after{background:linear-gradient(180deg,rgba(10,12,15,.12),rgba(10,12,15,.24) 42%,rgba(10,12,15,.92))}
+    .home-classic{display:flex;justify-content:flex-end;margin:0 0 10px}
+    .home-design-toggle{min-height:34px;padding:0 12px;color:#7b2b11;background:#fff;border:1px solid #efb194;border-radius:8px;font-size:12px;font-weight:850}
+    .app.dashboard-bento .home-design-toggle{color:#fff;background:#252d35;border-color:#46515d}
+    .home-bento-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin:0 0 14px}
+    .home-bento-heading p{margin:0 0 4px;color:#ff926f;font-size:11px;font-weight:900;text-transform:uppercase}
+    .home-bento-heading h1{margin:0;color:#f7f8f9;font-size:26px;line-height:1.12}
+    .home-bento-heading span{display:block;margin-top:6px;color:#aeb8c1;font-size:12px;line-height:1.4}
+    .home-bento-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:stretch}
+    .home-panel{min-width:0;padding:14px;background:rgba(26,31,38,.96);border:1px solid #303943;border-radius:8px;box-shadow:0 12px 26px rgba(0,0,0,.16)}
+    .home-panel-wide{grid-column:span 2}
+    .home-panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 10px}
+    .home-panel-head h2{margin:0;color:#f2f4f5;font-size:15px;line-height:1.2}
+    .home-panel-head small{color:#a5afb8;font-size:11px}
+    .home-short-list{display:grid;gap:8px}
+    .home-vacancy{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:10px;background:#20262d;border:1px solid #343e48;border-radius:8px}
+    .home-vacancy h3,.home-community-item h3{margin:0;color:#f5f6f7;font-size:14px;line-height:1.25}
+    .home-vacancy p,.home-community-item p{margin:4px 0 0;color:#aeb8c1;font-size:12px;line-height:1.35}
+    .home-vacancy-meta{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+    .home-vacancy-meta span{padding:3px 7px;color:#e8d8aa;background:#2d2a21;border:1px solid #51472e;border-radius:999px;font-size:10px;font-weight:750}
+    .home-vacancy-actions{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+    .home-vacancy-actions button{min-height:32px;padding:0 9px;border-radius:7px;font-size:11px}
+    .app.dashboard-bento .home-vacancy-actions .mini-btn{color:#fff;background:#ff5722;border-color:#ff5722}
+    .app.dashboard-bento .home-vacancy-actions .secondary{color:#f3f5f7;background:#2b333c;border-color:#46515d}
+    .home-product-row{display:grid;grid-template-columns:46px minmax(0,1fr) auto;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid #303943}
+    .home-product-row:last-child{border-bottom:0}
+    .home-product-row .product-logo,.home-product-row .product-media{width:46px;height:46px;aspect-ratio:1;border:1px solid #3b4651;border-radius:7px;background:#222930}
+    .home-product-row .product-logo img{width:88%;height:88%;object-fit:contain}
+    .home-product-row h3{margin:0;color:#f3f5f7;font-size:12px;line-height:1.25}
+    .home-product-row strong{display:block;margin-top:4px;color:#f2d486;font-size:12px}
+    .home-product-row .mini-btn{min-height:30px;padding:0 8px;color:#f3f5f7;background:#2b333c;border-color:#46515d;border-radius:7px;font-size:10px}
+    .home-news-list{display:grid;gap:0}
+    .home-news-item{display:grid;width:100%;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:10px 0;color:#f3f5f7;background:transparent;border:0;border-bottom:1px solid #303943;text-align:left}
+    .home-news-item:last-child{border-bottom:0}
+    .home-news-item:hover h3{color:#ff9b78}
+    .home-news-item h3{margin:0;color:#f3f5f7;font-size:13px;line-height:1.3}
+    .home-news-item span{display:block;margin-bottom:4px;color:#e6cc81;font-size:10px;font-weight:800;text-transform:uppercase}
+    .home-news-item time{color:#929da7;font-size:10px;white-space:nowrap}
+    .home-community-item{padding:10px 0;border-bottom:1px solid #303943}
+    .home-community-item:last-child{border-bottom:0}
+    .home-empty{padding:10px 0;color:#9ba6b0;font-size:12px;line-height:1.4}
+    .app.dashboard-bento .newspaper{color:#f1f3f5;background:#1a1f26;border-color:#46515d}
+    .app.dashboard-bento .newspaper-masthead{color:#f1f3f5;border-color:#66717c}
+    .app.dashboard-bento .newspaper-masthead strong{color:#f1f3f5}
+    .app.dashboard-bento .lead-story,.app.dashboard-bento .story-list{border-color:#46515d}
+    .app.dashboard-bento .lead-story h2,.app.dashboard-bento .story-card h3{color:#f5f6f7}
+    .app.dashboard-bento .lead-story p,.app.dashboard-bento .story-card p{color:#c0c8cf}
+    @media(max-width:1000px){.home-bento-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.home-panel-wide{grid-column:span 2}}
+    @media(max-width:820px){.home-bento-heading{align-items:flex-start}.home-bento-heading h1{font-size:22px}.home-bento-grid{grid-template-columns:minmax(0,1fr);gap:9px}.home-panel-wide{grid-column:auto}.home-panel{padding:12px}.home-vacancy{grid-template-columns:minmax(0,1fr)}.home-vacancy-actions{justify-content:flex-start}}
+    @media(max-width:380px){.home-bento-heading{display:grid}.home-bento-heading .home-design-toggle{justify-self:start}.home-vacancy-actions button{font-size:10px;padding:0 7px}}
   </style>
 </head>
 <body>
@@ -340,7 +409,9 @@
     let adTransitionTimer = null;
     let adTransitionId = 0;
     let adMuted = true;
-    let menuButtonsCollapsed = false;
+    let homeBentoEnabled = true;
+    try { homeBentoEnabled = localStorage.getItem("linkHomeLayout") !== "classic"; } catch {}
+    let menuButtonsCollapsed = homeBentoEnabled && window.matchMedia("(max-width: 820px)").matches;
     let appHistoryReady = false;
     let state = baseState();
 
@@ -385,7 +456,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v84";
+    const appBuild = "link-app-v85";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -1647,8 +1718,9 @@
     }
 
     function renderInicio() {
+      if (homeBentoEnabled) return renderBentoInicio();
       const activity = recentActivityItems();
-      return `<section class="screen">${hero("Noticias", "Información reciente de reguladores, eventos y fuentes gremiales del sector de casinos y juegos localizados.")}
+      return `<section class="screen"><div class="home-classic"><button class="home-design-toggle" data-home-layout="bento" aria-pressed="false" type="button">Probar nuevo diseño</button></div>${hero("Noticias", "Información reciente de reguladores, eventos y fuentes gremiales del sector de casinos y juegos localizados.")}
         <div class="verify-row">
           <div><strong>Fuentes verificadas</strong><span>${esc(state.officialNewsError || `Coljuegos, UIAF, Supersalud, DIAN, GAT Events, Fecoljuegos y fuentes sectoriales autorizadas. Última verificación: ${dateTimeLabel(state.officialNewsUpdatedAt)}`)}</span></div>
           <button class="secondary" type="button" id="refreshOfficialButton">Verificar ahora</button>
@@ -1656,6 +1728,36 @@
         ${renderOfficialNews()}
         <div class="section-title"><h2>Movimiento laboral y comunidad</h2><small>${activity.length}</small></div>
         <div class="activity-grid">${activity.length ? activity.map(activityCard).join("") : empty("Aun no hay publicaciones aprobadas.")}</div>
+      </section>`;
+    }
+
+    function renderBentoInicio() {
+      const newestFirst = (items) => [...items].sort((a, b) => (Date.parse(b.createdAt || "") || 0) - (Date.parse(a.createdAt || "") || 0));
+      const vacancies = newestFirst((state.vacancies || []).filter((item) => item.status === "published")).slice(0, 2);
+      const products = newestFirst((state.products || []).filter((item) => item.status === "published")).slice(0, 3);
+      const community = newestFirst((state.news || []).filter((item) => item.status === "published")).slice(0, 2);
+      const official = officialItems().slice(0, 3);
+      const vacancyCards = vacancies.length ? vacancies.map((item) => `
+        <article class="home-vacancy">
+          <div><h3>${esc(item.title)}</h3><p>${esc([item.company, item.city].filter(Boolean).join(" · "))}</p>
+            <div class="home-vacancy-meta">${item.salary ? `<span>${esc(item.salary)}</span>` : ""}<span>Publicado ${esc(dateLabel(item.createdAt))}</span></div>
+          </div>
+          <div class="home-vacancy-actions"><button class="secondary" data-go-tab="empleos" type="button">Ver</button>${vacancyApplyAction(item)}</div>
+        </article>`).join("") : `<div class="home-empty">Aún no hay vacantes publicadas.</div>`;
+      const productRows = products.length ? products.map((item) => `
+        <article class="home-product-row">${productMedia(item)}<div><h3>${esc(item.name)}</h3><strong>${esc(item.price)}</strong></div><button class="mini-btn" data-go-tab="marketplace" type="button">Ver</button></article>`).join("") : `<div class="home-empty">Aún no hay productos publicados.</div>`;
+      const newsRows = official.length ? official.map((item) => `
+        <button class="home-news-item" data-official-news-url="${esc(item.url)}" type="button"><div><span>${esc(item.entity)}</span><h3>${esc(item.title)}</h3></div><time>${esc(newsPublicationLabel(item.publishedAt))}</time></button>`).join("") : `<div class="home-empty">${esc(state.officialNewsError || "No hay noticias disponibles en este momento.")}</div>`;
+      const communityRows = community.length ? community.map((item) => `
+        <article class="home-community-item"><h3>${esc(item.title)}</h3><p>${esc(item.category || "Comunidad Link")} · ${esc(dateLabel(item.createdAt))}</p></article>`).join("") : `<div class="home-empty">Aún no hay novedades de la comunidad.</div>`;
+      return `<section class="screen home-bento">
+        <div class="home-bento-heading"><div><p>LINK / Panorama del gremio</p><h1>Tu sector, de un vistazo</h1><span>Empleo, MercaPlace y actualidad en un solo espacio.</span></div><button class="home-design-toggle" data-home-layout="classic" aria-pressed="true" type="button">Volver al diseño actual</button></div>
+        <div class="home-bento-grid">
+          <section class="home-panel home-panel-wide"><header class="home-panel-head"><h2>Bolsa de empleo</h2><small>${vacancies.length} vacantes recientes</small></header><div class="home-short-list">${vacancyCards}</div><div class="action-row"><button class="primary" data-go-tab="empleos" type="button">Ver todas las vacantes</button></div></section>
+          <section class="home-panel"><header class="home-panel-head"><h2>MercaPlace</h2><small>${products.length} publicaciones</small></header><div>${productRows}</div><div class="action-row"><button class="secondary" data-go-tab="marketplace" type="button">Explorar MercaPlace</button></div></section>
+          <section class="home-panel home-panel-wide"><header class="home-panel-head"><h2>Noticias del gremio</h2><small>Fuentes verificadas · ${esc(dateTimeLabel(state.officialNewsUpdatedAt))}</small></header>${activeOfficialNewsUrl ? renderOfficialNews() : `<div class="home-news-list">${newsRows}</div>`}<div class="action-row"><button class="secondary" id="refreshOfficialButton" type="button">Verificar noticias</button></div></section>
+          <section class="home-panel"><header class="home-panel-head"><h2>Comunidad Link</h2><small>${community.length} novedades</small></header>${communityRows}<div class="action-row"><button class="secondary" data-go-tab="mensajes" type="button">Chat técnico</button></div></section>
+        </div>
       </section>`;
     }
 
@@ -2759,6 +2861,15 @@
     function bindForms() {
       const updateAppButton = document.querySelector("#updateAppButton");
       if (updateAppButton) updateAppButton.onclick = updateAppNow;
+      document.querySelectorAll("[data-home-layout]").forEach((button) => {
+        button.onclick = () => {
+          homeBentoEnabled = button.dataset.homeLayout === "bento";
+          try { localStorage.setItem("linkHomeLayout", homeBentoEnabled ? "bento" : "classic"); } catch {}
+          menuButtonsCollapsed = homeBentoEnabled && window.matchMedia("(max-width: 820px)").matches;
+          activeOfficialNewsUrl = "";
+          render();
+        };
+      });
       document.querySelectorAll("[data-official-news-url]").forEach((button) => {
         button.onclick = () => openOfficialNews(button.dataset.officialNewsUrl || "");
       });
@@ -3574,6 +3685,7 @@
     }
 
     function render() {
+      document.querySelector(".app")?.classList.toggle("dashboard-bento", active === "inicio" && homeBentoEnabled);
       renderHeader();
       renderTabs();
       renderAdBanner();
