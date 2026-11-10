@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v96">
-  <link rel="icon" href="/icon-192.png?v=link-app-v96" type="image/png">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v96">
-  <link rel="preload" href="/icon-512.png?v=link-app-v96" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v97">
+  <link rel="icon" href="/icon-192.png?v=link-app-v97" type="image/png">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v97">
+  <link rel="preload" href="/icon-512.png?v=link-app-v97" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -388,6 +388,16 @@
     .home-empty{padding:10px 0;color:#9ba6b0;font-size:12px;line-height:1.4}
     .home-panel.home-panel-news{grid-column:1/-1;padding:18px;background:#faf8f2;border:1px solid #c9c1b6;border-radius:3px;color:#171717;box-shadow:0 12px 28px rgba(0,0,0,.2)}
     .home-bento{height:100%;display:flex;flex-direction:column}
+    .home-shortcuts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0 0 9px;flex:0 0 auto}
+    .home-shortcut{min-width:0;min-height:82px;display:grid;grid-template-columns:42px minmax(0,1fr) auto;align-items:center;gap:9px;padding:9px;color:#f3f5f7;background:#1a1f26;border:1px solid #303943;border-radius:8px;text-align:left}
+    .home-shortcut-icon{width:42px;height:42px;display:grid;place-items:center;color:#fff;background:#252d35;border:1px solid #3b4651;border-radius:8px;overflow:hidden}
+    .home-shortcut-icon svg{width:24px;height:24px}
+    .home-shortcut-icon img,.home-shortcut-icon .product-logo,.home-shortcut-icon .product-media{width:100%;height:100%;object-fit:cover}
+    .home-shortcut-copy{min-width:0}
+    .home-shortcut-copy strong,.home-shortcut-copy small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .home-shortcut-copy strong{font-size:12px;line-height:1.25}
+    .home-shortcut-copy small{margin-top:3px;color:#aeb8c1;font-size:10px}
+    .home-shortcut-count{color:#f2d486;font-size:10px;font-weight:850;white-space:nowrap}
     .home-bento-grid{min-height:0;flex:1 1 auto}
     .home-panel-news{display:flex;height:100%;min-height:0;flex-direction:column;overflow:hidden}
     .home-panel-news .home-panel-head{margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid #b9b1a7}
@@ -416,6 +426,7 @@
     @media(max-width:820px){.home-panel.home-panel-news{grid-column:1;padding:14px 12px}.home-panel-news{height:100%}.home-classic-screen>.newspaper{height:auto}.home-panel-news .home-panel-head{align-items:center;gap:8px}.home-panel-news .home-panel-head>small{flex:1 1 105px;min-width:80px;line-height:1.25}.home-panel-news .newspaper{gap:11px}.home-panel-news .newspaper-masthead{padding-bottom:9px}.home-panel-news .newspaper-masthead strong{font-size:34px}.home-panel-news .lead-story h2{font-size:27px}.home-panel-news .lead-story.has-image{grid-template-columns:minmax(0,1fr)}.home-panel-news .lead-story .story-content{order:0}.home-panel-news .lead-story .story-media{order:1;height:120px;min-height:120px;max-height:150px;border-left:0;border-top:1px solid #c9c1b6;border-bottom:0}.home-panel-news .story-card h3{font-size:19px}.app.dashboard-bento .brand-row{grid-template-columns:68px minmax(0,1fr) auto;gap:8px;margin-bottom:6px}.app.dashboard-bento .brand-mark{width:68px;height:68px}.app.dashboard-bento .brand-copy p{display:none}.app.dashboard-bento .brand-copy strong{font-size:26px}.app.dashboard-bento .header-actions{gap:5px}.app.dashboard-bento .header-action{min-width:68px;min-height:34px;padding:4px 7px;font-size:10px}.app.dashboard-bento .header-action strong,.app.dashboard-bento .header-action small{max-width:92px}.app.dashboard-bento .home-bento{padding-top:6px}.app.dashboard-bento .home-panel.home-panel-news{padding:12px 10px}.home-news-actions{gap:6px}.home-news-actions button{min-height:34px;padding:0 9px;font-size:11px}.home-news-actions .home-design-toggle{min-height:34px;padding:0 9px;font-size:11px}.home-classic{gap:6px}}
     @media(max-width:1000px){.home-bento-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.home-panel-wide{grid-column:span 2}}
     @media(max-width:820px){.home-bento-heading{align-items:flex-start}.home-bento-heading h1{font-size:22px}.home-bento-grid{grid-template-columns:minmax(0,1fr);gap:9px}.home-panel-wide{grid-column:auto}.home-panel{padding:12px}.home-vacancy{grid-template-columns:minmax(0,1fr)}.home-vacancy-actions{justify-content:flex-start}}
+    @media(max-width:820px){.home-shortcuts{gap:6px;margin-bottom:7px}.home-shortcut{grid-template-columns:34px minmax(0,1fr);min-height:68px;gap:7px;padding:7px}.home-shortcut-icon{width:34px;height:34px}.home-shortcut-count{grid-column:2;font-size:9px}}
     @media(max-width:820px){.side-feature-panel{height:clamp(146px,calc((100dvw - 16px)*.42),176px);min-height:clamp(146px,calc((100dvw - 16px)*.42),176px);max-height:clamp(146px,calc((100dvw - 16px)*.42),176px)}}
     @media(max-width:380px){.home-bento-heading{display:grid}.home-bento-heading .home-design-toggle{justify-self:start}.home-vacancy-actions button{font-size:10px;padding:0 7px}.home-panel-news .home-panel-head,.home-classic{align-items:flex-start}.home-panel-news .home-news-actions,.home-classic .home-news-actions{flex-wrap:wrap}}
     @media(max-width:820px){.app-header .tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;max-height:260px;overflow-y:auto;overscroll-behavior:contain;padding:2px 0 4px}.app-header.nav-collapsed .tabs{max-height:0}.app-header .menu-btn,.app-header .download-menu{width:100%;max-width:none;min-width:0;min-height:68px;justify-self:stretch;gap:3px;padding:3px 2px;border-radius:10px}.app-header .menu-icon{width:42px;height:42px;border-radius:12px}.app-header .menu-icon svg{width:23px;height:23px}.app-header .menu-btn span:last-child{max-width:100%;min-height:20px;font-size:10px;line-height:1.05}.app-header .nav-toggle{margin-top:2px}}
@@ -523,7 +534,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v96";
+    const appBuild = "link-app-v97";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -1797,7 +1808,15 @@
     }
 
     function renderBentoInicio() {
+      const vacancies = (state.vacancies || []).filter((item) => item.status === "published").sort((a, b) => (Date.parse(b.createdAt || "") || 0) - (Date.parse(a.createdAt || "") || 0));
+      const products = (state.products || []).filter((item) => item.status === "published").sort((a, b) => (Date.parse(b.createdAt || "") || 0) - (Date.parse(a.createdAt || "") || 0));
+      const vacancy = vacancies[0];
+      const product = products[0];
       return `<section class="screen home-bento">
+        <div class="home-shortcuts" aria-label="Accesos destacados">
+          <button class="home-shortcut" data-go-tab="empleos" type="button"><span class="home-shortcut-icon">${tabIcon("empleos")}</span><span class="home-shortcut-copy"><strong>${esc(vacancy?.title || "Bolsa de empleo")}</strong><small>${esc(vacancy ? [vacancy.company, vacancy.city].filter(Boolean).join(" · ") : "Ver vacantes")}</small></span><span class="home-shortcut-count">${vacancies.length} vacantes</span></button>
+          <button class="home-shortcut" data-go-tab="marketplace" type="button"><span class="home-shortcut-icon">${(product?.mediaUrl || product?.mediaData) && !String(product.mediaType || "").startsWith("video/") ? `<img src="${esc(product.mediaUrl || product.mediaData)}" alt="">` : tabIcon("marketplace")}</span><span class="home-shortcut-copy"><strong>${esc(product?.name || "MercaPlace")}</strong><small>${esc(product ? product.price : "Explorar productos")}</small></span><span class="home-shortcut-count">${products.length} productos</span></button>
+        </div>
         <div class="home-bento-grid">
           <section class="home-panel home-panel-news"><header class="home-panel-head"><small>${esc(dateTimeLabel(state.officialNewsUpdatedAt))}</small><div class="home-news-actions"><button class="secondary" id="refreshOfficialButton" type="button">Actualizar</button><button class="home-design-toggle" data-home-layout="classic" aria-pressed="true" type="button">Tema claro</button></div></header>${renderOfficialNews()}</section>
         </div>
