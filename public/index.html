@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Link">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v85">
-  <link rel="icon" href="/icon-192.png?v=link-app-v85" type="image/png">
-  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v85">
-  <link rel="preload" href="/icon-512.png?v=link-app-v85" as="image">
+  <link rel="manifest" href="/manifest.webmanifest?v=link-app-v86">
+  <link rel="icon" href="/icon-192.png?v=link-app-v86" type="image/png">
+  <link rel="apple-touch-icon" href="/icon-192.png?v=link-app-v86">
+  <link rel="preload" href="/icon-512.png?v=link-app-v86" as="image">
   <style>
     :root{--bg:#fff6ef;--paper:#fffdf9;--card:#ffffff;--soft:#fff0e3;--field:#fff9f2;--line:#f2c9ad;--line2:#e7a778;--ink:#1e1712;--muted:#735e50;--muted2:#9d8778;--orange:#ff6a00;--orange2:#ffb000;--red:#d71920;--red2:#ff3d2e;--blue:#1476ff;--green:#1f9d55;--shadow:0 24px 70px rgba(128,49,0,.22)}
     *{box-sizing:border-box}
@@ -283,11 +283,13 @@
     @media (max-width:820px){.tabs{grid-template-columns:repeat(auto-fit,minmax(58px,1fr));justify-content:stretch;gap:4px;max-width:100%;overflow:visible;padding:0 max(4px,env(safe-area-inset-right)) 4px max(4px,env(safe-area-inset-left))}.menu-btn,.download-menu{width:100%;max-width:none;min-width:0;flex:initial;margin:0}.app-header .tabs{max-height:230px}.menu-btn span:last-child{width:100%;max-width:none}}
     @media (max-width:380px){.brand-row{grid-template-columns:68px minmax(0,1fr) auto}.brand-mark{width:68px;height:68px}.brand-copy strong{font-size:24px}.brand-copy span{font-size:10.5px}.header-action{min-width:64px;min-height:32px;padding:4px 6px;font-size:10px}.account-action{min-width:94px}.header-action strong,.header-action small{max-width:94px}.tabs{grid-template-columns:repeat(auto-fit,minmax(54px,1fr));gap:3px}.menu-icon{width:42px;height:42px}.menu-btn span:last-child{font-size:9px}.screen{padding-left:10px;padding-right:10px}.hero h1{font-size:24px}}
     @media (max-width:820px){.screen{scrollbar-width:none}.screen::-webkit-scrollbar{display:none}.stage{min-height:100vh;min-height:100svh}.app{height:100vh;height:100svh;min-height:100vh;min-height:100svh}.newspaper-masthead strong{font-size:34px}.side-feature-panel{box-sizing:border-box;margin-bottom:max(6px,env(safe-area-inset-bottom))}.feature-media-main{object-fit:contain!important;object-position:center center}}
-    .app.dashboard-bento{--ink:#f3f5f7;--muted:#b2bbc3;--muted2:#8d99a4;--line:#303943;--line2:#414c57;--paper:#12161a;--card:#1a1f26;--field:#20262d;--soft:#242b33;--bg:#101419;--shadow:0 24px 70px rgba(0,0,0,.42);background:#12161a;border-color:#303943;color:#f3f5f7}
+    .stage.dashboard-bento{background:#0e1115}
+    .app.dashboard-bento{--ink:#f3f5f7;--muted:#b2bbc3;--muted2:#8d99a4;--line:#303943;--line2:#414c57;--paper:#12161a;--card:#1a1f26;--field:#20262d;--soft:#242b33;--bg:#101419;--orange:#ff5722;--orange2:#d4af37;--shadow:0 24px 70px rgba(0,0,0,.42);background:#12161a;border-color:#303943;color:#f3f5f7}
     .app.dashboard-bento .app-header{background:#171c22;border-color:#303943}
     .app.dashboard-bento .phone-status,.app.dashboard-bento .brand-copy strong{color:#f3f5f7}
     .app.dashboard-bento .brand-copy span{color:#aeb8c1}
     .app.dashboard-bento .header-action{background:#ff5722;box-shadow:none}
+    .app.dashboard-bento .app-back{color:#f3f5f7;background:#252d35;border-color:#46515d;box-shadow:none}
     .app.dashboard-bento .tabs{gap:10px}
     .app.dashboard-bento .menu-btn{color:#d2d8dd}
     .app.dashboard-bento .menu-icon{background:#252d35;box-shadow:none}
@@ -303,6 +305,46 @@
     .app.dashboard-bento .screen::-webkit-scrollbar-thumb{background:#65717d;border-color:#12161a}
     .app.dashboard-bento .side-feature-panel{background:#1a1f26;border-color:#8f7430;box-shadow:0 12px 34px rgba(0,0,0,.32)}
     .app.dashboard-bento .side-feature-panel::after{background:linear-gradient(180deg,rgba(10,12,15,.12),rgba(10,12,15,.24) 42%,rgba(10,12,15,.92))}
+    .app.dashboard-bento :is(.card,.source-card,.verify-row,.account-card,.locked,.settings-card,.auth-shell,.login-brand,.thread,.chat,.blog-post,.admin-row,.admin-kpi,.detail-panel,.file-field,.comment,.media-viewer-card,.update-banner,details.editor){color:#f3f5f7;background-color:#1a1f26;border-color:#303943;box-shadow:0 10px 24px rgba(0,0,0,.2)}
+    .app.dashboard-bento .update-banner{border-color:#7a3925}
+    .app.dashboard-bento .update-banner strong,.app.dashboard-bento .detail-panel h4,.app.dashboard-bento .comment strong{color:#ff956f}
+    .app.dashboard-bento .notice{color:#f4d98d;background:#332b18;border-color:#66532a}
+    .app.dashboard-bento .error,.app.dashboard-bento .screen-message.error-kind{color:#ffd5d5;background:#3a2022;border-color:#80383e}
+    .app.dashboard-bento .screen-message.notice-kind{color:#b8efcb;background:#193627;border-color:#2e6943}
+    .app.dashboard-bento .primary,.app.dashboard-bento .mini-btn,.app.dashboard-bento .flow-main,.app.dashboard-bento .flow-btn{color:#fff;background:#ff5722;border-color:#ff5722;box-shadow:none}
+    .app.dashboard-bento .secondary{color:#f3f5f7;background:#2b333c;border-color:#46515d;box-shadow:none}
+    .app.dashboard-bento .danger-btn{color:#fff;background:#a83238}
+    .app.dashboard-bento .feature-actions .secondary{color:#761b12;background:rgba(255,255,255,.94);border-color:rgba(255,255,255,.9)}
+    .app.dashboard-bento :is(input,textarea,select){color:#f3f5f7;background:#20262d;border-color:#46515d;color-scheme:dark}
+    .app.dashboard-bento :is(input,textarea,select):focus{border-color:#ff764e;box-shadow:0 0 0 3px rgba(255,87,34,.2)}
+    .app.dashboard-bento input[type="file"]{color:#b2bbc3;background:#20262d}
+    .app.dashboard-bento .file-field{background:#1a1f26;border-color:#3a444e}
+    .app.dashboard-bento .file-field input{background:#20262d}
+    .app.dashboard-bento .auth-tab{color:#d4dbe1;background:#252d35;border-color:#46515d}
+    .app.dashboard-bento .auth-tab.active{color:#fff;background:#ff5722;border-color:#ff5722}
+    .app.dashboard-bento .logo-admin-preview{background:#20262d;border-color:#3a444e}
+    .app.dashboard-bento .vacancy-company-logo,.app.dashboard-bento .profile-photo{background:#252d35;border-color:#46515d}
+    .app.dashboard-bento .detail-panel{background:#20262d}
+    .app.dashboard-bento .filter-chip{color:#e6d8b4;background:#2b2a24;border-color:#51472e}
+    .app.dashboard-bento .filter-chip.active{color:#fff;background:#ff5722;border-color:#ff5722}
+    .app.dashboard-bento .empty{color:#b2bbc3;background:#1a1f26;border-color:#46515d}
+    .app.dashboard-bento .pill{color:#eedb9f;background:#302b20;border-color:#554a30}
+    .app.dashboard-bento .status-badge{color:#f0d58c;background:#302b20;border-color:#554a30}
+    .app.dashboard-bento .status-badge.published,.app.dashboard-bento .status-badge.active,.app.dashboard-bento .status-badge.approved{color:#a9e8bd;background:#193627;border-color:#2e6943}
+    .app.dashboard-bento .status-badge.hidden,.app.dashboard-bento .status-badge.inactive,.app.dashboard-bento .status-badge.rejected{color:#ffc3c5;background:#3a2022;border-color:#80383e}
+    .app.dashboard-bento .product-logo,.app.dashboard-bento .product-media{background:#20262d;border-color:#3a444e}
+    .app.dashboard-bento .thread.active{background:#2a2528;border-color:#ff5722}
+    .app.dashboard-bento .bubble{color:#f3f5f7;background:#2b333c}
+    .app.dashboard-bento .bubble.mine{color:#fff;background:#a93828}
+    .app.dashboard-bento .blog-post.active{border-color:#ff5722;box-shadow:0 14px 30px rgba(255,87,34,.12)}
+    .app.dashboard-bento .comment{background:#20262d;border-color:#3a444e}
+    .app.dashboard-bento .technical-card{color:#e4f0ff;background:#182431;border-color:#34516d}
+    .app.dashboard-bento .technical-card h2{color:#8ec5ff}
+    .app.dashboard-bento .topline strong,.app.dashboard-bento .origin-link,.app.dashboard-bento .text-link{color:#ff956f}
+    .app.dashboard-bento .story-media{background:#20262d;border-color:#46515d}
+    .app.dashboard-bento .media-viewer-card{background:#1a1f26;border-color:#46515d}
+    .app.dashboard-bento .media-viewer-card img,.app.dashboard-bento .media-viewer-card video{background:#101419}
+    .app.dashboard-bento :is(button,a,input,textarea,select,summary):focus-visible{outline:2px solid #ff956f;outline-offset:2px}
     .home-classic{display:flex;justify-content:flex-end;margin:0 0 10px}
     .home-design-toggle{min-height:34px;padding:0 12px;color:#7b2b11;background:#fff;border:1px solid #efb194;border-radius:8px;font-size:12px;font-weight:850}
     .app.dashboard-bento .home-design-toggle{color:#fff;background:#252d35;border-color:#46515d}
@@ -456,7 +498,7 @@
     };
 
     window.__LINK_BOOTSTRAP_SETTINGS__ = window.__LINK_BOOTSTRAP_SETTINGS__ || null;
-    const appBuild = "link-app-v85";
+    const appBuild = "link-app-v86";
 
     const mainTabs = [
       { key: "inicio", label: "Link" },
@@ -1720,7 +1762,7 @@
     function renderInicio() {
       if (homeBentoEnabled) return renderBentoInicio();
       const activity = recentActivityItems();
-      return `<section class="screen"><div class="home-classic"><button class="home-design-toggle" data-home-layout="bento" aria-pressed="false" type="button">Probar nuevo diseño</button></div>${hero("Noticias", "Información reciente de reguladores, eventos y fuentes gremiales del sector de casinos y juegos localizados.")}
+      return `<section class="screen"><div class="home-classic"><button class="home-design-toggle" data-home-layout="bento" aria-pressed="false" type="button">Probar tema oscuro</button></div>${hero("Noticias", "Información reciente de reguladores, eventos y fuentes gremiales del sector de casinos y juegos localizados.")}
         <div class="verify-row">
           <div><strong>Fuentes verificadas</strong><span>${esc(state.officialNewsError || `Coljuegos, UIAF, Supersalud, DIAN, GAT Events, Fecoljuegos y fuentes sectoriales autorizadas. Última verificación: ${dateTimeLabel(state.officialNewsUpdatedAt)}`)}</span></div>
           <button class="secondary" type="button" id="refreshOfficialButton">Verificar ahora</button>
@@ -1751,7 +1793,7 @@
       const communityRows = community.length ? community.map((item) => `
         <article class="home-community-item"><h3>${esc(item.title)}</h3><p>${esc(item.category || "Comunidad Link")} · ${esc(dateLabel(item.createdAt))}</p></article>`).join("") : `<div class="home-empty">Aún no hay novedades de la comunidad.</div>`;
       return `<section class="screen home-bento">
-        <div class="home-bento-heading"><div><p>LINK / Panorama del gremio</p><h1>Tu sector, de un vistazo</h1><span>Empleo, MercaPlace y actualidad en un solo espacio.</span></div><button class="home-design-toggle" data-home-layout="classic" aria-pressed="true" type="button">Volver al diseño actual</button></div>
+        <div class="home-bento-heading"><div><p>LINK / Panorama del gremio</p><h1>Tu sector, de un vistazo</h1><span>Empleo, MercaPlace y actualidad en un solo espacio.</span></div><button class="home-design-toggle" data-home-layout="classic" aria-pressed="true" type="button">Volver al tema claro</button></div>
         <div class="home-bento-grid">
           <section class="home-panel home-panel-wide"><header class="home-panel-head"><h2>Bolsa de empleo</h2><small>${vacancies.length} vacantes recientes</small></header><div class="home-short-list">${vacancyCards}</div><div class="action-row"><button class="primary" data-go-tab="empleos" type="button">Ver todas las vacantes</button></div></section>
           <section class="home-panel"><header class="home-panel-head"><h2>MercaPlace</h2><small>${products.length} publicaciones</small></header><div>${productRows}</div><div class="action-row"><button class="secondary" data-go-tab="marketplace" type="button">Explorar MercaPlace</button></div></section>
@@ -3685,7 +3727,8 @@
     }
 
     function render() {
-      document.querySelector(".app")?.classList.toggle("dashboard-bento", active === "inicio" && homeBentoEnabled);
+      document.querySelector(".app")?.classList.toggle("dashboard-bento", homeBentoEnabled);
+      document.querySelector(".stage")?.classList.toggle("dashboard-bento", homeBentoEnabled);
       renderHeader();
       renderTabs();
       renderAdBanner();
