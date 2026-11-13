@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Link</title>
+  <style>
+    *{box-sizing:border-box}
+    html,body{width:100%;height:100%;margin:0;background:#000}
+    body{min-height:100dvh;display:grid;place-items:center;overflow:hidden}
+    img{display:block;width:min(72vw,420px,70vh);height:min(72vw,420px,70vh);object-fit:contain}
+  </style>
+</head>
+<body>
+  <img src="/logolink.png" alt="Link">
+  <script>
+    async function checkLinkServer(){
+      const controller=new AbortController();
+      const timeout=setTimeout(()=>controller.abort(),10000);
+      try{
+        const response=await fetch("/health",{cache:"no-store",signal:controller.signal});
+        const type=response.headers.get("content-type")||"";
+        if(response.ok&&type.includes("application/json")){
+          window.location.replace("/index.html");
+          return;
+        }
+      }catch{}
+      finally{clearTimeout(timeout)}
+      setTimeout(checkLinkServer,2000);
+    }
+    checkLinkServer();
+  </script>
+</body>
+</html>

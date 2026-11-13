@@ -1,5 +1,7 @@
-const CACHE_NAME = "link-app-v100";
+const CACHE_NAME = "link-app-v101";
 const CORE_ASSETS = [
+  "/index.html",
+  "/loading.html",
   "/manifest.webmanifest",
   "/logolink.png",
   "/icon-192.png",
@@ -28,22 +30,44 @@ self.addEventListener("message", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  const requestUrl = new URL(event.request.url);
-  if (event.request.method !== "GET" || requestUrl.pathname.startsWith("/api/")) {
+  const request = event.request;
+  const url = new URL(request.url);
+  if (request.method !== "GET" || url.origin !== self.location.origin) return;
+
+  if (url.pathname.startsWith("/api/") || url.pathname === "/health") {
+    event.respondWith(fetch(request));
     return;
   }
-  const acceptsHtml = event.request.mode === "navigate" || (event.request.headers.get("accept") || "").includes("text/html");
-  if (acceptsHtml) {
-    event.respondWith(fetch(new Request(event.request, { cache: "no-store" })));
+
+  if (request.mode === "navigate" && url.pathname === "/") {
+    event.respondWith(
+      caches.open(CACHE_NAME).then(async (cache) =>
+        (await cache.match("/loading.html")) || fetch(request),
+      ),
+    );
     return;
   }
+
+  if (request.mode === "navigate" && url.pathname === "/index.html") {
+    event.respondWith(
+      caches.open(CACHE_NAME).then(async (cache) => {
+        const cached = await cache.match("/index.html");
+        if (cached) return cached;
+        return fetch(request);
+      }),
+    );
+    return;
+  }
+
   event.respondWith(
-    fetch(event.request)
+    fetch(request)
       .then((response) => {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+        }
         return response;
       })
-      .catch(() => caches.match(event.request).then((cached) => cached || caches.match("/"))),
+      .catch(() => caches.match(request).then((cached) => cached || Response.error())),
   );
 });
