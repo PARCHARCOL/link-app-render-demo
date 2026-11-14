@@ -1,4 +1,4 @@
-const CACHE_NAME = "link-app-v101";
+const CACHE_NAME = "link-app-v102";
 const CORE_ASSETS = [
   "/index.html",
   "/loading.html",
